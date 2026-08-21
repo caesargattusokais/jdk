@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>01 · 方法调用全链路：LinkResolver 符号解析交互动画</title>
+<style>
+  :root{
+    --blue:#3b82f6; --purple:#8b5cf6; --orange:#f59e0b; --green:#10b981;
+    --bg:#f6f7fb; --card:#FFFFFF; --ink:#1f2937; --sub:#6b7280; --line:#e5e7eb;
+    --shadow:0 2px 6px rgba(17,24,39,.05);
+
+    --blue-bg:#eff6ff; --blue-bd:#bfdbfe;
+    --purple-bg:#f5f3ff; --purple-bd:#ddd6fe;
+    --orange-bg:#fffbeb; --orange-bd:#fde68a;
+    --green-bg:#ecfdf5; --green-bd:#a7f3d0;
+    --red:#ef4444; --red-bg:#fef2f2; --red-bd:#fecaca;
+    --ink-2:#6b7280; --ink-3:#9ca3af;
+    --code-bg:#111827; --code-ink:#e5e7eb;
+  }
+  header{text-align:center;margin-bottom:18px}
+  header h1{font-size:25px;letter-spacing:.5px}
+  header h1 .mono{font-family:Consolas,monospace;color:var(--blue)}
+  header .sub{color:var(--ink-2);font-size:13.5px;margin-top:6px}
+  .badges{margin-top:12px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+  header .badge{font-size:12px;padding:3px 12px;border-radius:999px;border:1px solid var(--blue-bd);
+    background:var(--blue-bg);color:var(--blue);font-family:Consolas,monospace}
+  header .badge.purple{border-color:var(--purple-bd);background:var(--purple-bg);color:var(--purple)}
+  header .badge.green{border-color:var(--green-bd);background:var(--green-bg);color:var(--green)}
+  header .badge.orange{border-color:var(--orange-bd);background:var(--orange-bg);color:var(--orange)}
+  header .badge.red{border-color:var(--red-bd);background:var(--red-bg);color:var(--red)}
+
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{background:var(--bg); color:var(--ink); font-family:'Segoe UI','Microsoft YaHei',sans-serif; padding:18px;}
+  .wrap{max-width:1180px; margin:0 auto;}
+
+  h1{font-size:22px; margin-bottom:4px;}
+  .sub{font-size:13px; color:var(--sub); margin-bottom:14px;}
+  .steps{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:16px; justify-content:center;}
+  .step-pill{font-size:11.5px; padding:5px 11px; border-radius:999px; cursor:pointer; border:1.5px solid var(--line); background:var(--card); color:var(--sub); display:flex; align-items:center; justify-content:center; transition:all .2s; user-select:none; white-space:nowrap; min-width:30px;}
+  .step-pill.active{border-color:var(--blue); background:var(--blue); color:#fff; box-shadow:0 4px 12px rgba(59,130,246,.35);}
+  .step-pill.done{border-color:var(--green); background:var(--green); color:#fff;}
+
+  .grid{display:grid; grid-template-columns:300px 1fr 310px; gap:12px; margin-bottom:12px;}
+  .panel{background:var(--card); border-radius:12px; padding:14px; box-shadow:var(--shadow);}
+  .panel h2{font-size:14px; margin-bottom:10px; padding-left:8px; border-left:4px solid var(--green);}
+  .panel.p2 h2{border-color:var(--orange);}
+  .panel.p3 h2{border-color:var(--blue);}
+
+  .face{display:flex; align-items:center; gap:8px; padding:10px 12px; border-radius:10px; margin-bottom:8px;
+        background:#eff6ff; cursor:pointer; transition:all .3s; border:1.5px solid transparent;}
+  .face .num{width:26px; height:26px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:bold; color:#fff; font-size:13px;}
+  .face .tt{font-size:13px; font-weight:bold;}
+  .face .ds{font-size:11px; color:var(--sub); margin-top:2px;}
+  .face.f1 .num{background:var(--orange);} .face.f2 .num{background:var(--blue);} .face.f3 .num{background:var(--purple);} .face.f4 .num{background:var(--green);}
+  .face.on{border-color:var(--orange); background:#fffbeb; box-shadow:var(--shadow);}
+  .face.f1.on{border-color:var(--orange);}
+  .face.f2.on{border-color:var(--blue);}
+  .face.f3.on{border-color:var(--purple); background:#f5f3ff;}
+  .face.f4.on{border-color:var(--green); background:#ecfdf5;}
+  .note{margin-top:10px; font-size:11.5px; color:var(--sub); background:#f3f4f6; border-radius:8px; padding:7px 9px;}
+
+  .stageBox{background:#111827; border-radius:10px; padding:10px 12px; font-family:Consolas,monospace; font-size:12px; line-height:1.75; color:#e5e7eb; min-height:220px; white-space:pre;}
+  .stageBox .hl{background:#4a3410; border-radius:3px; color:#fbbf24;}
+  .stageBox .dim{color:#64748b;}
+  .stageBox .grn{color:#a7f3d0;}
+  .stageBox .org{color:#fde68a;}
+  .stageBox .pur{color:#ddd6fe;}
+  .stageBox .blu{color:#bfdbfe;}
+  .stageBox .red{color:#fca5a5;}
+  .vrow{display:flex; align-items:center; gap:6px; padding:2px 0; font-size:11.5px; font-family:Consolas,monospace;}
+  .vslot{display:inline-block; min-width:64px; text-align:center; border-radius:6px; padding:2px 8px; font-size:11px; background:#1f2937; color:#d1d5db;}
+  .vslot.hot{background:#4a3410; color:#fbbf24;}
+  .vslot.empty{background:#374151; color:#6b7280; border:1px dashed #4b5563;}
+  .detail{margin-top:8px; font-size:12px; color:#4b5563; background:#f3f4f6; border-radius:8px; padding:7px 9px; min-height:34px;}
+
+  .src{background:#111827; border-radius:12px; padding:12px 14px; box-shadow:var(--shadow); margin-bottom:12px;}
+  .src h2{font-size:13px; color:#9ca3af; margin-bottom:8px;}
+  .src .code{font-family:Consolas,monospace; font-size:12px; line-height:1.7; white-space:pre; overflow-x:auto; color:#e5e7eb;}
+  .src .code .hl{background:#4a3410; border-radius:3px; color:#fbbf24;}
+  .src .code .dim{color:#64748b;}
+  .src .code .grn{color:#a7f3d0;}
+  .src .code .org{color:#fde68a;}
+  .src .code .pur{color:#ddd6fe;}
+  .src .code .blu{color:#bfdbfe;}
+  .scene{margin-top:8px; font-size:11px; color:#6b7280; background:#f3f4f6; border-radius:8px; padding:6px 8px;}
+
+  .ctl{display:flex; align-items:center; gap:10px; justify-content:center; padding:10px; background:var(--card); border-radius:12px; box-shadow:var(--shadow);}
+  .btn{width:44px; height:44px; border-radius:50%; border:none; background:var(--blue); color:#fff; font-size:16px; cursor:pointer; transition:all .15s; font-weight:bold;}
+  .btn:hover{transform:scale(1.08);}
+  .btn.green{background:var(--green);}
+  .btn.orange{background:var(--orange); width:52px; height:52px;}
+  .hint{font-size:12px; color:var(--sub);}
+  .stepDesc{font-size:14px; font-weight:normal; line-height:1.85; color:#334155; background:#eff6ff; border-radius:9px; padding:11px 16px; margin-bottom:12px; border-left:4px solid var(--blue);}
+  .stepDesc b{color:var(--blue); font-weight:600;}
+  .stepDesc code{color:#7c3aed; font-family:Consolas,monospace; background:rgba(139,92,246,.10); padding:0 5px; border-radius:4px; font-size:12.5px;}
+  .kbd{display:inline-block; border:1px solid var(--line); border-radius:4px; padding:0 6px; background:#fff; font-size:11px; color:#4b5563;}
+
+  @media(max-width:1000px){.grid{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1><span class="mono">invoke</span> · 方法调用全链路第一站：LinkResolver 符号解析</h1>
+    <div class="sub">resolve_invoke（linkResolver.cpp:1715）· resolve_method 七步（:753）· runtime 分派（:1412）· 写回缓存（:138）· JDK 28</div>
+    <div class="badges">
+      <span class="badge">invoke</span>
+      <span class="badge orange">入口分发</span>
+      <span class="badge">linktime 解析</span>
+      <span class="badge purple">runtime 分派</span>
+      <span class="badge green">缓存热路径</span>
+    </div>
+  </header>
+
+  <div class="steps" id="pills"></div>
+  <div class="stepDesc" id="stepDesc">点击 ▶ 开始播放，Space 播放/暂停，← → 步进，R 重置</div>
+
+  <div class="grid">
+    <!-- 左：四关卡导航 -->
+    <div class="panel p1">
+      <h2>四关卡导航</h2>
+      <div class="face f1" id="face1"><span class="num">1</span><div><div class="tt">入口分发</div><div class="ds">resolve_invoke 六路分发 :1715</div></div></div>
+      <div class="face f2" id="face2"><span class="num">2</span><div><div class="tt">linktime 解析</div><div class="ds">resolve_method 七步 :753</div></div></div>
+      <div class="face f3" id="face3"><span class="num">3</span><div><div class="tt">runtime 分派</div><div class="ds">vtable/itable 多态 :1412</div></div></div>
+      <div class="face f4" id="face4"><span class="num">4</span><div><div class="tt">缓存热路径</div><div class="ds">set_common 写回 :138</div></div></div>
+      <div class="note" id="fnote">当前：关卡 ①<br>入口分发</div>
+    </div>
+
+    <!-- 中：舞台 -->
+    <div class="panel p2">
+      <h2>机制舞台</h2>
+      <div class="stageBox" id="stage">// 当前关卡机制</div>
+      <div class="detail" id="detail">—</div>
+    </div>
+
+    <!-- 右：源码 -->
+    <div class="panel p3">
+      <h2>源码证据</h2>
+      <div class="src">
+        <div class="code" id="src">// 源码面板</div>
+      </div>
+      <div class="scene" id="scene">—</div>
+    </div>
+  </div>
+
+  <!-- 控制 -->
+  <div class="ctl">
+    <button class="btn" id="btnPrev" title="上一步">◀</button>
+    <button class="btn orange" id="btnPlay" title="播放/暂停 (Space)">▶</button>
+    <button class="btn" id="btnNext" title="下一步">▶</button>
+    <button class="btn green" id="btnReset" title="重置 (R)">↺</button>
+    <span class="hint"><span class="kbd">Space</span> 播放/暂停 · <span class="kbd">←</span> <span class="kbd">→</span> 步进 · <span class="kbd">R</span> 重置 · 点击步骤胶囊跳转</span>
+  </div>
+
+</div>
+
+<script>
+(() => {
+  const S = {
+    face1: document.getElementById('face1'),
+    face2: document.getElementById('face2'),
+    face3: document.getElementById('face3'),
+    face4: document.getElementById('face4'),
+    fnote: document.getElementById('fnote'),
+    stage: document.getElementById('stage'),
+    detail: document.getElementById('detail'),
+    src: document.getElementById('src'),
+    scene: document.getElementById('scene'),
+    desc: document.getElementById('stepDesc'),
+    pills: document.getElementById('pills'),
+  };
+  const COL = { blue:'#3b82f6', purple:'#8b5cf6', orange:'#f59e0b', green:'#10b981' };
+
+  function faces(n){
+    S.face1.className='face f1'+(n===1?' on':'');
+    S.face2.className='face f2'+(n===2?' on':'');
+    S.face3.className='face f3'+(n===3?' on':'');
+    S.face4.className='face f4'+(n===4?' on':'');
+  }
+  function stage(html){ S.stage.innerHTML = html; }
+  function src(html){ S.src.innerHTML = html; }
+  function scene(txt){ S.scene.innerHTML = txt; }
+
+  const steps = [
+    // 0 白话速览（先讲人话，再上源码）
+    { d:`<span style="display:inline-block;background:#dbeafe;color:#1d4ed8;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">白话速览</span> 这一站在演什么：<b>第一次喊「会计」</b>。
+<b>比喻</b>：老板喊「会计！算账」——字节码里喊的是<b>岗位名</b>，不是具体人（老王/小李都行）。第一次喊，得先<b>查员工档案</b>确认岗位归谁，再<b>记小本本</b>，下次直接翻本。
+<b>技术对照</b>：喊岗位名 = <code>invokevirtual</code>；岗位名 = 符号引用；查档案 = 类加载 + 解析；记小本 = ConstantPoolCache 缓存。
+<b>记住一句</b>：一次解析、终身缓存——这一站全在讲「第一次」。
+下面每一步都会用术语讲同一件事，忘了就把比喻拉回来。`,
+      fn:()=>{
+        faces(1); S.fnote.innerHTML='当前：白话速览<br>先讲人话';
+        stage(`<span class="blu">白话速览 · 老板喊「会计」</span>\n<span class="dim">比喻：喊岗位名 → 查档案 → 记小本</span>\n<span class="dim">技术：invokevirtual → 解析 → 缓存</span>\n<span class="dim">四关：①入口分发 ②linktime 解析</span>\n<span class="dim">      ③runtime 分派 ④缓存热路径</span>\n<span class="grn">一句话：一次解析，终身缓存</span>`);
+        S.detail.textContent='这一站把「会计」翻译成老王，写进小本本——以后喊一次查一次本。';
+        src(`<span class="dim">// 术语对照（人话 → 黑话）</span>\n<span class="blu">喊岗位名</span>      → <span class="grn">invokevirtual 字节码</span>\n<span class="blu">字节码里的名字</span> → <span class="grn">符号引用</span>\n<span class="blu">查员工档案</span>  → <span class="grn">类加载 + LinkInfo</span>\n<span class="blu">记小本本</span>    → <span class="grn">ConstantPoolCache</span>`);
+        scene('白话速览：<b>第一次喊「会计」</b>');
+      }},
+    // 0 初始
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：先认「这次喊的是哪种岗位」——六种喊法（static/special/virtual/interface/handle/indy）各走各的工位，语义不同。
+一个 <code>invoke</code> 字节码，背后是一条 <b>4 道关卡</b>的解析链——这次全程只发生在第一次执行。
+<b>为什么"只有第一次"</b>：每个类都自带一本「速查本」ConstantPoolCache（类加载时造好，槽位与常量池一一对应）——执行这条 invoke 先翻本：有记录直接走，没记录才掉进这条解析链。就像老板第一次喊「会计」要查档案，之后只翻小本本。
+<b>怎么走进来</b>：invoke 模板（执行这条字节码的机器码）先读缓存槽、比对字节码（templateTable_x86.cpp:2324）——没解析 → 调 C++ 运行时 <code>InterpreterRuntime::resolve_from_cache</code>（interpreterRuntime.cpp:1063，switch 分路）→ <code>resolve_invoke</code>（interpreterRuntime.cpp:864）从字节码抠出操作数 index（:890）+ 从栈上取接收者（:869）→ 交给 <code>LinkResolver::resolve_invoke</code>（:893）七步查找。
+<b>① 入口分发</b>（linkResolver.cpp:1715）：按字节码类型 <code>switch</code> 到 6 条独立管线（static/special/virtual/interface/handle/indy）——语义、异常各不相同，任一步出错立即 CHECK 抛异常。
+<b>② linktime 解析</b>（resolve_method :753）：把符号引用按"字面上指向谁"逐层查类链 + 接口链，得出 resolved_method。
+<b>③ runtime 分派</b>（runtime_resolve_virtual_method :1412）：按接收者<b>实际类型</b>查 vtable/itable，选出"真正执行谁"selected_method。
+<b>④ 缓存热路径</b>（CallInfo::set_common :138）：两个方法 + 调用形态写回 ConstantPoolCacheEntry，之后免解析。
+先看关卡①——它决定这一调用属于哪种语义：静态绑定还是动态分派，后面 3 关全靠它。`,
+      fn:()=>{
+        faces(1); S.fnote.innerHTML='当前：关卡 ①<br>入口分发';
+        stage(`<span class="org">关卡 ① 入口分发</span>\n<span class="dim">javac 编译调用点 → 6 种 invoke 字节码之一</span>\n<span class="dim">invokevirtual  → 多态调用（Dog.speak()）</span>\n<span class="dim">invokestatic   → 静态方法</span>\n<span class="dim">invokespecial  → 构造器/super/private</span>\n<span class="dim">invokeinterface→ 接口方法</span>\n<span class="dim">invokehandle / invokedynamic → 方法句柄/动态</span>`);
+        S.detail.textContent='语义不同、管线不同：6 种字节码各走各的解析函数。';
+        src(`<span class="dim">// DogDemo.java</span>\nDog dog = new Dog();\ndog.speak();    <span class="grn">← invokevirtual</span>\nDog.bark();     <span class="org">← invokestatic</span>\nsuper.init();   <span class="dim">← invokespecial</span>\nPet pet = dog;\npet.sleep();    <span class="pur">← invokeinterface</span>`);
+        scene('场景 0：<b>关卡① 入口分发</b>');
+      }},
+    // 1 javac 生成字节码
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：javac 把「dog.speak()」翻译成喊岗位名「invokevirtual #12」——只记名字（符号引用），还没认人（Method*）。
+javac 把每个调用点翻译成 <b>具体一种 invoke 字节码</b>，并记下常量池里的方法符号。
+<b>① 调用点</b>：<code>dog.speak()</code> 编译成 <code>invokevirtual #12</code>
+<b>② #12</b>：常量池 Methodref 槽——指向"类 + 方法名 + 签名"三个符号
+<b>③ 符号 ≠ 方法</b>：此刻只有名字，没有 C++ 的 Method* 对象——这就是"待解析"
+<b>④ 谁去解析</b>：解释器/C2 首次执行到这条字节码时，调 resolve_invoke`,
+      fn:()=>{
+        faces(1);
+        stage(`<span class="org">javac 产物</span>\n<span class="dim">aload_1         // dog</span>\n<span class="blu">invokevirtual #12</span>  <span class="dim">// Methodref Dog.speak()V</span>\n<span class="dim">return</span>\n<span class="dim">// 常量池 #12 = Methodref</span>\n<span class="dim">//   class:  #3  Dog</span>\n<span class="dim">//   name:   #4  speak</span>\n<span class="dim">//   type:   #5  ()V</span>`);
+        S.detail.textContent='符号是"名字"，Method* 是"真身"——解析就是建立对应关系。';
+        src(`<span class="dim">// javap -v DogDemo.class（截取）</span>\n12: invokevirtual #12  <span class="grn">// Method Dog.speak:()V</span>\n\n<span class="dim">// 常量池</span>\n#12 = Methodref    #3.#5    <span class="dim">// Dog.speak:()V</span>\n#3  = Class        #21      <span class="dim">// Dog</span>\n#5  = NameAndType  #22:#23  <span class="dim">// speak:()V</span>`);
+        scene('场景 1：<b>javac 生成 invoke 字节码</b>');
+      }},
+    // 2 六路分发
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：大前台 resolve_invoke 自己不干活，只按喊法把活儿分给六条独立工位，任一步异常立即上交。
+<b>resolve_invoke</b> 是个纯分发器——它自己不做任何解析，只按字节码类型把活儿分给 6 条独立管线。
+<b>① 6 条管线</b>：static / special / virtual / interface / handle / indy，互不串门
+<b>② 为什么分开</b>：语义不同——静态绑定 vs 多态查表 vs 接口分派 vs 方法句柄
+<b>③ CHECK 宏</b>：任一步抛异常就立即返回，异常交给调用方
+<b>④ 分发器本身零查找</b>：真正的解析在下一关 resolve_method`,
+      fn:()=>{
+        faces(1);
+        stage(`<span class="blu">switch (byte) {</span>  <span class="dim">// linkResolver.cpp:1715</span>\n  <span class="grn">case _invokestatic:   resolve_invokestatic(...);   break;</span>\n  <span class="grn">case _invokespecial:  resolve_invokespecial(...);  break;</span>\n  <span class="grn">case _invokevirtual:  resolve_invokevirtual(...);  break;</span>\n  <span class="grn">case _invokehandle:   resolve_invokehandle(...);   break;</span>\n  <span class="grn">case _invokedynamic:  resolve_invokedynamic(...);  break;</span>\n  <span class="grn">case _invokeinterface:resolve_invokeinterface(...);break;</span>\n<span class="blu">}</span>`);
+        S.detail.textContent='六路分发：语义不同，解析函数不同，异常类型也各不相同。';
+        src(`<span class="dim">// linkResolver.cpp:1715（原文）</span>\ncase Bytecodes::_invokestatic   : resolve_invokestatic   (result,       pool, index, init_mode, CHECK); break;\ncase Bytecodes::_invokespecial  : resolve_invokespecial  (result, recv, pool, index,            CHECK); break;\ncase Bytecodes::_invokevirtual  : resolve_invokevirtual  (result, recv, pool, index,            CHECK); break;\ncase Bytecodes::_invokehandle   : resolve_invokehandle   (result,       pool, index,            CHECK); break;\ncase Bytecodes::_invokedynamic  : resolve_invokedynamic  (result,       pool, index,            CHECK); break;\ncase Bytecodes::_invokeinterface: resolve_invokeinterface(result, recv, pool, index,            CHECK); break;`);
+        scene('场景 2：<b>六路分发器</b>');
+      }},
+    // 3 懒加载
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：开工前先查档案（LinkInfo）：类还没加载就现加载——所以「引用类不报错、真调不存在的方法才报错」。
+每条管线第一件事是构造 <b>LinkInfo</b>——它第一次触碰常量池，可能<b>触发类加载</b>。
+<b>① LinkInfo</b>：把"常量池第几个槽"翻译成"类名+方法名+签名"
+<b>② klass_ref_at</b>：取 Methodref 所属类（constantPool.cpp:918）
+<b>③ klass_at_impl</b>：类没加载 → SystemDictionary 现在加载（constantPool.cpp:631）
+<b>④ 这就是懒加载</b>："引用类不报错、调不存在的方法才 NoSuchMethodError"的根因`,
+      fn:()=>{
+        faces(2); S.fnote.innerHTML='当前：关卡 ②<br>linktime 解析';
+        stage(`<span class="blu">LinkInfo link_info(pool, index,</span>\n<span class="blu">                Bytecodes::_invokevirtual, CHECK);</span>  <span class="dim">// :259</span>\n<span class="dim">  └─ pool->klass_ref_at(index)</span>  <span class="dim">// constantPool.cpp:918</span>\n<span class="dim">     └─ klass_at_impl(...)</span>       <span class="dim">// constantPool.cpp:631</span>\n<span class="dim">        └─ SystemDictionary::resolve_or_fail</span>\n<span class="org">           // 类没加载？现在加载！</span>`);
+        S.detail.textContent='类加载是惰性的：第一次真正解析到它的成员才加载。';
+        src(`<span class="dim">// linkResolver.cpp:259（LinkInfo 构造，截取）</span>\nLinkInfo::LinkInfo(const constantPoolHandle& pool, int index,\n                   Bytecodes::Code code, TRAPS) {\n  ...\n  _resolved_klass = pool->klass_ref_at(index, CHECK);  <span class="grn">← 懒加载入口</span>\n  _name = pool->name_ref_at(index);\n  _signature = pool->signature_ref_at(index);\n}`);
+        scene('场景 3：<b>LinkInfo 懒解析入口</b>');
+      }},
+    // 4 七步①
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：第一步检查：喊的是「类方法」却指向接口——形状对不上，抛 ICCE（链接期通用的「语义变了」错误）。
+linktime 解析的核心是 <b>resolve_method 七步</b>——每步一个检查，失败抛对应异常。
+<b>① 第 1 步</b>：<code>invokevirtual</code> 的目标竟然是接口 → ICCE（:760）
+<b>② 为什么</b>：invokevirtual 语义是"类方法调用"，目标是接口就是类型不匹配
+<b>③ ICCE</b> = IncompatibleClassChangeError，链接期"语义变了"的通用错误
+<b>④ 类比</b>：就像把矩形当圆形用——API 形态对不上`,
+      fn:()=>{
+        faces(2);
+        stage(`<span class="blu">// 1. For invokevirtual, cannot call an interface method</span>  <span class="dim">// :759</span>\n<span class="grn">if (code == Bytecodes::_invokevirtual &&</span>\n<span class="grn">    resolved_klass->is_interface()) {</span>  <span class="dim">// :760</span>\n  <span class="org">THROW_MSG_NULL(</span>\n<span class="org">    vmSymbols::java_lang_IncompatibleClassChangeError(),</span>\n<span class="org">    "Found interface ..., but class was expected");</span>\n<span class="grn">}</span>`);
+        S.detail.textContent='第一步拦住"invokevirtual 指向接口"——类型形态不匹配 → ICCE。';
+        src(`<span class="dim">// linkResolver.cpp:760-766（原文）</span>\nif (code == Bytecodes::_invokevirtual && resolved_klass->is_interface()) {\n  ResourceMark rm(THREAD);\n  char buf[200];\n  jio_snprintf(buf, sizeof(buf),\n      "Found interface %s, but class was expected",\n      resolved_klass->external_name());\n  THROW_MSG_NULL(vmSymbols::java_lang_IncompatibleClassChangeError(), buf);\n}`);
+        scene('场景 4：<b>七步① invokevirtual 调接口 → ICCE</b>');
+      }},
+    // 5 七步②
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：第二步检查：喊的是方法，常量池槽却标着字段/类——手写坏字节码在这被拦，抛 ICCE。
+<b>第 2 步</b>：检查常量池槽的 tag 必须是 <code>Methodref</code>，否则 ICCE。
+<b>① tag</b>：常量池每个槽有类型标签（Class/Methodref/Fieldref/String...）
+<b>② 为什么检查</b>：invoke 指令必须指向方法符号，指向字段/类就是畸形
+<b>③ 反例</b>：手写字节码把 invokevirtual 指向 Fieldref → 这里被拦
+<b>④ 意义</b>：class 文件校验是"格式合法"，这里是"语义合法"`,
+      fn:()=>{
+        faces(2);
+        stage(`<span class="blu">// 2. check constant pool tag for called method</span>  <span class="dim">// :768</span>\n<span class="grn">if (!link_info.tag().is_invalid() &&</span>\n<span class="grn">    !link_info.tag().is_method()) {</span>  <span class="dim">// :769</span>\n  <span class="org">THROW_MSG_NULL(</span>\n<span class="org">    vmSymbols::java_lang_IncompatibleClassChangeError(),</span>\n<span class="org">    "'...' must be Methodref constant");</span>\n<span class="grn">}</span>`);
+        S.detail.textContent='槽 tag 必须是 Methodref——invoke 指令指向非方法符号即畸形。';
+        src(`<span class="dim">// linkResolver.cpp:769-776（原文）</span>\nif (!link_info.tag().is_invalid() && !link_info.tag().is_method()) {\n  ResourceMark rm(THREAD);\n  stringStream ss;\n  ss.print("Method '");\n  Method::print_external_name(&ss, link_info.resolved_klass(),\n                              link_info.name(), link_info.signature());\n  ss.print("' must be Methodref constant");\n  THROW_MSG_NULL(vmSymbols::java_lang_IncompatibleClassChangeError(), ss.as_string());\n}`);
+        scene('场景 5：<b>七步② tag≠Methodref → ICCE</b>');
+      }},
+    // 6 七步③ 类链查找
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：第三步找方法：按「本类 → 超类 → default 方法表」翻档案，这里最常找到人。
+<b>第 3 步</b>：沿 <b>类链</b>（本类 → 超类）找方法——这是最常命中的一步。
+<b>① lookup_method_in_klasses</b>（:356）：从 resolved_klass 出发上溯
+<b>② 先 skip overpass</b>（:365）：桥接方法先跳过，保证静态方法优先
+<b>③ 查找顺序</b>：本类精确查找 → 找不到再看 default 方法表（:388/:392）
+<b>④ 只查类链</b>：接口是第 4 步单独查的——两套体系分开`,
+      fn:()=>{
+        faces(2);
+        stage(`<span class="blu">// 3. lookup method in resolved klass and its super klasses</span>  <span class="dim">// :778</span>\n<span class="grn">methodHandle resolved_method(THREAD,</span>\n<span class="grn">    lookup_method_in_klasses(link_info, true, false));</span>  <span class="dim">// :779</span>\n<span class="dim">// lookup_method_in_klasses（:356）内部：</span>\n<span class="dim">// ① uncached_lookup_method（skip overpass）:366</span>\n<span class="dim">// ② ik->find_method（本类精确）      :389</span>\n<span class="dim">// ③ default_methods 表查找          :392-397</span>`);
+        S.detail.textContent='类链查找：本类 → 超类链 → default 方法表，最常命中。';
+        src(`<span class="dim">// linkResolver.cpp:356（lookup_method_in_klasses 原文）</span>\n// Ignore overpasses so statics can be found during resolution\nMethod* result = klass->uncached_lookup_method(name, signature,\n                                Klass::OverpassLookupMode::skip);  <span class="grn">// :366</span>\n...\nif (result == nullptr) {\n  result = ik->find_method(name, signature);                    <span class="grn">// :389</span>\n}\nif (result == nullptr) {\n  Array<Method*>* default_methods = ik->default_methods();\n  if (default_methods != nullptr) {\n    result = InstanceKlass::find_method(default_methods, name, signature);  <span class="grn">// :395</span>\n  }\n}`);
+        scene('场景 6：<b>七步③ 类链查找</b>');
+      }},
+    // 7 七步④ 接口链 + JSR292
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：类链没找到就去接口链找；再没有就找方法句柄的隐式方法（JSR292）——找不到留给第 5 步。
+<b>第 4 步</b>：类链没找到 → 查 <b>接口链</b>；再没有 → 兜底 <b>JSR 292 签名多态</b>。
+<b>① 接口链</b>：resolved_klass 实现的所有接口里找（:783）
+<b>② JSR 292</b>：MethodHandle.linkToXxx 这类隐式方法（:787）
+<b>③ 为什么兜底</b>：invokedynamic/方法句柄的调用点没有普通方法体
+<b>④ 找不到 → 留给第 5 步</b>：NoSuchMethodError`,
+      fn:()=>{
+        faces(2);
+        stage(`<span class="blu">// 4. lookup method in all the interfaces</span>  <span class="dim">// :781</span>\n<span class="grn">if (resolved_method.is_null() &&</span>\n<span class="grn">    !resolved_klass->is_array_klass()) {</span>  <span class="dim">// :782</span>\n  <span class="grn">resolved_method = methodHandle(THREAD,</span>\n<span class="grn">      lookup_method_in_interfaces(link_info));</span>  <span class="dim">// :783</span>\n  <span class="dim">if (resolved_method.is_null()) {</span>\n    <span class="org">// JSR 292: implicitly generated</span>\n    <span class="org">// MethodHandle.linkToVirtual(*...)</span>  <span class="dim">// :787</span>\n    <span class="org">Method* m = lookup_polymorphic_method(...);</span>\n  <span class="dim">}</span>\n<span class="blu">}</span>`);
+        S.detail.textContent='接口链单独查；JSR 292 签名多态兜底方法句柄调用点。';
+        src(`<span class="dim">// linkResolver.cpp:782-794（原文）</span>\nif (resolved_method.is_null() && !resolved_klass->is_array_klass()) {\n  resolved_method = methodHandle(THREAD, lookup_method_in_interfaces(link_info));\n  if (resolved_method.is_null()) {\n    // JSR 292:  see if this is an implicitly generated method\n    // MethodHandle.linkToVirtual(*...), etc\n    Method* method = lookup_polymorphic_method(link_info, (Handle*)nullptr, THREAD);\n    resolved_method = methodHandle(THREAD, method);\n    ...\n  }\n}`);
+        scene('场景 7：<b>七步④ 接口链 + JSR292</b>');
+      }},
+    // 8 七步⑤ NoSuchMethodError
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：类链、接口链、JSR292 全没找到——公司里没这个人，抛 NoSuchMethodError（消息带完整签名）。
+<b>第 5 步</b>：类链、接口链、JSR292 全没找到 → <b>NoSuchMethodError</b>。
+<b>① 触发</b>：方法名/签名在解析目标里根本不存在（:797）
+<b>② 常见场景</b>：改了方法签名忘了重编译依赖方
+<b>③ 和 NoClassDefFoundError 区别</b>：类是"没加载成功"；这里是"加载了但没这方法"
+<b>④ 消息</b>：打印完整外部名（类.方法:签名），一眼定位`,
+      fn:()=>{
+        faces(2);
+        stage(`<span class="blu">// 5. method lookup failed</span>  <span class="dim">// :796</span>\n<span class="grn">if (resolved_method.is_null()) {</span>  <span class="dim">// :797</span>\n  <span class="org">stringStream ss;</span>\n  <span class="org">ss.print("'");</span>\n  <span class="org">Method::print_external_name(&ss, resolved_klass,</span>\n<span class="org">      link_info.name(), link_info.signature());</span>\n  <span class="org">ss.print("'");</span>\n  <span class="org">THROW_MSG_CAUSE_(</span>\n<span class="org">      vmSymbols::java_lang_NoSuchMethodError(),</span>\n<span class="org">      ss.as_string(), nested_exception, nullptr);</span>  <span class="dim">// :803</span>\n<span class="grn">}</span>`);
+        S.detail.textContent='方法不存在 → NoSuchMethodError，消息带完整方法签名。';
+        src(`<span class="dim">// linkResolver.cpp:797-805（原文）</span>\nif (resolved_method.is_null()) {\n  ResourceMark rm(THREAD);\n  stringStream ss;\n  ss.print("'");\n  Method::print_external_name(&ss, resolved_klass,\n                              link_info.name(), link_info.signature());\n  ss.print("'");\n  THROW_MSG_CAUSE_(vmSymbols::java_lang_NoSuchMethodError(),\n                   ss.as_string(), nested_exception, nullptr);\n}`);
+        scene('场景 8：<b>七步⑤ NoSuchMethodError</b>');
+      }},
+    // 9 七步⑥ 访问检查
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：找到人了还要看「你够不够格叫他」——public/protected/包内/模块，权限不够抛 IllegalAccessError。
+<b>第 6 步</b>：方法找到了，还要检查<b>引用方有没有权限调它</b>。
+<b>① check_method_accessability</b>（:813）：public/protected/包内/同模块
+<b>② 触发</b>：反射调用私有方法、跨包调包私有类的方法等
+<b>③ 抛什么</b>：IllegalAccessError
+<b>④ 和 IllegalAccessException 区别</b>：Error 是链接期 VM 抛的；Exception 是反射层 Java 抛的`,
+      fn:()=>{
+        faces(2);
+        stage(`<span class="blu">// 6. access checks</span>  <span class="dim">// :807</span>\n<span class="grn">if (link_info.check_access()) {</span>  <span class="dim">// :809</span>\n  <span class="grn">assert(current_klass != nullptr, "..." );</span>\n  <span class="org">check_method_accessability(current_klass,</span>  <span class="dim">// :813</span>\n<span class="org">      resolved_klass,</span>\n<span class="org">      resolved_method->method_holder(),</span>\n<span class="org">      resolved_method, CHECK_NULL);</span>\n<span class="grn">}</span>`);
+        S.detail.textContent='访问控制校验：public/protected/包内/模块，失败 → IllegalAccessError。';
+        src(`<span class="dim">// linkResolver.cpp:807-818（原文）</span>\n// 6. access checks, access checking may be turned off when calling from within the VM.\nKlass* current_klass = link_info.current_klass();\nif (link_info.check_access()) {\n  assert(current_klass != nullptr , "current_klass should not be null");\n  // check if method can be accessed by the referring class\n  check_method_accessability(current_klass,\n                             resolved_klass,\n                             resolved_method->method_holder(),\n                             resolved_method,\n                             CHECK_NULL);\n}`);
+        scene('场景 9：<b>七步⑥ 访问检查</b>');
+      }},
+    // 10 七步⑦ loader 约束
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：最后对账：两个类加载器对同一岗位名必须认同一人，防「你看到的类和我看到的类不是同一个」。
+<b>第 7 步</b>：最后检查 <b>loader 约束</b>——保证两个类加载器对同一类名有共识。
+<b>① 问题</b>：两个 ClassLoader 各自加载了同名类，方法签名"同名"但真身不同
+<b>② check_method_loader_constraints</b>（:821）：校验一致性
+<b>③ 失败</b>：LinkageError 族——"你看到的类和我看到的类不是同一个"
+<b>④ 意义</b>：类型安全的最后一道防线，防类加载器混乱`,
+      fn:()=>{
+        faces(2);
+        stage(`<span class="blu">// 7. loader constraints</span>  <span class="dim">// :819</span>\n<span class="grn">if (link_info.check_loader_constraints()) {</span>  <span class="dim">// :819</span>\n  <span class="org">check_method_loader_constraints(link_info,</span>  <span class="dim">// :821</span>\n<span class="org">      resolved_method, "method", CHECK_NULL);</span>\n<span class="grn">}</span>\n<span class="grn">return resolved_method();</span>  <span class="dim">// :824 解析成功！</span>`);
+        S.detail.textContent='七步全过 → 返回 resolved_method，linktime 完成。';
+        src(`<span class="dim">// linkResolver.cpp:819-824（原文）</span>\nif (link_info.check_loader_constraints()) {\n  // check loader constraints\n  check_method_loader_constraints(link_info, resolved_method, "method", CHECK_NULL);\n}\n\nreturn resolved_method();`);
+        scene('场景 10：<b>七步⑦ loader 约束 → 解析成功</b>');
+      }},
+    // 11 runtime virtual
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：链接期定了「字面上指向谁」，现在看「实际对象是谁」——接收者为空抛 NPE，多态从这一步开始。
+linktime 找到了"字面上指向谁"，runtime 要回答<b>"实际该执行谁"</b>——多态落点在这。
+<b>① 接收者为 null</b> → NPE（:1429）
+<b>② 接口方法</b>（default/miranda）→ 转成 vtable index（:1440）
+<b>③ 类方法</b> → 直接拿 vtable_index（:1450）
+<b>④ final/private</b> → nonvirtual_vtable_index，目标唯一（:1457）
+<b>⑤ 否则</b>：recv_klass->method_at_vtable 按<b>接收者实际类型</b>查表（:1464）`,
+      fn:()=>{
+        faces(3); S.fnote.innerHTML='当前：关卡 ③<br>runtime 分派';
+        stage(`<span class="blu">// 1. null 接收者 → NPE</span>  <span class="dim">// :1429</span>\n<span class="org">if (recv.is_null()) THROW(NPE);</span>\n<span class="blu">// 2. 接口方法 → vtable index</span>  <span class="dim">// :1440</span>\n<span class="grn">vtable_index = vtable_index_of_interface_method(...);</span>\n<span class="blu">// 3. 类方法 → vtable_index</span>  <span class="dim">// :1450</span>\n<span class="grn">vtable_index = resolved_method->vtable_index();</span>\n<span class="blu">// 4. final/private → 静态绑定</span>  <span class="dim">// :1457</span>\n<span class="grn">if (vtable_index == Method::nonvirtual_vtable_index)</span>\n<span class="grn">    selected_method = resolved_method;  <span class="org">// 目标唯一</span></span>\n<span class="blu">// 5. 多态查表</span>  <span class="dim">// :1464</span>\n<span class="org">selected_method = recv_klass->method_at_vtable(vtable_index);</span>`);
+        S.detail.textContent='runtime 看接收者实际类型——子类覆写同一槽位，这就是多态。';
+        src(`<span class="dim">// linkResolver.cpp:1429-1464（原文节选）</span>\nif (check_null_and_abstract && recv.is_null()) {\n  THROW(vmSymbols::java_lang_NullPointerException());          <span class="grn">// :1429-1431</span>\n}\nif (resolved_method->method_holder()->is_interface()) {        <span class="grn">// default/miranda</span>\n  vtable_index = vtable_index_of_interface_method(resolved_klass, resolved_method);  <span class="grn">// :1440</span>\n  selected_method = methodHandle(THREAD, recv_klass->method_at_vtable(vtable_index));\n} else {\n  vtable_index = resolved_method->vtable_index();             <span class="grn">// :1450</span>\n  if (vtable_index == Method::nonvirtual_vtable_index) {      <span class="grn">// :1457</span>\n    selected_method = resolved_method;                        <span class="grn">// final/private</span>\n  } else {\n    selected_method = methodHandle(THREAD, recv_klass->method_at_vtable(vtable_index));  <span class="grn">// :1464</span>\n  }\n}`);
+        scene('场景 11：<b>runtime virtual 分派</b>');
+      }},
+    // 13 method_at_vtable 拆解
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：拆开 <code>method_at_vtable</code> 这个名字——"method at vtable" = <b>「名册里第 N 格的那个人」</b>。它不是查找，是<b>按号取人</b>。
+前面 :1464 说"按接收者实际类型查表"——表长什么样、怎么取，这一格拆到底。
+<b>① 名字拆解</b>：method_at_vtable(index) = vtable[index].method() —— 名册第 index 格里存的 Method*
+<b>② 格子结构</b>：vtableEntry 整个格子<b>就一个字段</b> <code>Method* _method</code>（klassVtable.hpp:195），一格只记一个人
+<b>③ 真实实现</b>：<code>start_of_vtable()[index].method()</code>（klass.cpp:1125）—— 本质是一次<b>带边界检查的数组下标访问</b>，零查找
+<b>④ 号谁定的</b>：index 是链接期算好的 vtable_index，永远不变；<b>名册谁给的</b>：recv_klass（运行期实际类型）
+<b>⑤ 所以多态</b>：号不变、名册换人——同一格，Animal 记 Animal.speak，Dog 记 Dog.speak`,
+      fn:()=>{
+        faces(3); S.fnote.innerHTML='当前：关卡 ③<br>runtime 分派';
+        stage(`<span class="blu">// klass.cpp:1118-1126 全部核心就一行</span>\nMethod* Klass::method_at_vtable(int index) {\n  <span class="org">return start_of_vtable()[index].method();</span>  <span class="dim">// :1125 按号取人</span>\n}\n<span class="dim">// 格子（klassVtable.hpp:195）</span>\nclass vtableEntry { <span class="grn">Method* _method;</span> };  <span class="dim">// 一格只记一个人</span>\n<span class="dim">// 名字拆解</span>\n<span class="grn">method_at_vtable(index)</span>  <span class="dim">= 名册[ index ] 记的那个人</span>`);
+        S.detail.textContent='名字即语义：vtable 里第 index 格的 method——数组下标访问，不是查找。';
+        src(`<span class="dim">// klass.cpp:1118-1126（原文）</span>\nMethod* Klass::method_at_vtable(int index)  {\n<span class="dim">#ifndef PRODUCT</span>\n  assert(index >= 0, "valid vtable index");  <span class="dim">// :1120</span>\n<span class="dim">#endif</span>\n  <span class="org">return start_of_vtable()[index].method();</span>  <span class="grn">// :1125</span>\n}\n<span class="dim">// klassVtable.hpp:182-202（vtableEntry 原文）</span>\nclass vtableEntry {\n public:\n  Method* method() const  { return _method; }  <span class="dim">// :191</span>\n private:\n  <span class="org">Method* _method;</span>                        <span class="grn">// :195 唯一字段</span>\n};`);
+        scene('场景 12：<b>method_at_vtable 拆解 · 按号取人</b>');
+      }},
+    // 14 vtable 多态
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：上一步拆了 <code>method_at_vtable</code> 的构造，这一步看它<b>翻名册翻出什么</b>——多态落点：按接收者<b>实际类</b>查名册（vtable），同一岗位号，Dog 就执行 Dog 的版本。
+<b>method_at_vtable</b>（:1464）是整条链的高潮——<b>多态语义的落点</b>。
+<b>① vtable</b>：每个类一张"方法指针表"，子类覆写同一槽位
+<b>② 查表</b>：recv_klass（实际类型）→ 槽位 → 方法指针
+<b>③ Dog vs Animal</b>：同一 invokevirtual，Dog 查到自己覆写的 speak
+<b>④ 08 篇衔接</b>：final 方法不进 vtable → 无槽 → 目标唯一 → 可内联`,
+      fn:()=>{
+        faces(3);
+        stage(`<span class="blu">Animal 的 vtable</span>\n<span class="vrow"><span class="vslot hot">[0]</span> speak() → Animal.speak   <span class="dim">← 覆写后变 Dog.speak</span></span>\n<span class="vrow"><span class="vslot hot">[1]</span> eat()   → Animal.eat</span>\n<span class="vrow"><span class="vslot hot">[2]</span> toString()</span>\n<span class="dim">Dog 的 vtable（覆写）</span>\n<span class="vrow"><span class="vslot hot">[0]</span> speak() → Dog.speak     <span class="grn">← 同一槽位被覆写</span></span>\n<span class="vrow"><span class="vslot hot">[1]</span> eat()   → Dog.eat</span>\n<span class="vrow"><span class="vslot empty">[-]</span> final 方法   <span class="org">← 无槽（08 篇）</span></span>`);
+        S.detail.textContent='invokevirtual #12 每次执行：按接收者实际类查表 → 命中覆写版本。';
+        src(`<span class="dim">// 分派链（伪码 + 行号）</span>\ninvokevirtual #12\n  → LinkResolver::resolve_invoke (:1715)\n  → runtime_resolve_virtual_method (:1412)\n  → recv_klass->method_at_vtable(idx) (:1464)\n  → Dog.speak()  <span class="grn">// 接收者是 Dog 就执行 Dog 的版本</span>\n<span class="dim">// C2 热路径：同一调用点 profile 稳定后去虚化/内联</span>`);
+        scene('场景 13：<b>method_at_vtable 多态查表</b>');
+      }},
+    // 15 interface 三分支
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：接口调用走另一条链：先验接收者确实实现了接口（否则 ICCE），再分三支走 vtable/itable/直接跳。
+接口调用 <b>runtime_resolve_interface_method</b>（:1525）——三分支决定走哪张表。
+<b>① 前提检查</b>：接收者必须实现该接口，否则 ICCE（:1540）
+<b>② 找方法</b>：接收者类里找实例方法（skip private，:1561）
+<b>③ 非 public</b> → IllegalAccessError（:1580）
+<b>④ 三分支</b>：default/miranda → vtable；普通接口方法 → <b>itable</b>；final/private → 非虚`,
+      fn:()=>{
+        faces(3);
+        stage(`<span class="blu">// 1. 接收者必须实现接口，否则 ICCE</span>  <span class="dim">// :1540</span>\n<span class="org">if (!recv_klass->is_subtype_of(resolved_klass))</span>\n<span class="org">    THROW(ICCE);</span>\n<span class="blu">// 2. 接收者类里找实例方法</span>  <span class="dim">// :1561</span>\n<span class="grn">Method* m = lookup_instance_method_in_klasses(recv_klass, ...);</span>\n<span class="blu">// 3. 非 public → IAE</span>  <span class="dim">// :1580</span>\n<span class="org">if (!selected_method->is_public()) THROW(IAE);</span>\n<span class="blu">// 4. 三分支（:1599-1617）</span>\n<span class="grn">has_vtable_index  → set_virtual</span>  <span class="dim">// default/miranda</span>\n<span class="grn">has_itable_index → set_interface</span>  <span class="dim">// 普通接口方法（06 篇）</span>\n<span class="grn">else              → set_virtual(nonvirtual)</span>  <span class="dim">// final/private</span>`);
+        S.detail.textContent='接口三分支：default→vtable、普通→itable、final/private→非虚。';
+        src(`<span class="dim">// linkResolver.cpp:1599-1617（原文）</span>\nif (resolved_method->has_vtable_index()) {\n  int vtable_index = resolved_method->vtable_index();\n  result.set_virtual(resolved_klass, resolved_method, selected_method, vtable_index, CHECK);\n} else if (resolved_method->has_itable_index()) {\n  int itable_index = resolved_method->itable_index();\n  result.set_interface(resolved_klass, resolved_method, selected_method, itable_index, CHECK);\n} else {\n  int index = resolved_method->vtable_index();\n  assert(index == Method::nonvirtual_vtable_index, "Oops hit another case!");\n  assert(resolved_method->is_private() ||\n         (resolved_method->is_final() && ...), "..." );\n  result.set_virtual(resolved_klass, resolved_method, resolved_method, index, CHECK);\n}`);
+        scene('场景 14：<b>interface 三分支</b>');
+      }},
+    // 16 set_virtual / set_common
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：解析结论记进小本本（ConstantPoolCache）：final/private 记「唯一目标」，多态记「查表号」，顺带触发 JIT。
+解析完成，<b>CallInfo</b> 记录结论并<b>写回 ConstantPoolCache</b>——热路径免解析。
+<b>① set_virtual</b>（:93）：关键判断在 :99——能否静态绑定
+<b>② vtable_call</b>：vtable_index≥0 且不可静态绑定 → 每次查表
+<b>③ direct_call</b>：final/private → 目标唯一 → C2 可内联（08 篇闭环）
+<b>④ set_common</b>（:138）：存四件套 + 顺带触发 JIT 编译（:156）`,
+      fn:()=>{
+        faces(4); S.fnote.innerHTML='当前：关卡 ④<br>缓存热路径';
+        stage(`<span class="blu">void CallInfo::set_virtual(...) {</span>  <span class="dim">// :93</span>\n  <span class="grn">CallKind kind =</span>\n<span class="grn">    (vtable_index >= 0 &&</span>\n<span class="grn">     !resolved_method->can_be_statically_bound()</span>\n<span class="grn">      ? CallInfo::vtable_call     <span class="org">// 查表</span></span>\n<span class="grn">      : CallInfo::direct_call);  <span class="org">// 唯一目标 → 可内联</span></span>  <span class="dim">// :99</span>\n<span class="grn">  set_common(..., kind, ...);</span>  <span class="dim">// :100</span>\n<span class="blu">}</span>\n<span class="dim">// set_common（:138）：_resolved_klass/_resolved_method/</span>\n<span class="dim">// _selected_method/_call_kind/_call_index 存入缓存</span>\n<span class="org">// :156 顺带 compile_if_required → 热方法开始 JIT</span>`);
+        S.detail.textContent='direct_call = final/private 唯一目标；vtable_call = 多态查表。';
+        src(`<span class="dim">// linkResolver.cpp:93-101（原文）</span>\nvoid CallInfo::set_virtual(Klass* resolved_klass,\n                           const methodHandle& resolved_method,\n                           const methodHandle& selected_method,\n                           int vtable_index, TRAPS) {\n  assert(vtable_index >= 0 || vtable_index == Method::nonvirtual_vtable_index, "valid index");\n  CallKind kind = (vtable_index >= 0 && !resolved_method->can_be_statically_bound()\n                        ? CallInfo::vtable_call : CallInfo::direct_call);   <span class="grn">// :99</span>\n  set_common(resolved_klass, resolved_method, selected_method, kind, vtable_index, CHECK);\n}`);
+        scene('场景 15：<b>CallInfo 写回缓存</b>');
+      }},
+    // 17 收尾
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：第一站走完：冷路径只解析一次，热路径查小本本一次定位——解析一次、缓存终身，多态=运行时按实际类型查表。
+第一站走完——<b>解析只在冷路径发生一次</b>，热路径成本≈一次数组查表。
+<b>① 冷路径</b>：分发 → linktime 七步 → runtime 分派 → 写缓存
+<b>② 热路径</b>：ConstantPoolCache 查 index → method_at_vtable → 调用
+<b>③ 多态语义</b>：linktime 看静态类型（resolved），runtime 看实际类型（selected）
+<b>④ 下一站</b>：klassVtable.cpp——vtable/itable 怎么构建、怎么查`,
+      fn:()=>{
+        faces(4);
+        stage(`<span class="org">❄ 冷路径（首次，只一次）</span>\n<span class="dim">resolve_invoke :1715 → resolve_method 七步 :753</span>\n<span class="dim">→ runtime 分派 :1412 → set_common 写缓存 :138</span>\n<span class="grn">🔥 热路径（每次）</span>\n<span class="dim">ConstantPoolCache 查 index</span>\n<span class="dim">→ recv_klass->method_at_vtable(idx) :1464</span>\n<span class="dim">→ 解释器/C2 调用（或内联）</span>\n<span class="pur">下一站：klassVtable.cpp（构建与查找）</span>`);
+        S.detail.textContent='核心：解析一次、缓存终身；多态 = 运行时按实际类型查表。';
+        src(`<span class="dim">// 本篇行号速查</span>\nresolve_invoke                  :1715\nresolve_method（七步）           :753\nlookup_method_in_klasses        :356\nruntime_resolve_virtual_method  :1412\nruntime_resolve_interface_method:1525\nCallInfo::set_virtual           :93   (kind 判断 :99)\nCallInfo::set_common            :138  (compile_if_required :156)`);
+        scene('场景 16：<b>冷热路径总结 · 下一站 klassVtable</b>');
+      }},
+  ];
+
+  let idx = 0;
+  let timer = null;
+  let playing = false;
+
+  function render(n){
+    idx = n;
+    const st = steps[idx];
+    S.desc.innerHTML = (idx+1) + '/' + steps.length + ' · ' + st.d;
+    if (st.fn) st.fn();
+    // pills
+    Array.from(S.pills.children).forEach((c,i)=>{
+      c.className = 'step-pill' + (i===idx ? ' active' : (i<idx ? ' done' : ''));
+    });
+  }
+
+  function next(){ if(idx < steps.length-1) render(idx+1); }
+  function prev(){ if(idx > 0) render(idx-1); }
+
+  function play(){
+    if(playing){ clearInterval(timer); playing=false; S.btnPlay.textContent='▶'; return; }
+    playing=true; S.btnPlay.textContent='⏸';
+    timer = setInterval(()=>{
+      if(idx >= steps.length-1){ clearInterval(timer); playing=false; S.btnPlay.textContent='▶'; return; }
+      next();
+    }, 2600);
+  }
+
+  // build pills
+  steps.forEach((s,i)=>{
+    const c = document.createElement('div');
+    c.className = 'step-pill';
+    c.textContent = i+1;
+    c.onclick = ()=>render(i);
+    S.pills.appendChild(c);
+  });
+
+  S.btnPrev = document.getElementById('btnPrev');
+  S.btnNext = document.getElementById('btnNext');
+  S.btnPlay = document.getElementById('btnPlay');
+  S.btnReset = document.getElementById('btnReset');
+
+  S.btnPrev.onclick = prev;
+  S.btnNext.onclick = next;
+  S.btnPlay.onclick = play;
+  S.btnReset.onclick = ()=>{ clearInterval(timer); playing=false; S.btnPlay.textContent='▶'; render(0); };
+
+  document.addEventListener('keydown', (e)=>{
+    if(e.key===' '){ e.preventDefault(); play(); }
+    else if(e.key==='ArrowRight'){ if(playing){clearInterval(timer);playing=false;S.btnPlay.textContent='▶';} next(); }
+    else if(e.key==='ArrowLeft'){ if(playing){clearInterval(timer);playing=false;S.btnPlay.textContent='▶';} prev(); }
+    else if(e.key==='r'||e.key==='R'){ clearInterval(timer); playing=false; S.btnPlay.textContent='▶'; render(0); }
+  });
+
+  render(0);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>05 · static 类初始化 &lt;clinit&gt; 状态机交互动画</title>
+<style>
+  :root{
+    --blue:#3b82f6; --purple:#8b5cf6; --orange:#f59e0b; --green:#10b981;
+    --bg:#f6f7fb; --card:#FFFFFF; --ink:#1f2937; --sub:#6b7280; --line:#e5e7eb;
+    --shadow:0 2px 6px rgba(17,24,39,.05);
+  
+    --blue-bg:#eff6ff; --blue-bd:#bfdbfe;
+    --purple-bg:#f5f3ff; --purple-bd:#ddd6fe;
+    --orange-bg:#fffbeb; --orange-bd:#fde68a;
+    --green-bg:#ecfdf5; --green-bd:#a7f3d0;
+    --red:#ef4444; --red-bg:#fef2f2; --red-bd:#fecaca;
+    --ink-2:#6b7280; --ink-3:#9ca3af;
+    --code-bg:#111827; --code-ink:#e5e7eb;
+  }
+  /* header / badges（与 02/03/04 对齐） */
+  header{text-align:center;margin-bottom:18px}
+  header h1{font-size:25px;letter-spacing:.5px}
+  header h1 .mono{font-family:Consolas,monospace;color:var(--blue)}
+  header .sub{color:var(--ink-2);font-size:13.5px;margin-top:6px}
+  .badges{margin-top:12px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+  header .badge{font-size:12px;padding:3px 12px;border-radius:999px;border:1px solid var(--blue-bd);
+    background:var(--blue-bg);color:var(--blue);font-family:Consolas,monospace}
+  header .badge.purple{border-color:var(--purple-bd);background:var(--purple-bg);color:var(--purple)}
+  header .badge.green{border-color:var(--green-bd);background:var(--green-bg);color:var(--green)}
+  header .badge.orange{border-color:var(--orange-bd);background:var(--orange-bg);color:var(--orange)}
+  header .badge.red{border-color:var(--red-bd);background:var(--red-bg);color:var(--red)}
+
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{background:var(--bg); color:var(--ink); font-family:'Segoe UI','Microsoft YaHei',sans-serif; padding:18px;}
+  .wrap{max-width:1180px; margin:0 auto;}
+
+  /* header */
+  h1{font-size:22px; margin-bottom:4px;}
+  .sub{font-size:13px; color:var(--sub); margin-bottom:14px;}
+  .steps{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:16px; justify-content:center;}
+  .step-pill{font-size:11.5px; padding:5px 11px; border-radius:999px; cursor:pointer; border:1.5px solid var(--line); background:var(--card); color:var(--sub); display:flex; align-items:center; justify-content:center; transition:all .2s; user-select:none; white-space:nowrap; min-width:30px;}
+  .step-pill.active{border-color:var(--blue); background:var(--blue); color:#fff; box-shadow:0 4px 12px rgba(59,130,246,.35);}
+  .step-pill.done{border-color:var(--green); background:var(--green); color:#fff;}
+
+  /* layout */
+  .grid{display:grid; grid-template-columns:300px 1fr 330px; gap:12px; margin-bottom:12px;}
+  .panel{background:var(--card); border-radius:12px; padding:14px; box-shadow:var(--shadow);}
+  .panel h2{font-size:14px; margin-bottom:10px; padding-left:8px; border-left:4px solid var(--blue);}
+  .panel.p2 h2{border-color:var(--orange);}
+  .panel.p3 h2{border-color:var(--purple);}
+
+  /* left: klass state */
+  .badge{display:flex; align-items:center; gap:8px; padding:9px 12px; border-radius:10px;
+         background:#eff6ff; margin-bottom:8px; font-size:13px;}
+  .badge .dot{width:14px; height:14px; border-radius:50%; background:#9ca3af; transition:all .3s;}
+  .badge .lbl{font-weight:bold; color:var(--sub); transition:all .3s;}
+  .stateRow{font-size:12px; color:#4b5563; padding:3px 0;}
+  .stateRow b{font-family:Consolas,monospace;}
+  .lockBox{margin-top:8px; border:1.5px dashed var(--line); border-radius:10px; padding:8px 10px; font-size:12px;}
+  .lockBox .cap{font-size:11px; color:var(--sub); margin-bottom:4px;}
+  .mirror{display:inline-block; padding:3px 9px; border-radius:7px; background:#f5f3ff; color:var(--purple); font-weight:bold; font-size:12px; transition:all .3s;}
+  .mirror.locked{background:var(--orange); color:#fff; box-shadow:0 0 0 3px rgba(245,158,11,.25);}
+  .mirror.free{background:#ecfdf5; color:var(--green);}
+  .flags{margin-top:8px; font-size:12px;}
+  .flag{display:flex; align-items:center; gap:6px; padding:3px 0;}
+  .flag .fdot{width:11px; height:11px; border-radius:3px; border:1.5px solid var(--line); background:#fff; transition:all .3s;}
+  .flag .fdot.set{background:var(--green); border-color:var(--green);}
+
+  /* middle: threads */
+  .lane{border-radius:10px; border:1.5px solid var(--line); padding:8px 10px; margin-bottom:8px; transition:all .3s; background:#fff;}
+  .lane .tname{font-weight:bold; font-size:13px; display:flex; align-items:center; gap:6px;}
+  .lane .tname .tag{font-size:10px; padding:1px 6px; border-radius:8px; color:#fff;}
+  .lane .tstate{font-size:12px; color:var(--sub); margin-top:3px; min-height:16px; transition:all .3s;}
+  .lane .tact{font-size:12px; font-family:Consolas,monospace; margin-top:3px; color:#4b5563; min-height:15px;}
+  .lane.run{border-color:var(--orange); background:#fffbeb;}
+  .lane.wait{border-color:var(--purple); background:#f5f3ff;}
+  .lane.done{border-color:var(--green); background:#ecfdf5;}
+  .lane.ready{border-color:var(--line);}
+  .stepsTip{margin-top:8px; font-size:11px; color:#6b7280; background:#f3f4f6; border-radius:8px; padding:6px 8px;}
+
+  /* right: bytecode */
+  .bc{font-family:Consolas,monospace; font-size:12.5px; line-height:1.85;}
+  .bc .l{display:flex; gap:8px; padding:0 6px; border-radius:5px; transition:background .25s;}
+  .bc .l.hl{background:#fef3c7; outline:1px solid var(--orange);}
+  .bc .l.ok{background:#d1fae5; outline:1px solid var(--green);}
+  .bc .addr{color:#9ca3af; min-width:26px; text-align:right; user-select:none;}
+  .bc .op{color:var(--blue); font-weight:bold;}
+  .bc .comment{color:#9ca3af; font-size:11px;}
+
+  /* source（与 04 同款：行号 + 逐行多色高亮 + 注释着色） */
+  .code-panel{background:var(--code-bg); border-radius:12px; overflow:hidden;
+    font-family:Consolas,"Courier New",monospace; font-size:12px; box-shadow:var(--shadow); margin-bottom:12px;}
+  .code-head{display:flex; justify-content:space-between; align-items:center; padding:8px 14px;
+    background:rgba(255,255,255,.06); color:#9ca3af; font-size:11px;}
+  .code-head .file{color:var(--green)}
+  .code-body{padding:12px 14px; overflow-x:auto; margin:0;}
+  .code-line{color:var(--code-ink); white-space:pre; padding:1px 0; transition:background .3s; border-radius:4px;}
+  .code-line .ln{display:inline-block; width:30px; color:#4b5563; user-select:none;}
+  .code-line.hl{background:rgba(245,158,11,.22); color:#fbbf24;}
+  .code-line.hlb{background:rgba(59,130,246,.22); color:#93c5fd;}
+  .code-line.hlg{background:rgba(16,185,129,.22); color:#6ee7b7;}
+  .code-line .cm{color:#64748b; font-style:italic;}
+
+  /* controls */
+  .ctl{display:flex; align-items:center; gap:10px; justify-content:center; padding:10px; background:var(--card); border-radius:12px; box-shadow:var(--shadow); flex-wrap:wrap;}
+  .btn{width:44px; height:44px; border-radius:50%; border:none; background:var(--blue); color:#fff; font-size:16px; cursor:pointer; transition:all .15s; font-weight:bold;}
+  .btn:hover{transform:scale(1.08);}
+  .btn.green{background:var(--green);}
+  .btn.orange{background:var(--orange); width:52px; height:52px;}
+  .hint{font-size:12px; color:var(--sub);}
+  .titleBar{display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;}
+  .prog{flex:1; min-width:120px; max-width:280px; height:6px; background:var(--line); border-radius:3px; overflow:hidden;}
+  .prog i{display:block; height:100%; width:0; background:linear-gradient(90deg,var(--blue),var(--purple)); transition:width .3s;}
+  .stepCount{font-size:12px; color:var(--sub); font-family:Consolas,monospace; white-space:nowrap;}
+  .stepDesc{font-size:14px; font-weight:bold; color:#334155; background:#eff6ff; border-radius:9px; padding:8px 14px; margin-bottom:12px; border-left:4px solid var(--orange);}
+  .kbd{display:inline-block; border:1px solid var(--line); border-radius:4px; padding:0 6px; background:#fff; font-size:11px; color:#4b5563;}
+
+  @media(max-width:1000px){.grid{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1><span class="mono">static</span> · 类初始化 &lt;clinit&gt; 状态机</h1>
+    <div class="sub">InstanceKlass::initialize_impl（instanceKlass.cpp:1417）· 双线程竞争 · 递归重入 · strict static 校验 · JDK 28</div>
+    <div class="badges">
+      <span class="badge ">static</span>
+      <span class="badge purple">instanceKlass.cpp:1417</span>
+      <span class="badge green">&lt;clinit&gt; 状态机</span>
+      <span class="badge orange">双线程竞争</span>
+    </div>
+  </header>
+
+  <div class="steps" id="pills"></div>
+  <div class="stepDesc" id="stepDesc">点击 ▶ 开始播放，Space 播放/暂停，← → 步进，R 重置</div>
+
+  <div class="grid">
+    <!-- 左：类状态 -->
+    <div class="panel p1">
+      <h2>InstanceKlass · Foo</h2>
+      <div class="badge">
+        <span class="dot" id="stateDot"></span>
+        <span class="lbl" id="stateLbl">linked</span>
+        <span style="font-size:11px;color:#6b7280;" id="stateNote"></span>
+      </div>
+      <div class="stateRow">init_state：<b id="stState">linked</b></div>
+      <div class="stateRow">_init_thread：<b id="stThread">null</b></div>
+      <div class="lockBox">
+        <div class="cap">初始化锁（住在 Java mirror 里，instanceKlass.cpp:910）</div>
+        <span class="mirror free" id="mirrorLock">🔓 Class&lt;Foo&gt;.initLock 空闲</span>
+      </div>
+      <div class="flags">
+        <div class="cap" style="font-size:11px;color:var(--sub);">strict static fields 位数组（JDK 28，:1587）</div>
+        <div class="flag"><span class="fdot" id="fX"></span><span>Foo.x（putstatic 赋值）</span></div>
+        <div class="flag"><span class="fdot" id="fY"></span><span>Foo.y（putstatic 赋值）</span></div>
+      </div>
+    </div>
+
+    <!-- 中：线程泳道 -->
+    <div class="panel p2">
+      <h2>线程泳道 · getstatic Foo.x</h2>
+      <div class="lane ready" id="lane1">
+        <div class="tname">🟠 T1 <span class="tag" style="background:var(--orange);">主触达</span></div>
+        <div class="tstate" id="ts1">准备执行 getstatic Foo.x</div>
+        <div class="tact" id="ta1"></div>
+      </div>
+      <div class="lane ready" id="lane2">
+        <div class="tname">🟣 T2 <span class="tag" style="background:var(--purple);">并发触达</span></div>
+        <div class="tstate" id="ts2">准备执行 getstatic Foo.x</div>
+        <div class="tact" id="ta2"></div>
+      </div>
+      <div class="stepsTip">💡 递归重入彩蛋：若 T1 的 &lt;clinit&gt; 里又触发 Foo 初始化，Step 3 检测 <b>thread == _init_thread</b> 直接放行，不死锁。</div>
+    </div>
+
+    <!-- 右：字节码 -->
+    <div class="panel p3">
+      <h2>&lt;clinit&gt;（javac 合成 · ()V）</h2>
+      <div class="bc" id="bc">
+        <div class="l" id="b0"><span class="addr">0</span><span class="op">bipush</span><span>42</span></div>
+        <div class="l" id="b1"><span class="addr">2</span><span class="op">putstatic</span><span>Foo.x</span><span class="comment">← strict 位被清</span></div>
+        <div class="l" id="b2"><span class="addr">5</span><span class="op">getstatic</span><span>System.out</span></div>
+        <div class="l" id="b3"><span class="addr">8</span><span class="op">ldc</span><span>"Foo &lt;clinit&gt;"</span></div>
+        <div class="l" id="b4"><span class="addr">10</span><span class="op">invokevirtual</span><span>println</span></div>
+        <div class="l" id="b5"><span class="addr">13</span><span class="op">return</span></div>
+      </div>
+      <div style="margin-top:10px; font-size:11px; color:var(--sub);">static 块 + 字段初始化代码全部并入此方法，按源码顺序拼接（vmSymbols.hpp:397）。</div>
+    </div>
+  </div>
+
+  <!-- 源码面板（与 04 同款：行号 + 逐行高亮） -->
+  <div class="code-panel">
+    <div class="code-head"><span>源码跟读</span><span class="file" id="codeFile">instanceKlass.cpp</span></div>
+    <pre class="code-body" id="codePanel"></pre>
+  </div>
+
+  <!-- 控制 -->
+  <div class="ctl">
+    <button class="btn" id="btnPrev" title="上一步">◀</button>
+    <button class="btn orange" id="btnPlay" title="播放/暂停 (Space)">▶</button>
+    <button class="btn" id="btnNext" title="下一步">▶</button>
+    <button class="btn green" id="btnReset" title="重置 (R)">↺</button>
+    <div class="prog"><i id="prog"></i></div>
+    <span class="stepCount" id="stepCount">1 / 13</span>
+    <span class="hint"><span class="kbd">Space</span> 播放/暂停 · <span class="kbd">←</span> <span class="kbd">→</span> 步进 · <span class="kbd">R</span> 重置 · 点击步骤胶囊跳转</span>
+  </div>
+
+</div>
+
+<script>
+(() => {
+  const S = {
+    stateDot: document.getElementById('stateDot'),
+    stateLbl: document.getElementById('stateLbl'),
+    stateNote: document.getElementById('stateNote'),
+    stState: document.getElementById('stState'),
+    stThread: document.getElementById('stThread'),
+    mirror: document.getElementById('mirrorLock'),
+    fX: document.getElementById('fX'), fY: document.getElementById('fY'),
+    lane1: document.getElementById('lane1'), lane2: document.getElementById('lane2'),
+    ts1: document.getElementById('ts1'), ts2: document.getElementById('ts2'),
+    ta1: document.getElementById('ta1'), ta2: document.getElementById('ta2'),
+    desc: document.getElementById('stepDesc'),
+    pills: document.getElementById('pills'),
+    b: [0,1,2,3,4,5].map(i => document.getElementById('b'+i)),
+  };
+
+  const COL = { blue:'#3b82f6', purple:'#8b5cf6', orange:'#f59e0b', green:'#10b981' };
+
+  function setState(state, note){
+    const map = {
+      linked:    { c:'#9ca3af', t:'linked' },
+      being_init:{ c:COL.orange, t:'being_initialized' },
+      fully:     { c:COL.green,  t:'fully_initialized' },
+      error:     { c:COL.purple, t:'initialization_error' },
+    }[state];
+    S.stateDot.style.background = map.c;
+    S.stateLbl.textContent = map.t;
+    S.stateLbl.style.color = map.c;
+    S.stateNote.textContent = note || '';
+    S.stState.textContent = map.t;
+    S.stState.style.color = map.c;
+  }
+  function setThread(n, thread){
+    S.stThread.textContent = thread || 'null';
+  }
+  function setLock(mode){
+    if(mode==='locked'){ S.mirror.className='mirror locked'; S.mirror.textContent='🔒 Class<Foo>.initLock 被 T1 持有'; }
+    else if(mode==='wait'){ S.mirror.className='mirror'; S.mirror.textContent='🔒 initLock（T1 持有中）'; }
+    else { S.mirror.className='mirror free'; S.mirror.textContent='🔓 Class<Foo>.initLock 空闲'; }
+  }
+  function lane(which, cls, tstate, tact){
+    const laneEl = which===1?S.lane1:S.lane2, tsEl=which===1?S.ts1:S.ts2, taEl=which===1?S.ta1:S.ta2;
+    laneEl.className = 'lane '+cls;
+    tsEl.textContent = tstate;
+    taEl.textContent = tact||'';
+  }
+  function renderCode(idx, hlMap, file){
+    const raw = SRCS[idx] || '';
+    const lines = raw.split('\n');
+    const out = lines.map((l,i)=>{
+      const cls = (hlMap && hlMap[i]) ? ' '+hlMap[i] : '';
+      let esc = l.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      esc = esc.replace(/(\/\/.*)$/, '<span class="cm">$1</span>');
+      return '<div class="code-line'+cls+'"><span class="ln">'+(i+1)+'</span> '+esc+'</div>';
+    }).join('');
+    document.getElementById('codePanel').innerHTML = out;
+    document.getElementById('codeFile').textContent = file || 'instanceKlass.cpp';
+  }
+  function bcHl(idxArr, mode){
+    S.b.forEach((el,i)=>{
+      el.className='l';
+      if(idxArr.includes(i)) el.className = 'l '+(mode||'hl');
+    });
+  }
+  function flag(f,set){ document.getElementById(f).className = 'fdot'+(set?' set':''); }
+
+  const SRCS = [
+    `  // Step 1-6 在初始化锁内（锁 = mirror.initLock）\n  while (is_being_initialized() && !is_reentrant_initialization(jt)) {  // :1442 Step2 等待\n    ol.wait_uninterruptibly(CHECK_PREEMPTABLE);\n  }\n  if (is_being_initialized() && is_reentrant_initialization(jt)) {      // :1454 Step3\n    return;\n  }\n  if (is_initialized()) { return; }                                     // :1465 Step4`,
+    `  set_init_state(being_initialized);                    // :1498 Step6\n  set_init_thread(jt);\n  // 锁外执行后续步骤（不持锁跑用户代码）\n  NoPreemptMark npm(THREAD);                             // :1510 防虚拟线程卸载`,
+    `  super_klass->initialize(THREAD);                     // :1539 Step7 父类先初始化\n  if (has_nonstatic_concrete_methods()) {\n    initialize_super_interfaces(THREAD);                // :1546 默认方法接口\n  }`,
+    `  call_class_initializer(THREAD);                      // :1578 Step8 跑 <clinit>\n  // JavaCalls::call(h_method, &args) — 普通无参静态调用（:2057）`,
+    `  // :1587 Step 8.5 — strict static 校验（<clinit> 刚跑完）\n  if (has_strict_static_fields() && !HAS_PENDING_EXCEPTION && !ReplayCompiles) {\n    Symbol* bad_strict_static = nullptr;\n    for (int index = 0; index < fields_status()->length(); index++) {\n      // 逐个检查位数组：位还是 1 = 从没被 putstatic 清过 = 忘赋值\n      if (fields_status()->adr_at(index)->is_strict_static_unset()) {\n        bad_strict_static = field(index).name(constants());\n        break;\n      }\n    }\n    if (bad_strict_static != nullptr) {\n      throw_strict_static_exception(bad_strict_static, "is unset after initialization of", THREAD);\n    }\n  }`,
+    `  set_initialization_state_and_notify(fully_initialized, CHECK);  // :1620 Step9\n  // set_init_thread(nullptr) → set_init_state → fence → notify_all（:1654）`,
+    `  if (is_in_error_state()) {                          // :1476 Step5\n    THROW_MSG_CAUSE(NoClassDefFoundError, ..., cause);\n  }`,
+  ];
+
+  const steps = [
+    // 0 初始
+    { d:'初始态：Foo 已经过 <b>加载 + 链接（linked）</b>，但 <b>&lt;clinit&gt; 还没跑</b>。关键点：<b>init_state</b> 这个字段记录类初始化到哪一步。<br>任何线程第一次碰 Foo 的静态成员（这里 T1、T2 都准备执行 <code>getstatic Foo.x</code>），都会先触发类初始化检查——这就是整个状态机的入口。<br><br><b>本次示例的 Foo 长这样</b>：<pre style="background:#0b1020;color:#e5e7eb;padding:10px 12px;border-radius:8px;font-size:11.5px;line-height:1.7;overflow-x:auto;margin-top:6px">class Foo {\n  static int x;     // 静态字段：属于「类」，不属于某个实例\n  static int y;     // 静态字段：所有实例共享同一份\n  static {          // &lt;clinit&gt;：javac 把「静态赋值 + static{}」拼成\n    x = 42;\n    y = 7;          // 都在 &lt;clinit&gt; 里赋值 → 严格静态校验通过\n  }\n}</pre>',
+      fn:()=>{
+        setState('linked'); setThread(null); setLock('free');
+        flag('fX',false); flag('fY',false);
+        lane(1,'ready','准备执行 getstatic Foo.x','');
+        lane(2,'ready','准备执行 getstatic Foo.x','');
+        bcHl([],''); renderCode(0, {}, 'instanceKlass.cpp');
+      }},
+    // 1 T1 到 clinit_barrier
+    { d:'T1 先执行到 <code>getstatic</code> 模板里的 <b>clinit_barrier</b>（templateTable_x86.cpp:2376）。它做两条快路径判断：<br>① <b>init_state == fully_initialized</b>？否 → 不能走「已初始化」快路径；<br>② <b>当前线程 == _init_thread</b>（递归重入）？否 → 不能走「自己初始化自己」快路径。<br>两条全 miss → 退化为<b>慢路径</b>，交给 runtime 做完整解析。',
+      fn:()=>{
+        lane(1,'run','到达 clinit_barrier','① state!=fully ② r15!=_init_thread → 慢路径');
+        lane(2,'ready','准备执行 getstatic Foo.x','');
+        renderCode(0, {}, 'instanceKlass.cpp');
+      }},
+    // 2 T1 进入 initialize
+    { d:'慢路径解析最终调用 <code>InstanceKlass::initialize → initialize_impl</code>（:1417）。<br><b>Step 1</b>：T1 抢到 <b>mirror.initLock</b>——这个锁就住在 <code>Class&lt;Foo&gt;</code> 的 Java mirror 对象里（:910）。<b>类初始化的并发控制本质就是 synchronized(mirror)</b>：谁抢到锁，谁才是唯一的初始化执行者。',
+      fn:()=>{
+        setLock('locked');
+        lane(1,'run','Step 1 · 抢到初始化锁','ObjectLocker(mirror.initLock)');
+        lane(2,'ready','准备执行 getstatic Foo.x','');
+        renderCode(0, {}, 'instanceKlass.cpp');
+      }},
+    // 3 Step 2 无竞争跳过
+    { d:'进入锁内，状态机开始过闸：<br><b>Step 2</b>：<code>is_being_initialized()</code> 为 <b>false</b>（此刻还没人初始化）→ 不必等待，直接过；<br><b>Step 4</b>：<code>is_initialized()</code> 为 <b>false</b> → 继续往下。<br>因为 T1 是第一个来的人，没有竞争，所以这两道「等别人 / 已好了」的闸都直接放行。',
+      fn:()=>{
+        lane(1,'run','Step 2/4 · 无竞争，跳过等待','being_initialized=false → 直接进 Step 6');
+        renderCode(0, {1:'hlb', 5:'hlg'}, 'instanceKlass.cpp');
+      }},
+    // 4 Step 6 当选
+    { d:'<b>Step 6</b>：T1 正式当选执行者——<code>set_init_state(being_initialized)</code> + <code>set_init_thread(T1)</code>（:1498）。<br>从此 <b>init_state 变橙（being_initialized）</b>，后续任何线程看到这个状态都会知道自己「来晚了」。注意：锁只在「改状态」这一瞬间持有，改完就<b>释放</b>，好让后面的 &lt;clinit&gt; 用户代码能自由访问本类静态成员而不死锁。',
+      fn:()=>{
+        setState('being_init','T1 初始化中');
+        setThread('T1');
+        lane(1,'run','Step 6 · 当选执行者','_init_state=being_initialized · _init_thread=T1');
+        renderCode(1, {0:'hl'}, 'instanceKlass.cpp');
+      }},
+    // 5 Step 7 父类
+    { d:'<b>Step 7</b>：跑 &lt;clinit&gt; 之前，JVM 先保证<b>父类已初始化</b>（<code>super_klass-&gt;initialize</code>，:1539）。Foo 的父类是 <code>Object</code>，早就初始化完了 → 跳过。<br>接着若有<b>默认方法接口</b>（<code>has_nonstatic_concrete_methods</code>）也要初始化（:1546），Foo 没有 → 跳过。直接进 Step 8。',
+      fn:()=>{
+        lane(1,'run','Step 7 · 父类已初始化，跳过','super=Object · 无 default 接口');
+        renderCode(2, {0:'hl'}, 'instanceKlass.cpp');
+      }},
+    // 6 Step 8 跑 clinit
+    { d:'<b>Step 8</b>：T1 执行 <b>&lt;clinit&gt;</b>——这是 javac 把「静态字段赋值 + static{} 块」按源码顺序拼成的合成方法（JavaCalls::call，:2057）。<br>字节码按序跑：<code>bipush 42 → putstatic Foo.x → getstatic System.out → println</code>。注意 <b>putstatic Foo.x</b> 这一步会触发 strict static 位清零（见下一步）。',
+      fn:()=>{
+        lane(1,'run','Step 8 · 正在执行 &lt;clinit&gt;','⏳ 执行字节码…');
+        bcHl([0,1],'hl'); renderCode(3, {0:'hl'}, 'instanceKlass.cpp');
+      }},
+    // 7 strict 位清零
+    { d:'<b>什么是 strict static？</b>JDK 28 给字段加了 <code>ACC_STRICT_INIT</code> 标记（0x0800，preview），让 JVM 帮你查「<b>声明了却忘赋值</b>」的 bug。<br>普通 <code>static int x</code> 忘赋值 → 默认 0，运行时才暴露；strict static 在<b>类初始化阶段就揪出来</b>。<br><br><b>位在哪里设的？</b>类加载时（<code>classFileParser.cpp:6434</code>）发现 strict static 字段 → 在 <code>fields_status</code> 位数组里把对应位设 1（<code>unset=1</code>），表示「还没被赋值」。<br><br><b>putstatic 做了什么？</b>T1 执行 <code>putstatic Foo.x</code> → 命中 strict static 字段 → 解释器调 <code>notify_strict_static_access</code>（:1669）→ 把对应位<b>清零</b>（<code>update_strict_static_unset(false)</code> :1698）。<br>位变 0 = 这个字段「已被赋值」，后面校验就放行。<br><br><b>如果先读后写呢？</b>若 <code>getstatic</code> 命中一个 <code>unset=1</code> 的字段 → <b>直接抛 IllegalStateException</b>（:1703）。即 <b>读前写 = 非法</b>——你还没赋值就想读？不行。',
+      fn:()=>{
+        flag('fX',true);
+        bcHl([0,1],'ok'); renderCode(3, {0:'hl'}, 'instanceKlass.cpp');
+      }},
+    // 8 T2 到达并阻塞
+    { d:'这时 <b>T2 才姗姗来迟</b>：它也到 clinit_barrier → 慢路径 → 抢 mirror.initLock（此时 T1 早已释放，T2 抢到）→ 进入 initialize_impl。<br>但 <b>Step 2</b> 发现 <code>is_being_initialized()==true</code> 且自己不是 <code>_init_thread</code> → 不是递归重入 → 调 <code>wait_uninterruptibly</code> <b>挂起</b>（并发细节见 JFR 事件 ThreadWaitingForClassInit）。T2 在此 park，直到 T1 收尾。',
+      fn:()=>{
+        lane(1,'run','继续执行 &lt;clinit&gt;','⏳ println("Foo &lt;clinit&gt;")…');
+        lane(2,'wait','Step 2 · 挂起等待','is_being_initialized && 非重入 → wait_uninterruptibly');
+        renderCode(0, {1:'hlb', 2:'hlb'}, 'instanceKlass.cpp');
+      }},
+    // 9 clinit 完成 + strict 校验
+    { d:'&lt;clinit&gt; 跑完（return）。<b>Step 8.5</b>（:1587）做 <b>strict static 校验</b>——这是最后一道安检：<br><br><b>怎么查？</b>遍历 <code>fields_status</code> 位数组，逐个检查每个 strict static 字段的 <code>unset</code> 位。源码注释说得很直白：<i>"bits must all be clear, or else we must throw an error"</i>。<br><br><b>三种结局：</b><br>① <b>全部清零</b>（putstatic 都清过了）→ 通过 → 进 Step 9 收尾；<br>② <b>某位仍是 1</b>（&lt;clinit&gt; 里从没给这个字段赋过值）→ 抛 <code>IllegalStateException</code> → 类进 <code>initialization_error</code>，永久中毒；<br>③ <b>有 ConstantValue 属性</b>的字段不参与检查（加载时跳过置位，:6443）——因为编译期常量天然有值。<br><br>本例 Foo.x、Foo.y 都在 &lt;clinit&gt; 里赋过值 → 两位皆清 → <b>校验通过 ✅</b>（左栏 fX、fY 亮起）。',
+      fn:()=>{
+        flag('fY',true);
+        bcHl([2,3,4,5],'ok');
+        lane(1,'run','Step 8.5 · strict 校验通过','所有 strict static 字段已赋值 ✅');
+        renderCode(4, {0:'hlg', 2:'hl'}, 'instanceKlass.cpp');
+      }},
+    // 10 Step 9 收尾
+    { d:'<b>Step 9</b>：T1 调 <code>set_initialization_state_and_notify(fully_initialized)</code>（:1620，实际 notify 在 :1654）。<br>顺序很关键：先清 <code>_init_thread=null</code> → 再置 <code>init_state=fully_initialized</code> → 内存屏障 fence → 最后 <code>notify_all</code> 唤醒 T2 → 锁被清空（可被 GC）。<br>从此任何线程看这个类都会走「已初始化」快路径。',
+      fn:()=>{
+        setState('fully','通知所有等待者');
+        setThread(null); setLock('free');
+        lane(1,'run','Step 9 · notify_all','_init_thread=null · 状态=fully_initialized · 锁清空');
+        lane(2,'wait','被唤醒','notify_all → 重新抢锁');
+        renderCode(5, {0:'hl'}, 'instanceKlass.cpp');
+      }},
+    // 11 T2 放行
+    { d:'T2 被唤醒 → 重新抢锁 → 回到 Step 2/Step 4 → <code>is_initialized()==true</code> → <b>直接返回，绝不再跑一遍 &lt;clinit&gt;</b>。<br><code>getstatic Foo.x</code> 命中已初始化结果，读到 <b>42</b>。<br>这正是类初始化的铁律：<b>无论多少线程竞争，&lt;clinit&gt; 只执行一次</b>。',
+      fn:()=>{
+        setState('fully','初始化完成 ✅');
+        lane(1,'done','getstatic 返回 42','&lt;clinit&gt; 只跑了一次');
+        lane(2,'done','Step 4 · 已初始化，直接放行','读到 Foo.x = 42 ✅');
+        bcHl([],'');
+        renderCode(0, {5:'hlg'}, 'instanceKlass.cpp');
+      }},
+    // 12 错误路径
+    { d:'<b>错误路径</b>：若 &lt;clinit&gt; 抛异常，运行时把状态置为 <code>initialization_error</code>，并包成 <b>ExceptionInInitializerError</b> 抛出。<br>更要命的是：类从此<b>永久中毒</b>——之后每次访问都走 Step 5（<code>is_in_error_state</code>）瞬间抛 <b>NoClassDefFoundError</b>，<b>不重试、不恢复</b>。所以一个抛异常的静态初始化器会毁掉这个类一辈子。',
+      fn:()=>{
+        setState('error','失败终态');
+        setThread(null);
+        lane(1,'wait','（回顾）&lt;clinit&gt; 抛异常','状态→initialization_error · 抛 ExceptionInInitializerError');
+        lane(2,'ready','（回顾）再访问','Step 5 · 秒抛 NoClassDefFoundError');
+        renderCode(6, {0:'hl'}, 'instanceKlass.cpp');
+      }},
+  ];
+  let idx = -1, timer = null, playing = false;
+
+  function render(i){
+    idx = i;
+    const s = steps[i];
+    s.fn();
+    const pct = i/(steps.length-1)*100;
+    document.getElementById('prog').style.width = pct+'%';
+    document.getElementById('stepCount').textContent = (i+1) + ' / ' + steps.length;
+    S.desc.innerHTML = (i+1) + '/' + steps.length + ' · ' + s.d;
+    document.querySelectorAll('.step-pill').forEach((c,j)=>{
+      c.className = 'step-pill' + (j===i?' active':(j<i?' done':''));
+    });
+    document.getElementById('btnPlay').textContent = '▶';
+    playing = false;
+  }
+  function next(){ if(idx < steps.length-1) render(idx+1); }
+  function prev(){ if(idx > 0) render(idx-1); }
+  function play(){
+    if(playing){ clearInterval(timer); playing=false; document.getElementById('btnPlay').textContent='▶'; return; }
+    if(idx >= steps.length-1){ render(0); }
+    playing = true; document.getElementById('btnPlay').textContent='⏸';
+    timer = setInterval(()=>{
+      if(idx >= steps.length-1){ clearInterval(timer); playing=false; document.getElementById('btnPlay').textContent='▶'; return; }
+      render(idx+1);
+    }, 3200);
+  }
+  function reset(){ clearInterval(timer); playing=false; render(0); }
+
+  // chips
+  steps.forEach((s,i)=>{
+    const c = document.createElement('div');
+    c.className='step-pill'; c.textContent=i+1; c.title=s.d;
+    c.onclick = ()=>render(i);
+    S.pills.appendChild(c);
+  });
+
+  document.getElementById('btnPrev').onclick = prev;
+  document.getElementById('btnNext').onclick = next;
+  document.getElementById('btnPlay').onclick = play;
+  document.getElementById('btnReset').onclick = reset;
+  document.addEventListener('keydown', e=>{
+    if(e.code==='Space'){ e.preventDefault(); play(); }
+    else if(e.key==='ArrowRight') next();
+    else if(e.key==='ArrowLeft') prev();
+    else if(e.key==='r'||e.key==='R') reset();
+  });
+
+  render(0);
+})();
+</script>
+</body>
+</html>

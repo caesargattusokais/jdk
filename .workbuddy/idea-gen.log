@@ -1,0 +1,3 @@
+Building target 'idea-gen-config' in configuration 'windows-x86_64-server-release'
+/usr/bin/xargs: environment is too large for exec
+Finished building target 'idea-gen-config' in configuration 'windows-x86_64-server-release'

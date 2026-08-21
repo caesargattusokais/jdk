@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>07 · 异常处理：布局 + 查表交互动画</title>
+<style>
+  :root{
+    --blue:#3b82f6; --purple:#8b5cf6; --orange:#f59e0b; --green:#10b981;
+    --bg:#f6f7fb; --card:#FFFFFF; --ink:#1f2937; --sub:#6b7280; --line:#e5e7eb;
+    --shadow:0 2px 6px rgba(17,24,39,.05);
+  
+    --blue-bg:#eff6ff; --blue-bd:#bfdbfe;
+    --purple-bg:#f5f3ff; --purple-bd:#ddd6fe;
+    --orange-bg:#fffbeb; --orange-bd:#fde68a;
+    --green-bg:#ecfdf5; --green-bd:#a7f3d0;
+    --red:#ef4444; --red-bg:#fef2f2; --red-bd:#fecaca;
+    --ink-2:#6b7280; --ink-3:#9ca3af;
+    --code-bg:#111827; --code-ink:#e5e7eb;
+  }
+  /* header / badges（与 02/03/04 对齐） */
+  header{text-align:center;margin-bottom:18px}
+  header h1{font-size:25px;letter-spacing:.5px}
+  header h1 .mono{font-family:Consolas,monospace;color:var(--blue)}
+  header .sub{color:var(--ink-2);font-size:13.5px;margin-top:6px}
+  .badges{margin-top:12px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+  header .badge{font-size:12px;padding:3px 12px;border-radius:999px;border:1px solid var(--blue-bd);
+    background:var(--blue-bg);color:var(--blue);font-family:Consolas,monospace}
+  header .badge.purple{border-color:var(--purple-bd);background:var(--purple-bg);color:var(--purple)}
+  header .badge.green{border-color:var(--green-bd);background:var(--green-bg);color:var(--green)}
+  header .badge.orange{border-color:var(--orange-bd);background:var(--orange-bg);color:var(--orange)}
+  header .badge.red{border-color:var(--red-bd);background:var(--red-bg);color:var(--red)}
+
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{background:var(--bg); color:var(--ink); font-family:'Segoe UI','Microsoft YaHei',sans-serif; padding:18px;}
+  .wrap{max-width:1180px; margin:0 auto;}
+
+  h1{font-size:22px; margin-bottom:4px;}
+  .sub{font-size:13px; color:var(--sub); margin-bottom:14px;}
+  .steps{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:16px; justify-content:center;}
+  .step-pill{font-size:11.5px; padding:5px 11px; border-radius:999px; cursor:pointer; border:1.5px solid var(--line); background:var(--card); color:var(--sub); display:flex; align-items:center; justify-content:center; transition:all .2s; user-select:none; white-space:nowrap; min-width:30px;}
+  .step-pill.active{border-color:var(--blue); background:var(--blue); color:#fff; box-shadow:0 4px 12px rgba(59,130,246,.35);}
+  .step-pill.done{border-color:var(--green); background:var(--green); color:#fff;}
+
+  .grid{display:grid; grid-template-columns:300px 1fr 310px; gap:12px; margin-bottom:12px;}
+  .panel{background:var(--card); border-radius:12px; padding:14px; box-shadow:var(--shadow);}
+  .panel h2{font-size:14px; margin-bottom:10px; padding-left:8px; border-left:4px solid var(--blue);}
+  .panel.p2 h2{border-color:var(--purple);}
+  .panel.p3 h2{border-color:var(--green);}
+
+  /* left: exception table */
+  .etable{width:100%; border-collapse:collapse; font-size:11.5px; font-family:Consolas,monospace;}
+  .etable th{background:#eff6ff; color:var(--sub); padding:5px 4px; font-size:10.5px; border-bottom:2px solid var(--line);}
+  .etable td{padding:6px 4px; text-align:center; border-bottom:1px solid #f3f4f6; color:#4b5563; transition:background .25s;}
+  .etable tr.cur td{background:#fef3c7; outline:1px solid var(--orange); font-weight:bold; color:#334155;}
+  .etable tr.done td{background:#d1fae5; color:var(--green);}
+  .etable tr.fail td{background:#f5f3ff; color:var(--purple);}
+  .typeCatch{color:var(--blue);}
+  .typeAny{color:var(--orange); font-weight:bold;}
+  .exBox{margin-top:10px; border:1.5px dashed var(--line); border-radius:10px; padding:8px 10px; font-size:12px;}
+  .exBox .cap{font-size:11px; color:var(--sub); margin-bottom:4px;}
+  .ex{display:inline-block; padding:3px 9px; border-radius:7px; background:#f5f3ff; color:var(--purple); font-weight:bold; font-size:12px; transition:all .3s;}
+  .ex.throw{background:var(--purple); color:#fff; box-shadow:0 0 0 3px rgba(139,92,246,.25);}
+  .ex.caught{background:var(--green); color:#fff;}
+  .ex.unwound{background:var(--orange); color:#fff;}
+  .bcState{margin-top:8px; font-size:12px; color:#4b5563; font-family:Consolas,monospace;}
+  .bcState b{color:var(--purple);}
+
+  /* middle: pipeline */
+  .pipe{display:flex; gap:4px; margin-bottom:10px;}
+  .pstep{flex:1; text-align:center; font-size:10.5px; padding:5px 2px; border-radius:7px; background:#eff6ff; color:var(--sub); transition:all .3s; border:1.5px solid transparent;}
+  .pstep.on{background:#fef3c7; border-color:var(--orange); color:#334155; font-weight:bold;}
+  .pstep.ok{background:#d1fae5; border-color:var(--green); color:var(--green);}
+  .stageBox{background:#111827; border-radius:10px; padding:10px 12px; font-family:Consolas,monospace; font-size:12px; line-height:1.75; color:#e5e7eb; min-height:150px;}
+  .stageBox .hl{background:#4a3410; border-radius:3px; color:#fbbf24;}
+  .stageBox .dim{color:#64748b;}
+  .stageBox .grn{color:#a7f3d0;}
+  .stageBox .org{color:#fde68a;}
+  .stageBox .pur{color:#ddd6fe;}
+  .stageBox .blu{color:#bfdbfe;}
+  .detail{margin-top:8px; font-size:12px; color:#4b5563; background:#f3f4f6; border-radius:8px; padding:7px 9px; min-height:34px;}
+
+  /* right: bytecode */
+  .bc{font-family:Consolas,monospace; font-size:12.5px; line-height:1.85;}
+  .bc .l{display:flex; gap:8px; padding:0 6px; border-radius:5px; transition:background .25s;}
+  .bc .l.hl{background:#fef3c7; outline:1px solid var(--orange);}
+  .bc .l.ok{background:#d1fae5; outline:1px solid var(--green);}
+  .bc .l.pur{background:#f5f3ff; outline:1px solid var(--purple);}
+  .bc .addr{color:#9ca3af; min-width:24px; text-align:right; user-select:none;}
+  .bc .op{color:var(--blue); font-weight:bold;}
+  .bc .comment{color:#9ca3af; font-size:11px;}
+  .src{background:#111827; border-radius:10px; padding:10px 12px; font-family:Consolas,monospace; font-size:11.5px; line-height:1.7; color:#e5e7eb; margin-top:10px;}
+  .src .dim{color:#64748b;}
+  .scene{margin-top:8px; font-size:11px; color:#6b7280; background:#f3f4f6; border-radius:8px; padding:6px 8px;}
+
+  /* controls */
+  .ctl{display:flex; align-items:center; gap:10px; justify-content:center; padding:10px; background:var(--card); border-radius:12px; box-shadow:var(--shadow);}
+  .btn{width:44px; height:44px; border-radius:50%; border:none; background:var(--blue); color:#fff; font-size:16px; cursor:pointer; transition:all .15s; font-weight:bold;}
+  .btn:hover{transform:scale(1.08);}
+  .btn.green{background:var(--green);}
+  .btn.orange{background:var(--orange); width:52px; height:52px;}
+  .hint{font-size:12px; color:var(--sub);}
+  .stepDesc{font-size:13.5px; font-weight:normal; line-height:1.75; color:#334155; background:#eff6ff; border-radius:9px; padding:10px 14px; margin-bottom:12px; border-left:4px solid var(--orange);}
+  .stepDesc b{color:var(--blue);}
+  .stepDesc code{background:#e0e7ff;border-radius:4px;padding:0 5px;font-family:Consolas,monospace;font-size:12px;color:#4f46e5;}
+  .kbd{display:inline-block; border:1px solid var(--line); border-radius:4px; padding:0 6px; background:#fff; font-size:11px; color:#4b5563;}
+
+  /* 示例代码总地图 */
+  .sample{background:var(--card); border-radius:12px; padding:12px 14px; box-shadow:var(--shadow); margin-bottom:12px; border:1px solid var(--line);}
+  .sample .sample-head{font-size:13px; font-weight:bold; color:var(--ink); margin-bottom:8px; padding-left:8px; border-left:4px solid var(--green);}
+  .sample .sample-head .tip{font-weight:normal; color:var(--sub); font-size:11.5px; margin-left:6px;}
+  .sample pre{font-family:Consolas,monospace; font-size:12px; line-height:1.8; overflow-x:auto; background:#f8fafc; border-radius:8px; padding:10px 12px; color:#334155; white-space:pre;}
+  .sample .ln{display:inline-block; width:24px; color:#9ca3af; user-select:none;}
+  .sample .kw{color:var(--blue); font-weight:bold;}
+  .sample .ty{color:var(--purple); font-weight:bold;}
+  .sample .mg{color:var(--green); font-weight:bold;}
+  .sample .cm{color:#6b7280;}
+  .sample .bci{color:var(--orange); font-size:11px;}
+
+  @media(max-width:1000px){.grid{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1><span class="mono">异常</span>处理 · 布局 + 查表</h1>
+    <div class="sub">异常表（constMethod.hpp:111）· athrow 0xbf · fast_exception_handler_bci_for（method.cpp:275）· finally 复制 · JDK 28</div>
+    <div class="badges">
+      <span class="badge ">athrow 0xbf</span>
+      <span class="badge purple">method.cpp:275</span>
+      <span class="badge green">异常表 constMethod</span>
+      <span class="badge orange">finally 复制</span>
+    </div>
+  </header>
+
+  <div class="steps" id="pills"></div>
+  <div class="stepDesc" id="stepDesc">点击 ▶ 开始播放，Space 播放/暂停，← → 步进，R 重置</div>
+
+  <!-- 示例代码总地图：本动画唯一的剧情 -->
+  <div class="sample">
+    <div class="sample-head">示例代码 —— 本动画唯一的剧情 <span class="tip">右栏字节码就是 main 方法的编译产物；行号 ↔ bci 门牌对应关系已标出，看不懂某步时回到这里对号入座</span></div>
+    <pre><span class="ln">1</span><span class="kw">static void</span> <span class="ty">main</span>(<span class="ty">String</span>[] args) {        <span class="cm">// main 帧 · 有异常表（左栏 3 条）</span>
+<span class="ln">2</span>    <span class="kw">try</span> {
+<span class="ln">3</span>        <span class="ty">risky</span>();                             <span class="bci">← bci 0 ── try 块 [0,3)</span>
+<span class="ln">4</span>    } <span class="kw">catch</span> (<span class="ty">IOException</span> e) {          <span class="bci">← handler 9：astore_1 把异常存进 e</span>
+<span class="ln">5</span>        <span class="ty">System</span>.out.<span class="ty">println</span>(e);              <span class="bci">← bci 10：打印</span>
+<span class="ln">6</span>    } <span class="kw">finally</span> {
+<span class="ln">7</span>        <span class="ty">cleanup</span>();                           <span class="bci">← bci 3（正常出口）/ 13（异常出口）</span>
+<span class="ln">8</span>    }
+<span class="ln">9</span>}
+<span class="ln">10</span>
+<span class="ln">11</span><span class="kw">static void</span> <span class="ty">risky</span>() <span class="kw">throws</span> <span class="ty">IOException</span> {   <span class="cm">// 方法体没有 try → 异常表为空</span>
+<span class="ln">12</span>    <span class="kw">throw new</span> <span class="ty">FileNotFoundException</span>(<span class="cm">"f"</span>); <span class="bci">← athrow 0xbf：唯一能"扔"异常的指令</span>
+<span class="ln">13</span>}
+<span class="ln">14</span>
+<span class="ln">15</span><span class="kw">static void</span> <span class="ty">cleanup</span>() { <span class="cm">/* 释放资源 */</span> }       <span class="cm">// finally 的内容被 javac 复制成两份</span></pre>
+  </div>
+
+  <div class="grid">
+    <!-- 左：异常表 -->
+    <div class="panel p1">
+      <h2>main 方法异常表（4×u2 短格式）</h2>
+      <table class="etable">
+        <tr><th>#</th><th>[start,end)</th><th>handler</th><th>type</th></tr>
+        <tr id="et0"><td>0</td><td>0,3</td><td>9</td><td><span class="typeCatch">IOException</span></td></tr>
+        <tr id="et1"><td>1</td><td>0,3</td><td>13</td><td><span class="typeAny">any (finally)</span></td></tr>
+        <tr id="et2"><td>2</td><td>0,3</td><td>13</td><td><span class="typeCatch">RuntimeException</span></td></tr>
+      </table>
+      <div class="exBox">
+        <div class="cap">异常对象（TLS）</div>
+        <span class="ex" id="exObj">—</span>
+        <div class="bcState" id="bcState">bci = —</div>
+      </div>
+      <div class="scene" id="scene">场景：<b>risky() 抛 FileNotFoundException</b></div>
+    </div>
+
+    <!-- 中：查表流水线 -->
+    <div class="panel p2">
+      <h2>查表流水线（athrow → VM 入口 → 查表）</h2>
+      <div class="pipe">
+        <div class="pstep" id="ps0">athrow</div>
+        <div class="pstep" id="ps1">区间覆盖</div>
+        <div class="pstep" id="ps2">catch-all?</div>
+        <div class="pstep" id="ps3">子类型判定</div>
+        <div class="pstep" id="ps4">命中/上抛</div>
+      </div>
+      <div class="stageBox" id="stage">// 当前阶段代码</div>
+      <div class="detail" id="detail">—</div>
+    </div>
+
+    <!-- 右：字节码 -->
+    <div class="panel p3">
+      <h2>main 字节码（javac 输出）</h2>
+      <div class="bc">
+        <div class="l" id="b0"><span class="addr">0</span><span class="op">invokestatic</span><span>risky</span><span class="comment">← try 块 [0,3)</span></div>
+        <div class="l" id="b1"><span class="addr">3</span><span class="op">invokestatic</span><span>cleanup</span><span class="comment">finally 复制①</span></div>
+        <div class="l" id="b2"><span class="addr">6</span><span class="op">goto</span><span>16</span></div>
+        <div class="l" id="b3"><span class="addr">9</span><span class="op">astore_1</span><span class="comment">← handler 9</span></div>
+        <div class="l" id="b4"><span class="addr">10</span><span class="op">println</span><span>(e)</span></div>
+        <div class="l" id="b5"><span class="addr">13</span><span class="op">invokestatic</span><span>cleanup</span><span class="comment">finally 复制②</span></div>
+        <div class="l" id="b6"><span class="addr">16</span><span class="op">return</span></div>
+      </div>
+      <div class="src"><span class="dim">// 异常传播：callee 无 handler → 解栈</span>
+<span class="dim">// main 帧 current_bci = 0（invokestatic 处）</span>
+Klass* klass = h_exception-&gt;klass();      <span class="dim">// :576</span>
+handler_bci = Method::fast_exception_
+  handler_bci_for(h_method, klass, 0, THREAD);</div>
+      <div class="scene" id="scene2">—</div>
+    </div>
+  </div>
+
+  <!-- 控制 -->
+  <div class="ctl">
+    <button class="btn" id="btnPrev" title="上一步">◀</button>
+    <button class="btn orange" id="btnPlay" title="播放/暂停 (Space)">▶</button>
+    <button class="btn" id="btnNext" title="下一步">▶</button>
+    <button class="btn green" id="btnReset" title="重置 (R)">↺</button>
+    <span class="hint"><span class="kbd">Space</span> 播放/暂停 · <span class="kbd">←</span> <span class="kbd">→</span> 步进 · <span class="kbd">R</span> 重置 · 点击步骤胶囊跳转</span>
+  </div>
+
+</div>
+
+<script>
+(() => {
+  const S = {
+    et: [0,1,2].map(i => document.getElementById('et'+i)),
+    exObj: document.getElementById('exObj'),
+    bcState: document.getElementById('bcState'),
+    scene: document.getElementById('scene'),
+    scene2: document.getElementById('scene2'),
+    stage: document.getElementById('stage'),
+    detail: document.getElementById('detail'),
+    desc: document.getElementById('stepDesc'),
+    pills: document.getElementById('pills'),
+    b: [0,1,2,3,4,5,6].map(i => document.getElementById('b'+i)),
+    ps: [0,1,2,3,4].map(i => document.getElementById('ps'+i)),
+  };
+  const COL = { blue:'#3b82f6', purple:'#8b5cf6', orange:'#f59e0b', green:'#10b981' };
+
+  function setEx(mode, name){
+    S.exObj.className = 'ex'+(mode?' '+mode:'');
+    S.exObj.textContent = name||'—';
+  }
+  function setBci(txt){ S.bcState.innerHTML = txt; }
+  function etRow(n, mode){
+    S.et.forEach((el,i)=>{ el.className = (i===n ? ('tr '+(mode||'cur')) : ''); });
+  }
+  function pipe(n, mode){
+    S.ps.forEach((el,i)=>{ el.className = 'pstep'+(i<n?' ok':(i===n?' on':'')); });
+  }
+  function stage(html){ S.stage.innerHTML = html; }
+  function bcHl(idxArr, mode){
+    S.b.forEach((el,i)=>{ el.className='l'; if(idxArr.includes(i)) el.className='l '+(mode||'hl'); });
+  }
+  function scene(txt, id){ (id?document.getElementById(id):S.scene).innerHTML = txt; }
+
+  const steps = [
+    // 0 初始
+    { d:`<b>一张"救援地图" + 一段代码，就是本动画的全部材料。</b><br>
+&nbsp;• <b>上方示例代码就是完整剧情</b>：main 里 try 包住 risky()（第 3 行）、catch 接 IOException（第 4 行）、finally 调 cleanup（第 7 行）；risky() 里 throw 一个 FileNotFoundException（第 12 行）。右栏字节码 = 第 1~9 行 main 的编译产物。<br>
+&nbsp;• <b>try/catch/finally</b> 只是 Java 语法糖——javac 编译时把它翻译成两样东西：<b>字节码</b>（机器可执行的指令）+ <b>异常表</b>（一张纯数据表，不执行、只供查询）。<br>
+&nbsp;• 左栏就是 main 的"救援地图"：<b>3 条记录</b>，每条写着"哪段代码出问题 → 去哪处理 → 处理哪种异常"。<br>
+&nbsp;• 右侧是 main 的字节码：try 块在 bci 0~2，之后是 finally 的拷贝①和②。<br>
+&nbsp;• 剧情：risky() 马上就要抛 <code>FileNotFoundException</code>（找不到文件），看 JVM 怎么用这张表救人。`,
+      fn:()=>{
+        setEx('', '—'); setBci('bci = —');
+        etRow(-1); pipe(-1);
+        stage(`<span class="blu">// 编译期产物就位</span>\n<span class="dim">字节码：try 块 [0,3) + finally 复制 ×2</span>\n<span class="dim">异常表：3 条 4×u2 记录（constMethod.hpp:111）</span>\n<span class="org">等待 risky() 抛异常…</span>`);
+        S.detail.textContent='异常表是方法的一部分，躺在 ConstMethod 内联表里。';
+        bcHl([0],''); scene('场景 0：<b>布局就绪 · risky() 即将执行</b>');
+      }},
+    // 1 编译期布局
+    { d:`<b>finally 没有自己的指令——javac 把它的代码"复制"到每个出口。</b><br>
+&nbsp;• 你写的 <code>finally { cleanup(); }</code> 在 class 文件里<b>不存在</b>，而是变成多份拷贝，插到每个可能离开 try 块的位置：<br>
+&nbsp;&nbsp;① 正常走完 try → 在 <b>bci 3</b> 执行 cleanup（拷贝①）<br>
+&nbsp;&nbsp;② 异常被 catch 接住 → 在 <b>bci 13</b> 执行 cleanup（拷贝②）<br>
+&nbsp;• 这就是 finally"无论如何都会执行"的原理：<b>不是运行时保证，是编译期把代码铺满了所有出口</b>。<br>
+&nbsp;• 若异常没被任何 catch 接住？靠异常表 #1 的 <b>catch-all（type=any）</b>兜底——先跑 finally，再原样重抛。`,
+      fn:()=>{
+        bcHl([1,5],'ok');
+        stage(`<span class="org">finally 复制语义</span>\n<span class="dim">bci 3: cleanup  ← 正常出口复制①</span>\n<span class="dim">bci 13: cleanup ← catch 出口复制②</span>\n<span class="blu">异常表 #1: type=any → catch-all</span>\n<span class="dim">// synchronized 的 monitorexit 也靠这个（02 篇）</span>`);
+        S.detail.textContent='finally 代码在 class 文件中出现多次；异常路径由 type=0 的 catch-all 记录接住。';
+        bcHl([1,5],'ok'); scene('场景 1：<b>finally 复制 ×2</b>');
+      }},
+    // 2 异常表结构
+    { d:`<b>先说一个前提：每条字节码指令都有"门牌号"——bci（bytecode index）。</b><br>
+&nbsp;• 右栏每一行最左边的数字（<b>0 / 3 / 6 / 9 / 13 / 16</b>）就是门牌号：<code>invokestatic risky</code> 住 bci 0，<code>astore_1</code> 住 bci 9。<b>异常表里写的一切数字，都是这些门牌号</b>——不是行号、不是类名。<br>
+&nbsp;• 有了门牌号，<b>异常表每条记录 = 4 个数字</b>（<code>u2</code> = 2 字节无符号整数，4×2 = 8 字节/条，HotSpot 用 <code>ExceptionTableElement</code> 存，constMethod.hpp:111）：<br>
+&nbsp;&nbsp;<b>① start_pc</b>：救援范围从哪个门牌开始（= try 块第一条指令的门牌）<br>
+&nbsp;&nbsp;<b>② end_pc</b>：救援范围到哪个门牌为止，<b>但不包含它</b>——它写的是 try 块<u>最后一条指令的下一条</u>的门牌。合起来 [start,end) 就是"从 start 起、到 end 前止"（半开区间）<br>
+&nbsp;&nbsp;<b>③ handler_pc</b>：异常发生时的<u>跳转目标门牌</u>——跳到这个门牌继续执行<br>
+&nbsp;&nbsp;<b>④ catch_type_index</b>：只救这种类型；<b>0 = catch-all</b>（什么都救，finally 专用）<br>
+&nbsp;• 为什么用半开区间 [start,end) 而不是 [start,end]？因为字节码指令<b>长短不一</b>（invokestatic 占 3 字节、astore_1 只占 1 字节），很难数"最后一条的字节偏移"；而"最后一条的下一条"编译器一算就有，所以约定 <b>end 不包含</b>。<br>
+&nbsp;• 对照左栏 <code>#0</code>：<b>[0,3) → 9 → IOException</b> 翻译成人话 = "住在门牌 0、1、2 的三条指令（try 块）里，只要抛出的异常是 IOException（或其子类），就把执行流搬到门牌 9（<code>astore_1</code> 存异常 → <code>println</code> 打印）"。门牌 3 是 try 外的 finally 复制①，<b>不属于保护范围</b>——这正是 [0,3) 写 3 不写 2 的原因。<br>
+&nbsp;• 这张表嵌在方法的 <b>ConstMethod</b> 里（方法在表就在）。`,
+      fn:()=>{
+        etRow(0);
+        stage(`<span class="blu">struct ExceptionTableElement {</span>\n  <span class="grn">u2 start_pc; u2 end_pc;</span>      <span class="dim">// 区间 [start,end)</span>\n  <span class="grn">u2 handler_pc; u2 catch_type_index;</span>  <span class="dim">// 0 = catch-all</span>\n<span class="blu">};</span>  <span class="dim">// constMethod.hpp:111</span>\n<span class="dim">// 8 字节/条 · ConstMethod 内联表</span>`);
+        S.detail.textContent='四元组 = javap 的 from/to/target/type 四列。';
+        bcHl([],''); scene('场景 2：<b>异常表结构拆解</b>');
+      }},
+    // 3 抛出
+    { d:`<b>throw 一句话翻译：new 一个异常对象，然后执行"扔"指令 athrow。</b><br>
+&nbsp;• <code>throw new FileNotFoundException("f")</code> 在 javac 眼里是 5 条指令：<code>new</code>（造对象）→ <code>dup</code>（复制引用）→ <code>ldc</code>（压入字符串）→ <code>invokespecial</code>（调构造器）→ <b><code>athrow</code></b>（扔出去）。<br>
+&nbsp;• <code>athrow</code> 是 JVM 里<b>唯一能"扔异常"的指令</b>，操作码 <b>0xbf</b>（bytecodes.hpp:235）。它只做 3 件事（templateTable 4022）：<br>
+&nbsp;&nbsp;① 栈型转换 transition(atos,vtos)<br>
+&nbsp;&nbsp;② null 检查——<code>throw null</code> 自动变 <code>NullPointerException</code><br>
+&nbsp;&nbsp;③ 跳转解释器的"抛异常公共例程"，正式进入查表流程<br>
+&nbsp;• 此刻左栏 exBox 亮起：异常对象 <code>FileNotFoundException</code> 已在手上。`,
+      fn:()=>{
+        setEx('throw','FileNotFoundException');
+        setBci('risky 帧 · bci = athrow 处');
+        pipe(0);
+        stage(`<span class="pur">athrow:</span>  <span class="dim">// 0xbf · bytecodes.hpp:235</span>\n  <span class="blu">transition(atos, vtos);</span>  <span class="dim">// templateTable:4022</span>\n  <span class="org">null_check(rax);</span>      <span class="dim">// throw null → NPE</span>\n  <span class="grn">jump(throw_exception_entry());</span>`);
+        S.detail.textContent='athrow 模板只有 3 件事：栈型转换、null 检查（throw null → NPE）、跳公用例程。';
+        bcHl([],''); scene('场景 3：<b>risky() 抛异常</b>');
+      }},
+    // 4 risky 帧查表失败
+    { d:`<b>先在本方法里找救援地图——risky() 没有，只好"撤"回上一层。</b><br>
+&nbsp;• <b>看示例代码第 11~13 行</b>：risky() 方法体里没有 try/catch，所以它<b>根本没有异常表</b>——第一轮查表直接落空，这就是"没找到"。<br>
+&nbsp;• 异常查表是<b>逐帧</b>的：先在<b>当前方法（risky()）自己的异常表</b>里找。risky() 里没 try → 一张表都没有 → <code>handler_bci &lt; 0</code>（没找到）。<br>
+&nbsp;• 没找到怎么办？<b>解栈（unwind）</b>：把 risky() 这一帧（这个方法的"工作台"：局部变量 + 操作数栈）整个撤掉，异常对象放进<b>线程本地存储 TLS</b>（线程自己的小抽屉，代码里叫 vm_result），控制权回到调用处——main 帧里 <code>invokestatic risky</code> 那条指令，记作 <code>current_bci = 0</code>。<br>
+&nbsp;• 关键：<b>risky 帧没了，但异常对象还在</b>，轮到 main 接着查表。<br>
+&nbsp;• 中栏流水线走到第 5 格"命中/上抛"——这轮是"上抛"。`,
+      fn:()=>{
+        setEx('unwound','FileNotFoundException');
+        setBci('解栈 → main 帧 · bci = 0');
+        pipe(4);
+        stage(`<span class="org">risky 帧：无异常表 → 无 handler</span>\n<span class="pur">handler_bci &lt; 0 →</span>\n  <span class="grn">continuation = remove_activation_entry();</span>  <span class="dim">// :606</span>\n<span class="dim">// 异常对象 → TLS（vm_result）</span>\n<span class="dim">// 控制权 → main 的 invokestatic risky 处</span>`);
+        S.detail.textContent='解栈上抛：异常沿调用链逐帧回溯，每帧都重新查表。main 帧 current_bci = 0（调用点）。';
+        bcHl([0],'pur'); scene('场景 4：<b>risky 解栈 → main 帧</b>');
+      }},
+    // 5 main 帧开始查表
+    { d:`<b>回到 main 帧，这次有救援地图了——从头开始逐条对。</b><br>
+&nbsp;• <b>看示例代码第 1~3 行</b>：main 的 try 块包住了第 3 行 risky() 调用，所以 main 有异常表（左栏 3 条）。查表从<b>调用点 bci 0</b>（第 3 行）开始。<br>
+&nbsp;• 解释器调用运行时入口 <code>InterpreterRuntime::exception_handler_for_exception</code>（interpreterRuntime.cpp:507），它把脏活交给 <code>Method::fast_exception_handler_bci_for</code>（method.cpp:275）。<br>
+&nbsp;• 入参三件套：<b>哪个方法</b>（main）、<b>什么异常</b>（FileNotFoundException）、<b>出错位置</b>（current_bci = 0）。<br>
+&nbsp;• 算法很简单：把 main 的异常表 <b>3 条记录从头到尾扫一遍</b>，第一条能"接住"的就赢。现在先看记录 #0。`,
+      fn:()=>{
+        setEx('throw','FileNotFoundException');
+        setBci('main 帧 · bci = 0（查表中）');
+        pipe(1); etRow(-1);
+        stage(`<span class="blu">InterpreterRuntime::exception_handler_for_exception</span>  <span class="dim">// :507</span>\n<span class="blu">Method::fast_exception_handler_bci_for(main, FNFE, 0)</span>  <span class="dim">// :275</span>\n<span class="dim">ExceptionTable table(mh());  // 3 条记录</span>\n<span class="org">顺序扫描开始 → 记录 #0</span>`);
+        S.detail.textContent='查找从调用点 bci 0 开始。算法入口：method.cpp:275。';
+        bcHl([0],'hl'); scene('场景 5：<b>main 帧查表</b>');
+      }},
+    // 6 记录#0 区间覆盖
+    { d:`<b>第一关对"范围"：出错位置在不在救援范围内？</b><br>
+&nbsp;• <b>对照示例代码第 3 行</b>：risky() 这行调用占 bci 0~2，[0,3) 保护的就是它；bci 3 已是 finally 复制①（第 7 行 cleanup 的正常出口），不属于 try。<br>
+&nbsp;• 记录 #0 写的范围是 [0,3)：<b>bci 0、1、2 属于 try 块，bci 3 不属于</b>（3 已经是 finally 拷贝①了）。<br>
+&nbsp;• 判定式（method.cpp:296）：<code>beg_bci &lt;= throw_bci && throw_bci &lt; end_bci</code> → <code>0 &lt;= 0 &lt; 3</code> → <b>覆盖 ✅</b>。<br>
+&nbsp;• 范围过了，再看"类型"：<code>catch_type_index = IOException</code>，不是 0 → <b>不是 catch-all</b>，得正经做类型判定。<br>
+&nbsp;• 一句话：<b>位置对了，还得确认"救的这个异常是不是 IOException 家的"</b>。`,
+      fn:()=>{
+        etRow(0); pipe(1);
+        stage(`<span class="blu">if (beg_bci &lt;= throw_bci && throw_bci &lt; end_bci)</span>  <span class="dim">// :296</span>\n  <span class="grn">0 &lt;= 0 &lt; 3 → 覆盖 ✅</span>\n<span class="blu">klass_index = catch_type_index(0);</span>\n  <span class="org">#0: type=IOException ≠ 0 → 非 catch-all</span>\n<span class="dim">→ 解析 IOException Klass，类型判定</span>`);
+        S.detail.textContent='半开区间 [start, end)：bci 3 本身不属于 try 块（它已是 finally 复制①）。';
+        bcHl([0],'hl'); scene('场景 6：<b>#0 区间覆盖 ✅</b>');
+      }},
+    // 7 子类型判定命中
+    { d:`<b>第二关对"血缘"：FileNotFoundException 是不是 IOException 的后代？是 → 接住。</b><br>
+&nbsp;• <b>对照示例代码第 4 行</b>：catch 写的是 <code>IOException e</code>，而第 12 行扔的是 FileNotFoundException——它<b>继承自</b> IOException，所以接得住。<br>
+&nbsp;• 类型判定（method.cpp:336）用 <code>is_subtype_of</code>：拿异常对象的类 FileNotFoundException，和记录的 catch 类型 IOException 做一次<b>子类型检查</b>。<br>
+&nbsp;• 结果：FileNotFoundException <b>继承自</b> IOException → <code>true</code> → <b>命中记录 #0</b> → 返回 <code>handler_bci = 9</code>。<br>
+&nbsp;• 这里复用的正是 06 篇讲过的 <code>Klass::is_subtype_of</code> 双通道算法（父类链 + 接口表）——<b>catch 匹配和 instanceof 是同一套机制</b>。<br>
+&nbsp;• 左栏 #0 变绿（done），中栏流水线"子类型判定"亮灯。`,
+      fn:()=>{
+        etRow(0,'done'); pipe(3);
+        stage(`<span class="blu">Klass* k = pool->klass_at(klass_index, THREAD);</span>  <span class="dim">// :326</span>\n<span class="blu">if (ex_klass->is_subtype_of(k))</span>  <span class="dim">// :336</span>\n  <span class="grn">FNFE ⊑ IOException → true ✅</span>\n<span class="org">return handler_bci = 9;</span>\n<span class="dim">// is_subtype_of = 06 篇 Klass 双通道！</span>`);
+        S.detail.textContent='catch(IOException) 能接住 FileNotFoundException 的根源就是 is_subtype_of 子类型判定。';
+        bcHl([3],'ok'); scene('场景 7：<b>is_subtype_of 命中 → handler 9</b>');
+      }},
+    // 8 跳转 handler
+    { d:`<b>命中后不拆栈——直接把执行指针搬到 handler 地址。</b><br>
+&nbsp;• <b>对照示例代码第 4~5 行</b>：handler 9 就是 catch 块的起点——astore_1 把异常对象存进变量 e，println(e) 打印。<br>
+&nbsp;• 解释器算出 handler 的物理地址：<code>handler_pc = 方法代码起始 + 9</code>（method.cpp:613），再用 <code>set_bcp_and_mdp</code>（:616）把"当前执行到哪条指令"的指针 <b>bcp</b> 改到 bci 9。<br>
+&nbsp;• <b>栈不拆！</b>main 帧的局部变量原封不动，catch 块照样能访问 try 块里的变量（这就是"栈不拆"的意义）。<br>
+&nbsp;• 然后解释器按 bci 9 继续跑：<code>astore_1</code>（把异常对象存进局部变量 e）+ <code>println(e)</code> 打印。<br>
+&nbsp;• 左栏异常对象变绿"已接住"，中栏流水线"命中/上抛"亮起。`,
+      fn:()=>{
+        setEx('caught','已接住');
+        setBci('main 帧 · bcp → 9（handler）');
+        pipe(4); etRow(0,'done');
+        stage(`<span class="grn">handler_pc = h_method->code_base() + 9;</span>  <span class="dim">// :613</span>\n<span class="grn">set_bcp_and_mdp(handler_pc, current);</span>  <span class="dim">// :616</span>\n<span class="grn">continuation = dispatch_table(vtos)[*handler_pc];</span>\n<span class="org">→ 解释器跳到 bci 9：astore_1 + println(e)</span>`);
+        S.detail.textContent='栈不拆！try 块里的局部变量还在，catch 块通过局部变量表访问。';
+        bcHl([3,4],'ok'); scene('场景 8：<b>跳转 handler 9</b>');
+      }},
+    // 9 finally 复制执行
+    { d:`<b>catch 跑完，还得把 finally 的拷贝②跑掉，才算完整收尾。</b><br>
+&nbsp;• <b>对照示例代码第 6~8 行</b>：finally 块里的 cleanup() 被 javac 复制成两份——bci 3（正常出口）和 bci 13（异常出口）。catch 跑完自然落到 bci 13 执行拷贝②。<br>
+&nbsp;• catch 块 println 之后自然落到 <b>bci 13</b>——这正好是 javac 复制出来的 finally 拷贝②（cleanup）。<br>
+&nbsp;• 执行完 cleanup → 落到 <b>bci 16</b> → <code>return</code>，main 正常返回。<br>
+&nbsp;• 这就是 finally"无论正常还是异常都执行"的保障：<b>正常路径有拷贝①，异常路径有拷贝②</b>，两条路都铺了。<br>
+&nbsp;• 补充：若 catch 块<b>自己又抛异常</b>，会走异常表 #1 的 catch-all → 先跑 finally 拷贝②再重抛——finally 还是不会漏。`,
+      fn:()=>{
+        setBci('main 帧 · bci = 13（finally 复制②）');
+        bcHl([5],'ok');
+        stage(`<span class="org">bci 13: invokestatic cleanup</span>  <span class="dim">// finally 复制②</span>\n<span class="dim">// catch 出口也必须跑 finally</span>\n<span class="blu">→ bci 16: return</span>\n<span class="dim">// 若 catch 块内部也抛异常 → 走 #1 catch-all</span>\n<span class="dim">// → 复制②后重抛（athrow）</span>`);
+        S.detail.textContent='finally 的"必执行"承诺 = 每个出口都复制了 finally 代码。';
+        bcHl([5,6],'ok'); scene('场景 9：<b>finally 复制②执行 → return</b>');
+      }},
+    // 10 无匹配场景
+    { d:`<b>换个剧情：异常不在任何 catch 的"血统"里，谁来兜底？catch-all。</b><br>
+&nbsp;• <b>对照示例代码第 4 行</b>：如果 risky() 扔的不是 IOException 家谱的（换成 SQLException），catch (IOException e) 就接不住；但 finally 必须执行——这时靠异常表 #1 的 catch-all 兜底。<br>
+&nbsp;• 假设 risky() 抛的是 <code>SQLException</code>：先对 #0，范围 [0,3) 虽覆盖，但 SQLException 不是 IOException 子类 → <b>miss</b>。<br>
+&nbsp;• 再对 #1：<code>catch_type_index == 0</code> → 这是 <b>catch-all</b>（finally 专用），<b>不用做类型判定直接接住</b>（method.cpp:302 免类型比较）→ <code>handler_bci = 13</code>。<br>
+&nbsp;• bci 13 是 finally 拷贝②：跑完 cleanup 之后，javac 还在后面插了 <code>aload_1 + athrow</code>——<b>把原来的异常原样重抛</b>，继续向上传播。<br>
+&nbsp;• 一句话：catch-all 不是"处理"异常，是<b>"确保 finally 一定跑，然后原样往上扔"</b>。`,
+      fn:()=>{
+        setEx('throw','SQLException');
+        setBci('main 帧 · 查 #0 失败');
+        etRow(1); pipe(2);
+        stage(`<span class="org">#0: SQLException ⊄ IOException → miss</span>\n<span class="org">#1: catch_type_index == 0 → catch-all!</span>\n  <span class="grn">return handler_bci = 13;</span>  <span class="dim">// 免类型比较（:302）</span>\n<span class="dim">// finally 代码执行后 aload_1 + athrow 重抛</span>`);
+        S.detail.textContent='catch-all（type=0）是 finally 的兜底：任何异常先跑 finally，再原样重抛。';
+        bcHl([5],'hl'); scene('场景 10：<b>catch-all 兜底 → finally 重抛</b>');
+      }},
+    // 11 完全无 handler
+    { d:`<b>如果整条调用链都没人能接住，异常就一路解栈到 JVM 顶层。</b><br>
+&nbsp;• <b>对照示例代码</b>：想象这段代码外面再没有 try——异常在 main 帧（第 9 行结束处）也查不到 handler，就继续往调用链外层撤，直到 JVM 顶层。<br>
+&nbsp;• 假设 main 之外再没有 try：main 帧也查不到 → <code>handler_bci = -1</code> → 再次 <code>remove_activation_entry</code>（method.cpp:602）解栈。<br>
+&nbsp;• 一路解到最外层线程入口 → 交给 <code>Thread.dispatchUncaughtException</code> → 打印那条经典的<b>红色异常堆栈</b>。<br>
+&nbsp;• 我们平时看到的堆栈就是这么来的：<b>不是某条指令"记录"了栈，而是解栈过程中每撤一帧就记一行</b>（interpreter_throwout_increment，method.cpp:609）。<br>
+&nbsp;• 这是最后防线，线程通常随之终止。`,
+      fn:()=>{
+        setEx('unwound','未捕获');
+        setBci('解栈到顶层');
+        etRow(-1); pipe(4);
+        stage(`<span class="pur">handler_bci &lt; 0 → remove_activation_entry</span>  <span class="dim">// :602</span>\n<span class="dim">→ 解栈到 JVM 顶层</span>\n<span class="org">→ Thread.dispatchUncaughtException</span>\n<span class="dim">→ stderr 打印异常堆栈（main 线程）</span>\n<span class="dim">// h_method->interpreter_throwout_increment（:609）</span>`);
+        S.detail.textContent='我们日常看到的红色堆栈就是这么来的：整条调用链都查不到 handler。';
+        bcHl([],''); scene('场景 11：<b>全链无 handler → 打印堆栈</b>');
+      }},
+    // 12 总结
+    { d:`<b>总结：异常机制 = 编译期"铺路" + 运行期"查表"，全程没有一条"异常处理指令"。</b><br>
+&nbsp;• <b>对照示例代码走一遍</b>：try（第 2 行）→ 编译成字节码+异常表；risky() 无表 → 解栈（第 11 行）；main 查表命中 catch（第 4 行）；finally 复制 ×2（第 7 行）。<br>
+&nbsp;① <b>try/catch/finally</b> → 编译成字节码 + 异常表（finally 复制到每个出口，catch-all 兜底）<br>
+&nbsp;② <b>throw</b> → 编译成 athrow（0xbf，bytecodes.hpp:235），唯一能扔异常的指令<br>
+&nbsp;③ <b>throws</b> → 只是 class 文件里的 Exceptions 属性（classFileParser:1862），声明用，不参与运行时<br>
+&nbsp;④ <b>查表三关</b>：区间覆盖（method.cpp:296）→ catch-all 免判定（:302）→ 子类型判定（:336，复用 06 篇）<br>
+&nbsp;⑤ <b>闭环</b>：synchronized 的 monitorexit 也编译进 finally 位置（02 篇）——异常发生时锁照样释放`,
+      fn:()=>{
+        pipe(-1); etRow(-1);
+        stage(`<span class="blu">// 五关键字三落点</span>\n<span class="grn">try/catch/finally → 异常表 + 复制</span>\n<span class="org">throw → athrow 0xbf（bytecodes.hpp:235）</span>\n<span class="pur">throws → Exceptions 属性（classFileParser:1862）</span>\n<span class="dim">// 查表：区间 → catch-all → is_subtype_of（06 复用）</span>\n<span class="dim">// 闭环：synchronized 的 monitorexit 在 finally 位置</span>`);
+        S.detail.textContent='异常机制是"数据驱动"的：没有异常处理指令，只有一张表 + 一次查表。';
+        bcHl([],''); scene('场景 12：<b>总结 · 与 02/06 篇闭环</b>');
+      }},
+  ];
+
+  let idx = -1, timer = null, playing = false;
+
+  function render(i){
+    idx = i;
+    steps[i].fn();
+    S.desc.innerHTML = (i+1) + '/' + steps.length + ' · ' + steps[i].d;
+    document.querySelectorAll('.step-pill').forEach((c,j)=>{
+      c.className = 'step-pill' + (j===i?' active':(j<i?' done':''));
+    });
+    document.getElementById('btnPlay').textContent = '▶';
+    playing = false;
+  }
+  function next(){ if(idx < steps.length-1) render(idx+1); }
+  function prev(){ if(idx > 0) render(idx-1); }
+  function play(){
+    if(playing){ clearInterval(timer); playing=false; document.getElementById('btnPlay').textContent='▶'; return; }
+    if(idx >= steps.length-1){ render(0); }
+    playing = true; document.getElementById('btnPlay').textContent='⏸';
+    timer = setInterval(()=>{
+      if(idx >= steps.length-1){ clearInterval(timer); playing=false; document.getElementById('btnPlay').textContent='▶'; return; }
+      render(idx+1);
+    }, 3600);
+  }
+  function reset(){ clearInterval(timer); playing=false; render(0); }
+
+  steps.forEach((s,i)=>{
+    const c = document.createElement('div');
+    c.className='step-pill'; c.textContent=i+1; c.title=s.d;
+    c.onclick = ()=>render(i);
+    S.pills.appendChild(c);
+  });
+
+  document.getElementById('btnPrev').onclick = prev;
+  document.getElementById('btnNext').onclick = next;
+  document.getElementById('btnPlay').onclick = play;
+  document.getElementById('btnReset').onclick = reset;
+  document.addEventListener('keydown', e=>{
+    if(e.code==='Space'){ e.preventDefault(); play(); }
+    else if(e.key==='ArrowRight') next();
+    else if(e.key==='ArrowLeft') prev();
+    else if(e.key==='r'||e.key==='R') reset();
+  });
+
+  render(0);
+})();
+</script>
+</body>
+</html>

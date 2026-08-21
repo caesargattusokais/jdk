@@ -1,0 +1,100 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 620" font-family="'Segoe UI','Microsoft YaHei',sans-serif">
+  <defs>
+    <marker id="arwB" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#3b82f6"/></marker>
+    <marker id="arwP" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#7c3aed"/></marker>
+    <marker id="arwO" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#f59e0b"/></marker>
+    <marker id="arwG" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#10b981"/></marker>
+  </defs>
+
+  <rect x="0" y="0" width="900" height="620" rx="14" fill="#ffffff"/>
+  <text x="450" y="34" text-anchor="middle" font-size="20" font-weight="bold" fill="#1e293b">方法调用全链路 · 第三站：解释器 invoke 模板</text>
+  <text x="450" y="56" text-anchor="middle" font-size="13" fill="#64748b">templateTable_x86.cpp — 热路径寻址 → 分派 → 最后一跳</text>
+
+  <!-- ============ 顶部：字节码 ============ -->
+  <rect x="320" y="76" width="260" height="52" rx="10" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.6"/>
+  <text x="450" y="98" text-anchor="middle" font-size="15" font-weight="bold" fill="#1d4ed8">invokevirtual #12</text>
+  <text x="450" y="116" text-anchor="middle" font-size="11.5" fill="#475569">字节码流：操作码 + u2 常量池索引</text>
+
+  <!-- 字节码 → 帧 -->
+  <line x1="450" y1="128" x2="450" y2="158" stroke="#3b82f6" stroke-width="1.8" marker-end="url(#arwB)"/>
+
+  <!-- ============ 第 1 段：热路径寻址（蓝） ============ -->
+  <rect x="60" y="160" width="780" height="150" rx="12" fill="#f8fafc" stroke="#3b82f6" stroke-width="1.4" stroke-dasharray="6 4"/>
+  <text x="80" y="182" font-size="13" font-weight="bold" fill="#1d4ed8">① 热路径寻址 · load_method_entry（interp_masm_x86.cpp:1855）+ resolve_cache_and_index_for_method（:2301）</text>
+
+  <rect x="90" y="196" width="150" height="66" rx="8" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.4"/>
+  <text x="165" y="219" text-anchor="middle" font-size="12" font-weight="bold" fill="#1e293b">解释器帧 rbp</text>
+  <text x="165" y="237" text-anchor="middle" font-size="10.5" fill="#475569">interpreter_frame_</text>
+  <text x="165" y="251" text-anchor="middle" font-size="10.5" fill="#475569">cache_offset</text>
+
+  <line x1="240" y1="229" x2="288" y2="229" stroke="#3b82f6" stroke-width="1.6" marker-end="url(#arwB)"/>
+
+  <rect x="290" y="196" width="150" height="66" rx="8" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.4"/>
+  <text x="365" y="219" text-anchor="middle" font-size="12" font-weight="bold" fill="#1e293b">ConstantPoolCache</text>
+  <text x="365" y="237" text-anchor="middle" font-size="10.5" fill="#475569">method_entries[]</text>
+  <text x="365" y="251" text-anchor="middle" font-size="10.5" fill="#475569">基址</text>
+
+  <line x1="440" y1="229" x2="488" y2="229" stroke="#3b82f6" stroke-width="1.6" marker-end="url(#arwB)"/>
+
+  <rect x="490" y="196" width="170" height="66" rx="8" fill="#bfdbfe" stroke="#2563eb" stroke-width="1.4"/>
+  <text x="575" y="219" text-anchor="middle" font-size="12" font-weight="bold" fill="#1e293b">index × sizeof(RME)</text>
+  <text x="575" y="237" text-anchor="middle" font-size="10.5" fill="#475569">u2 index 来自字节码</text>
+  <text x="575" y="251" text-anchor="middle" font-size="10.5" fill="#475569">→ entry 指针</text>
+
+  <line x1="660" y1="229" x2="706" y2="229" stroke="#3b82f6" stroke-width="1.6" marker-end="url(#arwB)"/>
+
+  <rect x="708" y="190" width="122" height="80" rx="8" fill="#93c5fd" stroke="#1d4ed8" stroke-width="1.4"/>
+  <text x="769" y="212" text-anchor="middle" font-size="12" font-weight="bold" fill="#0f172a">ResolvedMethodEntry</text>
+  <text x="769" y="230" text-anchor="middle" font-size="10" fill="#1e3a8a">_method / _table_index</text>
+  <text x="769" y="245" text-anchor="middle" font-size="10" fill="#1e3a8a">_flags / _bytecode1/2</text>
+  <text x="769" y="260" text-anchor="middle" font-size="10" fill="#1e3a8a">_num_parameters / _tos</text>
+
+  <!-- 已解析 → 热路径 -->
+  <text x="300" y="294" font-size="11.5" fill="#047857" font-weight="bold">✓ bytecode1/2 == 当前操作码 → 已解析 → 直行（热路径，几纳秒）</text>
+  <text x="560" y="294" font-size="11.5" fill="#b91c1c" font-weight="bold">✗ 未解析 → InterpreterRuntime::resolve_from_cache（冷路径，回 linkResolver 站）</text>
+
+  <!-- ============ 第 2 段：prepare_invoke（紫） ============ -->
+  <line x1="450" y1="310" x2="450" y2="336" stroke="#7c3aed" stroke-width="1.8" marker-end="url(#arwP)"/>
+  <rect x="60" y="338" width="780" height="96" rx="12" fill="#faf5ff" stroke="#7c3aed" stroke-width="1.4" stroke-dasharray="6 4"/>
+  <text x="80" y="360" font-size="13" font-weight="bold" fill="#6d28d9">② prepare_invoke（:3394）— 调用前的最后准备</text>
+
+  <rect x="90" y="374" width="300" height="44" rx="8" fill="#f3e8ff" stroke="#7c3aed" stroke-width="1.3"/>
+  <text x="240" y="393" text-anchor="middle" font-size="11.5" fill="#1e293b" font-weight="bold">取 receiver（非 static/indy）</text>
+  <text x="240" y="409" text-anchor="middle" font-size="10" fill="#6b7280">num_parameters → argument_address 回退一格</text>
+
+  <rect x="420" y="374" width="340" height="44" rx="8" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.3"/>
+  <text x="590" y="393" text-anchor="middle" font-size="11.5" fill="#1e293b" font-weight="bold">压"解释器返回地址"</text>
+  <text x="590" y="409" text-anchor="middle" font-size="10" fill="#6b7280">按 tos_type 从 invoke_return_entry_table 取表项</text>
+
+  <!-- ============ 第 3 段：分派（橙/绿） ============ -->
+  <line x1="450" y1="434" x2="450" y2="458" stroke="#f59e0b" stroke-width="1.8" marker-end="url(#arwO)"/>
+  <rect x="60" y="460" width="780" height="140" rx="12" fill="#fffbeb" stroke="#f59e0b" stroke-width="1.4" stroke-dasharray="6 4"/>
+  <text x="80" y="482" font-size="13" font-weight="bold" fill="#b45309">③ 分派 · invokevirtual_helper（:3435）</text>
+
+  <!-- vfinal 分支 -->
+  <rect x="90" y="496" width="230" height="88" rx="8" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.4"/>
+  <text x="205" y="516" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#1e293b">is_vfinal（final/private）</text>
+  <text x="205" y="534" text-anchor="middle" font-size="10" fill="#6b7280">_method 已是 Method*</text>
+  <text x="205" y="551" text-anchor="middle" font-size="10" fill="#6b7280">null_check + profile</text>
+  <text x="205" y="568" text-anchor="middle" font-size="10" fill="#b45309" font-weight="bold">直接跳，不查表</text>
+
+  <!-- 查表分支 -->
+  <rect x="350" y="496" width="230" height="88" rx="8" fill="#ecfdf5" stroke="#10b981" stroke-width="1.4"/>
+  <text x="465" y="516" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#1e293b">非 final（多态）</text>
+  <text x="465" y="534" text-anchor="middle" font-size="10" fill="#6b7280">load_klass（取接收者类）</text>
+  <text x="465" y="551" text-anchor="middle" font-size="10" fill="#6b7280">profile_virtual_call</text>
+  <text x="465" y="568" text-anchor="middle" font-size="10" fill="#047857" font-weight="bold">lookup_virtual_method → 1 条 movptr</text>
+
+  <!-- itable -->
+  <rect x="610" y="496" width="220" height="88" rx="8" fill="#f0fdfa" stroke="#14b8a6" stroke-width="1.4"/>
+  <text x="720" y="516" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#1e293b">invokeinterface</text>
+  <text x="720" y="534" text-anchor="middle" font-size="10" fill="#6b7280">forced_virtual → 走左路</text>
+  <text x="720" y="551" text-anchor="middle" font-size="10" fill="#6b7280">否则 itable 线性扫描</text>
+  <text x="720" y="568" text-anchor="middle" font-size="10" fill="#0f766e" font-weight="bold">lookup_interface_method</text>
+
+  <!-- ============ 底部：最后一跳 ============ -->
+  <line x1="450" y1="460" x2="450" y2="0" stroke="none"/>
+  <rect x="250" y="570" width="400" height="42" rx="10" fill="#064e3b" stroke="#10b981" stroke-width="1.6"/>
+  <text x="450" y="589" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#d1fae5">最后一跳 · jump_from_interpreted（interp_masm_x86.cpp:715）</text>
+  <text x="450" y="605" text-anchor="middle" font-size="10.5" fill="#a7f3d0">jmp Method::from_interpreted_offset() — 直接跳进被调方法的解释器入口</text>
+</svg>

@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>01 · 常量池站①：#12 在类文件里长什么样</title>
+<style>
+  :root{
+    --blue:#3b82f6; --purple:#8b5cf6; --orange:#f59e0b; --green:#10b981;
+    --bg:#f6f7fb; --card:#FFFFFF; --ink:#1f2937; --sub:#6b7280; --line:#e5e7eb;
+    --shadow:0 2px 6px rgba(17,24,39,.05);
+    --blue-bg:#eff6ff; --blue-bd:#bfdbfe;
+    --purple-bg:#f5f3ff; --purple-bd:#ddd6fe;
+    --orange-bg:#fffbeb; --orange-bd:#fde68a;
+    --green-bg:#ecfdf5; --green-bd:#a7f3d0;
+    --red:#ef4444; --red-bg:#fef2f2; --red-bd:#fecaca;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{background:var(--bg); color:var(--ink); font-family:'Segoe UI','Microsoft YaHei',sans-serif; padding:18px;}
+  .wrap{max-width:1180px; margin:0 auto;}
+  header{text-align:center; margin-bottom:18px}
+  header h1{font-size:23px; letter-spacing:.5px}
+  header h1 .mono{font-family:Consolas,monospace; color:var(--blue)}
+  header .sub{color:var(--sub); font-size:13px; margin-top:6px}
+  .badges{margin-top:12px; display:flex; gap:8px; justify-content:center; flex-wrap:wrap}
+  header .badge{font-size:12px; padding:3px 12px; border-radius:999px; border:1px solid var(--blue-bd);
+    background:var(--blue-bg); color:var(--blue); font-family:Consolas,monospace}
+  header .badge.purple{border-color:var(--purple-bd); background:var(--purple-bg); color:var(--purple)}
+  header .badge.green{border-color:var(--green-bd); background:var(--green-bg); color:var(--green)}
+  header .badge.orange{border-color:var(--orange-bd); background:var(--orange-bg); color:var(--orange)}
+  .steps{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px; justify-content:center;}
+  .step-pill{font-size:11.5px; padding:5px 11px; border-radius:999px; cursor:pointer; border:1.5px solid var(--line); background:var(--card); color:var(--sub); display:flex; align-items:center; justify-content:center; transition:all .2s; user-select:none; white-space:nowrap; min-width:30px;}
+  .step-pill.active{border-color:var(--blue); background:var(--blue); color:#fff; box-shadow:0 4px 12px rgba(59,130,246,.35);}
+  .step-pill.done{border-color:var(--green); background:var(--green); color:#fff;}
+  .grid{display:grid; grid-template-columns:290px 1fr 320px; gap:12px; margin-bottom:12px;}
+  .panel{background:var(--card); border-radius:12px; padding:14px; box-shadow:var(--shadow);}
+  .panel h2{font-size:14px; margin-bottom:10px; padding-left:8px; border-left:4px solid var(--green);}
+  .panel.p2 h2{border-color:var(--orange);}
+  .panel.p3 h2{border-color:var(--blue);}
+  .face{display:flex; align-items:center; gap:8px; padding:10px 12px; border-radius:10px; margin-bottom:8px;
+        background:var(--blue-bg); cursor:pointer; transition:all .3s; border:1.5px solid transparent;}
+  .face .num{width:26px; height:26px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:bold; color:#fff; font-size:13px;}
+  .face .tt{font-size:13px; font-weight:bold;}
+  .face .ds{font-size:11px; color:var(--sub); margin-top:2px;}
+  .face.f1 .num{background:var(--orange);} .face.f2 .num{background:var(--blue);} .face.f3 .num{background:var(--purple);} .face.f4 .num{background:var(--green);}
+  .face.on{border-color:var(--orange); background:var(--orange-bg); box-shadow:var(--shadow);}
+  .face.f2.on{border-color:var(--blue); background:var(--blue-bg);}
+  .face.f3.on{border-color:var(--purple); background:var(--purple-bg);}
+  .face.f4.on{border-color:var(--green); background:var(--green-bg);}
+  .note{margin-top:10px; font-size:11.5px; color:var(--sub); background:#f3f4f6; border-radius:8px; padding:7px 9px;}
+  .stageBox{background:#111827; border-radius:10px; padding:10px 12px; font-family:Consolas,monospace; font-size:12px; line-height:1.75; color:#e5e7eb; min-height:230px; white-space:pre;}
+  .stageBox .hl{background:#4a3410; border-radius:3px; color:#fbbf24;}
+  .stageBox .dim{color:#64748b;}
+  .stageBox .grn{color:#a7f3d0;}
+  .stageBox .org{color:#fde68a;}
+  .stageBox .pur{color:#ddd6fe;}
+  .stageBox .blu{color:#bfdbfe;}
+  .stageBox .red{color:#fca5a5;}
+  .detail{margin-top:8px; font-size:12px; color:#4b5563; background:#f3f4f6; border-radius:8px; padding:7px 9px; min-height:34px;}
+  .src{background:#111827; border-radius:12px; padding:12px 14px; box-shadow:var(--shadow); margin-bottom:12px;}
+  .src h2{font-size:13px; color:#9ca3af; margin-bottom:8px;}
+  .src .code{font-family:Consolas,monospace; font-size:12px; line-height:1.7; white-space:pre; overflow-x:auto; color:#e5e7eb;}
+  .src .code .hl{background:#4a3410; border-radius:3px; color:#fbbf24;}
+  .src .code .dim{color:#64748b;}
+  .src .code .grn{color:#a7f3d0;}
+  .src .code .org{color:#fde68a;}
+  .src .code .pur{color:#ddd6fe;}
+  .src .code .blu{color:#bfdbfe;}
+  .scene{margin-top:8px; font-size:11px; color:#6b7280; background:#f3f4f6; border-radius:8px; padding:6px 8px;}
+  .ctl{display:flex; align-items:center; gap:10px; justify-content:center; padding:10px; background:var(--card); border-radius:12px; box-shadow:var(--shadow);}
+  .btn{width:44px; height:44px; border-radius:50%; border:none; background:var(--blue); color:#fff; font-size:16px; cursor:pointer; transition:all .15s; font-weight:bold;}
+  .btn:hover{transform:scale(1.08);}
+  .btn.green{background:var(--green);}
+  .btn.orange{background:var(--orange); width:52px; height:52px;}
+  .hint{font-size:12px; color:var(--sub);}
+  .stepDesc{font-size:14px; font-weight:normal; line-height:1.85; color:#334155; background:var(--blue-bg); border-radius:9px; padding:11px 16px; margin-bottom:12px; border-left:4px solid var(--blue);}
+  .stepDesc b{color:var(--blue); font-weight:600;}
+  .stepDesc code{color:#7c3aed; font-family:Consolas,monospace; background:rgba(139,92,246,.10); padding:0 5px; border-radius:4px; font-size:12.5px;}
+  .kbd{display:inline-block; border:1px solid var(--line); border-radius:4px; padding:0 6px; background:#fff; font-size:11px; color:#4b5563;}
+  @media(max-width:1000px){.grid{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1><span class="mono">Constant_Pool ①</span> · #12 在类文件里长什么样</h1>
+    <div class="sub">classfile/classFileParser.cpp · oops/constantPool.hpp · classfile/symbolTable.cpp · JDK 28 mainline</div>
+    <div class="badges">
+      <span class="badge orange">位置与槽位</span>
+      <span class="badge">12 种项解析</span>
+      <span class="badge purple">两遍 fixup</span>
+      <span class="badge green">挂载与闭环</span>
+    </div>
+  </header>
+
+  <div class="steps" id="pills"></div>
+  <div class="stepDesc" id="stepDesc">点击 ▶ 开始播放，Space 播放/暂停，← → 步进，R 重置</div>
+
+  <div class="grid">
+    <div class="panel p1">
+      <h2>四关</h2>
+      <div class="face f1 on" id="face1">
+        <div class="num">1</div>
+        <div><div class="tt">位置与槽位</div><div class="ds">cp_count → 槽位表 → tag</div></div>
+      </div>
+      <div class="face f2" id="face2">
+        <div class="num">2</div>
+        <div><div class="tt">12 种项解析</div><div class="ds">switch(tag)：Utf8/Class/ref/数值/句柄</div></div>
+      </div>
+      <div class="face f3" id="face3">
+        <div class="num">3</div>
+        <div><div class="tt">两遍 fixup</div><div class="ds">ClassIndex→UnresolvedClass / StringIndex→String</div></div>
+      </div>
+      <div class="face f4" id="face4">
+        <div class="num">4</div>
+        <div><div class="tt">挂载与闭环</div><div class="ds">set_constants 进 InstanceKlass</div></div>
+      </div>
+      <div class="note" id="fnote">当前：白话速览</div>
+    </div>
+
+    <div class="panel p2">
+      <h2>场景</h2>
+      <div class="stageBox" id="stage"></div>
+      <div class="detail" id="detail"></div>
+    </div>
+
+    <div class="panel p3">
+      <h2>源码</h2>
+      <div class="src">
+        <h2>classFileParser.cpp · constantPool.hpp</h2>
+        <div class="code" id="src"></div>
+      </div>
+      <div class="scene" id="scene"></div>
+    </div>
+  </div>
+
+  <div class="ctl">
+    <button class="btn" id="btnPrev" title="上一步 (←)">◀</button>
+    <button class="btn orange" id="btnPlay" title="播放/暂停 (Space)">▶</button>
+    <button class="btn" id="btnNext" title="下一步 (→)">▶</button>
+    <button class="btn green" id="btnReset" title="重置 (R)">↺</button>
+    <span class="hint"><span class="kbd">Space</span> 播放/暂停 · <span class="kbd">←</span> <span class="kbd">→</span> 步进 · <span class="kbd">R</span> 重置 · 点击步骤胶囊跳转</span>
+  </div>
+</div>
+
+<script>
+(() => {
+  const S = {
+    face1: document.getElementById('face1'),
+    face2: document.getElementById('face2'),
+    face3: document.getElementById('face3'),
+    face4: document.getElementById('face4'),
+    fnote: document.getElementById('fnote'),
+    stage: document.getElementById('stage'),
+    detail: document.getElementById('detail'),
+    src: document.getElementById('src'),
+    scene: document.getElementById('scene'),
+    desc: document.getElementById('stepDesc'),
+    pills: document.getElementById('pills'),
+  };
+  const COL = { blue:'#3b82f6', purple:'#8b5cf6', orange:'#f59e0b', green:'#10b981' };
+
+  function faces(n){
+    S.face1.className='face f1'+(n===1?' on':'');
+    S.face2.className='face f2'+(n===2?' on':'');
+    S.face3.className='face f3'+(n===3?' on':'');
+    S.face4.className='face f4'+(n===4?' on':'');
+  }
+  function stage(html){ S.stage.innerHTML = html; }
+  function src(html){ S.src.innerHTML = html; }
+  function scene(txt){ S.scene.innerHTML = txt; }
+
+  const steps = [
+    // 0 白话速览
+    { d:`<span style="display:inline-block;background:#dbeafe;color:#1d4ed8;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">白话速览</span> 这一站在演什么：<b>javac 出门前写的一张「点名册」</b>。
+<b>比喻</b>：.class 文件 = 一个行李箱。常量池 = 行李箱里的<b>名录簿</b>，每个格子一个编号（#1、#2、#3…），格子里只写<b>名字和字面量</b>，不写「人」——比如 #12 只写着「Dog.speak()V」，至于 Dog 是谁、speak 在哪儿，一概不管。
+<b>技术对照</b>：名录簿 = ConstantPool；格子里写的 = 常量池项（CONSTANT_Utf8 / CONSTANT_Class / CONSTANT_Methodref…）；编号 = cp index；簿子开头写着总格数 = cp_count；每格开头一个 1 字节「这是什么类型」= tag。
+<b>记住一句</b>：常量池只存<b>名字</b>，不存<b>人</b>；把名字变成人的是「解析」，下一站再讲。
+下面每一步都会用术语讲同一件事，忘了就把点名册比喻拉回来。`,
+      fn:()=>{
+        faces(1); S.fnote.innerHTML='当前：白话速览<br>先讲人话';
+        stage(`<span class="blu">白话速览 · javac 出门前的点名册</span>
+<span class="dim">比喻：.class = 行李箱 · 常量池 = 名录簿</span>
+<span class="dim">每格一个编号：#1 #2 #3 … #12</span>
+<span class="dim">格子里只写名字，不写人</span>
+<span class="org">#12 → Methodref → "Dog.speak()V"</span>
+<span class="grn">把名字变成人 = 解析（下一站）</span>`);
+        S.detail.textContent='这一站回答一个问题：invokevirtual #12 里的 #12，在 .class 文件里到底长什么样。';
+        src(`<span class="dim">// 术语对照（人话 → 黑话）</span>
+<span class="blu">名录簿</span>      → <span class="grn">ConstantPool</span>
+<span class="blu">格子编号</span>    → <span class="grn">cp index（#12）</span>
+<span class="blu">格子里写的</span>  → <span class="grn">CONSTANT_* 常量池项</span>
+<span class="blu">总格数</span>      → <span class="grn">cp_count（u2）</span>
+<span class="blu">类型标签</span>    → <span class="grn">tag（u1，17 种）</span>
+<span class="blu">名字→人</span>     → <span class="grn">解析 resolve（站②）</span>`);
+        scene('白话速览：<b>点名册</b>');
+      }},
+    // 1 类文件坐标
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：翻开 .class 文件，先找到常量池的坐标——开头第 9 字节起有个 cp_count，告诉你后面跟着多少格。
+.class 文件头是固定格式：<code>magic</code>（4 字节 CAFEBABE）+ <code>minor/major version</code>（4 字节）+ <code>cp_count</code>（2 字节）+ 常量池表 + 后续（接口/字段/方法/属性表）。JVM 读到这里先 <code>get_u2_fast()</code> 取 cp_count（classFileParser.cpp:6046），然后按这个数 <b>一次性分配好整张表</b>（:6058 → <code>ConstantPool::allocate</code>，constantPool.cpp:78）。
+<b>为什么先分配</b>：常量池是随机访问的（任何 #index 都可能被引用），必须是一块「知道总大小、按下标直取」的结构，而不是链式追加。`,
+      fn:()=>{
+        faces(1); S.fnote.innerHTML='当前：关卡 ①<br>位置与槽位';
+        stage(`<span class="org">.class 文件开头（classFileParser.cpp:6024 parse_stream）</span>
+<span class="dim">┌────────────────────────────────────────┐</span>
+<span class="blu">│ magic          u4   CAFEBABE   (:6033) │</span>
+<span class="blu">│ minor+major    u4   0x0034     (:6043) │</span>
+<span class="org">│ cp_count       u2   = 16       (:6046) │</span>
+<span class="grn">│ 常量池表       16 格（tag+内容）        │</span>
+<span class="dim">│ interfaces_count u2                   │</span>
+<span class="dim">│ fields / methods / attributes         │</span>
+<span class="dim">└────────────────────────────────────────┘</span>
+<span class="grn">ConstantPool::allocate 一次分配整张表</span>
+<span class="dim">constantPool.cpp:78 · 分配 tags 数组 + 槽位</span>`);
+        S.detail.textContent='读 cp_count（:6046）→ ConstantPool::allocate（:6058 / constantPool.cpp:78）：按总数一次性分配，按下标直取。';
+        src(`<span class="dim">// classFileParser.cpp:6046 读总格数</span>
+<span class="org">u2 cp_size = stream->get_u2_fast();</span>
+<span class="dim">// classFileParser.cpp:6058 分配整张表</span>
+<span class="org">ConstantPool* cp = ConstantPool::allocate(</span>
+<span class="org">    loader_data, cp_size, CHECK);</span>
+<span class="dim">// constantPool.cpp:78 ConstantPool::allocate</span>
+<span class="blu">//   new ConstantPool(...) + _tags = 新数组</span>
+<span class="grn">// 之后所有 #index 都是这张表的数组下标</span>`);
+        scene('场景1：<b>读 cp_count，分配整张常量池表</b>');
+      }},
+    // 2 tag 表与循环
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：现在开始一格一格填表：每格第一个字节是 tag（告诉 JVM「这格是什么类型」），JVM 按 tag 分头处理。注意从第 1 格开始——第 0 格是保留位。
+第一遍解析 <code>parse_constant_pool_entries</code>（classFileParser.cpp:171）用 <code>for (int index = 1; ...)</code> 从 1 号槽起步（:196，0 号槽 JVM 自留，恒为 invalid）；循环体先 <code>cfs->get_u1_fast()</code> 读 1 字节 tag（:200），然后 <code>switch (tag)</code>（:201）分派到 17 个分支。后面 8 步就是把这 17 个分支逐个过一遍。`,
+      fn:()=>{
+        faces(1); S.fnote.innerHTML='当前：关卡 ①<br>位置与槽位';
+        stage(`<span class="org">第一遍：parse_constant_pool_entries (:171)</span>
+<span class="dim">for (index = 1; index < length; index++) {</span>
+<span class="dim">  tag = stream->get_u1_fast();  // :200</span>
+<span class="org">  switch (tag) {                // :201</span>
+<span class="blu">    case 1  Utf8    case 7  Class</span>
+<span class="blu">    case 9  Fieldref  case 10 Methodref</span>
+<span class="blu">    case 11 InterfaceMethodref case 12 NameAndType</span>
+<span class="blu">    case 8  String   case 3/4/5/6 数值</span>
+<span class="blu">    case 15/16/17/18 句柄类   case 19/20 Module</span>
+<span class="dim">  }</span>
+<span class="dim">}</span>
+<span class="grn">0 号槽保留：恒为 invalid，永不被引用</span>`);
+        S.detail.textContent='循环 :196 从 index=1 起步；每格先读 tag（:200），再 switch 分发（:201）——后面几步逐个看分支。';
+        src(`<span class="dim">// classFileParser.cpp:196-201</span>
+<span class="org">for (int index = 1; index < length; index++) {</span>
+<span class="org">  const u1 tag = cfs->get_u1_fast();</span>
+<span class="org">  switch (tag) {</span>
+<span class="grn">    case JVM_CONSTANT_Utf8:  ...  // :334</span>
+<span class="grn">    case JVM_CONSTANT_Class: ...  // :202</span>
+<span class="dim">    ...17 个 case...              // :201-390</span>
+<span class="org">  }</span>
+<span class="org">}</span>
+<span class="dim">// 外部 tag 定义：classfile_constants.h.template:97-116</span>`);
+        scene('场景2：<b>逐格读 tag，switch 分发</b>');
+      }},
+    // 3 Utf8 + SymbolTable
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：最常见的一项：字符串（类名、方法名、签名的原材料）。JVM 不傻存——先查全局 SymbolTable，这个字符串<b>已经有人用过了就直接复用</b>，只有头一回才真插进去。
+CONSTANT_Utf8（tag=1）分支在 classFileParser.cpp:334：先 <code>SymbolTable::lookup_only(utf8_buffer, utf8_length, hash)</code> 查重（:349，symbolTable.cpp:446 实现，只查不加）；没查到的先攒进批量数组（:352-366），最后 <code>SymbolTable::new_symbols(...)</code> 一次性插入（:358，symbolTable.cpp:485 逐个 do_add_if_needed）；命中的直接 <code>cp->symbol_at_put(index, result)</code> 写槽（:368）。
+<b>为什么去重</b>：一个 JVM 里 "speak" 这种名字可能被几千个类引用，每个都存一份太浪费——Symbol 表全局共享，类与类之间共用同一个 Symbol 对象。`,
+      fn:()=>{
+        faces(2); S.fnote.innerHTML='当前：关卡 ②<br>12 种项解析';
+        stage(`<span class="org">CONSTANT_Utf8（tag=1，:334）</span>
+<span class="dim">"speak" 来了 → 先查 SymbolTable</span>
+<span class="blu">  lookup_only("speak", hash)   :349</span>
+<span class="pur">  ┌─ 已存在？→ symbol_at_put 复用  :368</span>
+<span class="grn">  └─ 头一回？→ new_symbols 插入   :358</span>
+<span class="dim">SymbolTable（全局一张，类间共享）</span>
+<span class="grn">  "speak" → Symbol#A   "Dog" → Symbol#B</span>
+<span class="grn">  "()V"   → Symbol#C   "run" → Symbol#D</span>
+<span class="dim">同一字符串只存一份，省内存</span>`);
+        S.detail.textContent='Utf8 分支（:334）：lookup_only 查重（:349）→ 未命中批量 new_symbols（:358）→ 命中直接复用（:368）。';
+        src(`<span class="dim">// classFileParser.cpp:349-368</span>
+<span class="org">Symbol* result = SymbolTable::lookup_only(</span>
+<span class="org">    utf8_buffer, utf8_length, hash);   // 只查不加</span>
+<span class="org">if (result == nullptr) {</span>
+<span class="dim">  // 头一回：攒进批量数组</span>
+<span class="org">  names[index]=utf8_buffer; ...</span>
+<span class="org">} else {</span>
+<span class="org">  cp->symbol_at_put(index, result);    // 复用</span>
+<span class="org">}</span>
+<span class="dim">// 收尾批量插入 symbolTable.cpp:485 new_symbols</span>
+<span class="grn">//   → do_add_if_needed(:503) 真正去重入表</span>`);
+        scene('场景3：<b>Utf8 字符串 → SymbolTable 全局去重</b>');
+      }},
+    // 4 Class
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：碰到「类」项（tag=7）先不急着加载类——只记下「类名写在 Utf8 第几格」（name_index），真正去加载类是解析阶段的事。
+CONSTANT_Class 分支（classFileParser.cpp:202）：<code>cp->klass_index_at_put(index, name_index)</code> 把「这个类项的名字索引」暂存进槽位。此刻它只是个「指路牌」：指向某个 Utf8 格子里存的类名字符串（比如 "java/lang/String"）。类本体（Klass）还没影儿。
+<b>注意</b>：这是"两遍 fixup"的伏笔——name_index 可能指向<b>后面</b>才读到的 Utf8 格，所以第一遍只能先存索引，等所有 Utf8 都进表后第二遍再转正（第 11-13 步细讲）。`,
+      fn:()=>{
+        faces(2); S.fnote.innerHTML='当前：关卡 ②<br>12 种项解析';
+        stage(`<span class="org">CONSTANT_Class（tag=7，:202）</span>
+<span class="dim">槽 #5 ┌─────────────────────────┐</span>
+<span class="dim">      │ tag = 7 (Class)         │</span>
+<span class="org">      │ name_index = 3          │──→ 槽 #3: Utf8 "java/lang/String"</span>
+<span class="dim">      └─────────────────────────┘</span>
+<span class="dim">只存「名字在第几格」，不加载类本体</span>
+<span class="grn">klass_index_at_put(index, name_index)</span>
+<span class="dim">真正的类（Klass*）？解析阶段才有</span>`);
+        S.detail.textContent='Class 分支（:202）：klass_index_at_put 暂存 name_index——「指路牌」指向 Utf8 格。';
+        src(`<span class="dim">// classFileParser.cpp:202</span>
+<span class="org">case JVM_CONSTANT_Class: {</span>
+<span class="org">  u2 name_index = cfs->get_u2_fast();</span>
+<span class="org">  cp->klass_index_at_put(index, name_index);</span>
+<span class="dim">  // 内部暂存为 JVM_CONSTANT_ClassIndex</span>
+<span class="dim">  // 第二遍再转 UnresolvedClass（:507）</span>
+<span class="org">}</span>
+<span class="grn">// 类没加载、没解析——只是记了个名字下标</span>`);
+        scene('场景4：<b>CONSTANT_Class 暂存 name_index</b>');
+      }},
+    // 5 三种 ref
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：字段引用、方法引用、接口方法引用——这三兄弟是「双指针」结构：指向所属类 + 指向名字签名对。#12 就是这样一个 Methodref。
+三个分支（classFileParser.cpp:208/215/222）都是读两个 u2 再写入：<code>class_index</code>（所属类在第几格）+ <code>name_and_type_index</code>（名字+签名在第几格）。<code>invokevirtual #12</code> 的 #12 指向的正是 Methodref 项——它最终通过 class_index 找到 Dog、通过 name_and_type_index 找到 "speak:()V"。
+<b>结构就是链表</b>：#12(Methodref) → #3(Class "Dog") + #9(NameAndType "speak" "()V") → #1(Utf8 "Dog") + #2(Utf8 "speak")。一张图就能从字节码反推「调谁的方法」。`,
+      fn:()=>{
+        faces(2); S.fnote.innerHTML='当前：关卡 ②<br>12 种项解析';
+        stage(`<span class="org">三种引用（双指针结构）</span>
+<span class="dim">Fieldref(9)  :208  field_at_put</span>
+<span class="org">Methodref(10):215  method_at_put</span>
+<span class="dim">InterfaceMethodref(11):222</span>
+<span class="dim">槽 #12 ┌──────────────────────────┐</span>
+<span class="dim">       │ tag = 10 (Methodref)      │</span>
+<span class="org">       │ class_index = 3           │──→ #3  Class "Dog"</span>
+<span class="org">       │ name_and_type_index = 9   │──→ #9  NameAndType</span>
+<span class="dim">       └──────────────────────────┘</span>
+<span class="grn">invokevirtual #12 = 顺着这双指针找名字</span>`);
+        S.detail.textContent='Fieldref/Methodref/InterfaceMethodref（:208/215/222）：class_index + name_and_type_index 双指针。';
+        src(`<span class="dim">// classFileParser.cpp:215（Methodref 为例）</span>
+<span class="org">case JVM_CONSTANT_Methodref: {</span>
+<span class="org">  u2 class_index = cfs->get_u2_fast();</span>
+<span class="org">  u2 nat_index   = cfs->get_u2_fast();</span>
+<span class="org">  cp->method_at_put(index, class_index, nat_index);</span>
+<span class="org">}</span>
+<span class="dim">// Fieldref :208 · InterfaceMethodref :222 同构</span>
+<span class="grn">// 双指针：类 + 名字签名对，最终都指向 Utf8</span>`);
+        scene('场景5：<b>三种 ref 项 = 类指针 + 名字签名指针</b>');
+      }},
+    // 6 NameAndType
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：NameAndType 是「名字 + 签名」这对信息的本体，是 ref 项链的最后一环。#12 → Methodref → NameAndType → 「speak」+「()V」。
+CONSTANT_NameAndType（tag=12，classFileParser.cpp:327）：读 <code>name_index</code>（方法名在 Utf8 第几格）+ <code>descriptor_index</code>（签名在 Utf8 第几格），<code>cp->name_and_type_at_put</code> 写入。
+<b>签名为什么单独一格</b>：方法重载靠签名区分——同名方法（speak() 和 speak(int)）的 name 一样、descriptor 不同，拆开存才能精确区分「调的是哪个 speak」。这也正是 LinkResolver 解析时「名字+签名」二元组匹配的来源。`,
+      fn:()=>{
+        faces(2); S.fnote.innerHTML='当前：关卡 ②<br>12 种项解析';
+        stage(`<span class="org">CONSTANT_NameAndType（tag=12，:327）</span>
+<span class="dim">槽 #9 ┌──────────────────────────┐</span>
+<span class="dim">      │ tag = 12 (NameAndType)    │</span>
+<span class="org">      │ name_index = 2            │──→ #2 Utf8 "speak"</span>
+<span class="org">      │ descriptor_index = 4      │──→ #4 Utf8 "()V"</span>
+<span class="dim">      └──────────────────────────┘</span>
+<span class="dim">链：#12 Methodref → #9 NameAndType → 名字+签名</span>
+<span class="grn">重载区分：同名不同 descriptor，签名独立成格</span>`);
+        S.detail.textContent='NameAndType（:327）：name_index + descriptor_index——名字和签名拆开存，重载靠签名区分。';
+        src(`<span class="dim">// classFileParser.cpp:327</span>
+<span class="org">case JVM_CONSTANT_NameAndType: {</span>
+<span class="org">  u2 name_index = cfs->get_u2_fast();</span>
+<span class="org">  u2 descriptor_index = cfs->get_u2_fast();</span>
+<span class="org">  cp->name_and_type_at_put(index, name_index,</span>
+<span class="org">                          descriptor_index);</span>
+<span class="org">}</span>
+<span class="grn">// name + descriptor 二元组 = 方法唯一标识</span>
+<span class="dim">// LinkResolver 解析时按这个二元组匹配（linkResolver.cpp:753）</span>`);
+        scene('场景6：<b>NameAndType = 名字 + 签名</b>');
+      }},
+    // 7 String
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：字符串字面量（代码里写的 "hello" 之类）也先不急着 intern，只记下「内容在 Utf8 第几格」。
+CONSTANT_String（tag=8，classFileParser.cpp:229）：<code>cp->string_index_at_put(index, string_index)</code>——暂存内容所在 Utf8 槽号。和 Class 一样，第一遍只存索引，第二遍转正（:516）。
+<b>和 Utf8 的区别</b>：Utf8 是「原材料」（符号名字），String 是「字面量」——它指向一个 Utf8 槽，含义是"代码里写了个字符串常量"。真正变成 Java String 对象（intern 进 StringTable）发生在运行期常量解析（constantPool.cpp:1394 string_at_impl → StringTable::intern :1400），这一站还没到。`,
+      fn:()=>{
+        faces(2); S.fnote.innerHTML='当前：关卡 ②<br>12 种项解析';
+        stage(`<span class="org">CONSTANT_String（tag=8，:229）</span>
+<span class="dim">代码：String s = "hello";</span>
+<span class="dim">槽 #7 ┌──────────────────────────┐</span>
+<span class="dim">      │ tag = 8 (String)          │</span>
+<span class="org">      │ string_index = 6          │──→ #6 Utf8 "hello"</span>
+<span class="dim">      └──────────────────────────┘</span>
+<span class="dim">只记「内容在 Utf8 第几格」</span>
+<span class="grn">真正 new 出 String 对象？运行期 intern</span>
+<span class="dim">constantPool.cpp:1400 StringTable::intern</span>`);
+        S.detail.textContent='String 分支（:229）：string_index_at_put 暂存——字面量指向 Utf8 槽，运行期才 intern。';
+        src(`<span class="dim">// classFileParser.cpp:229</span>
+<span class="org">case JVM_CONSTANT_String: {</span>
+<span class="org">  u2 string_index = cfs->get_u2_fast();</span>
+<span class="org">  cp->string_index_at_put(index, string_index);</span>
+<span class="dim">  // 内部暂存 JVM_CONSTANT_StringIndex</span>
+<span class="dim">  // 第二遍转 String（:516）</span>
+<span class="org">}</span>
+<span class="grn">// String 项 ≠ String 对象：只是字面量指路牌</span>`);
+        scene('场景7：<b>CONSTANT_String 暂存 string_index</b>');
+      }},
+    // 8 数值类
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：数值字面量（42、3.14 这种）直接把值塞进格子；Long/Double 比较宽，占两格，第二格自动跳过、不作数。
+四个分支（classFileParser.cpp:291/297/303/315）：<code>JVM_CONSTANT_Integer</code> → <code>int_at_put</code>（4 字节直接存）；<code>Float</code> → <code>float_at_put</code>；<code>Long</code> → <code>long_at_put</code>；<code>Double</code> → <code>double_at_put</code>。Long/Double 特殊：占两个槽位，读完后 <code>index++</code> 跳过下一格（:312/:324）——这是 JVMS 的老规矩（64 位值按两槽计），所以"常量池长度 ≠ 项数量"。
+<b>为什么要占两格</b>：class 文件里常量池索引是 u2（2 字节），而槽位按"一个引用"计。64 位值在历史上需要连续两槽存放，为了保持索引语义统一，Long/Double 就占两个索引号（第二个恒为 invalid，第二遍会校验 :473）。`,
+      fn:()=>{
+        faces(2); S.fnote.innerHTML='当前：关卡 ②<br>12 种项解析';
+        stage(`<span class="org">数值字面量（tag 3/4/5/6）</span>
+<span class="dim">Integer :291 int_at_put     4 字节</span>
+<span class="dim">Float   :297 float_at_put   4 字节</span>
+<span class="org">Long    :303 long_at_put    8 字节 ┬ 占两格</span>
+<span class="org">Double  :315 double_at_put  8 字节 ┘ (:312/:324 index++)</span>
+<span class="dim">槽 #6 ┌──────────────────────┐</span>
+<span class="dim">      │ tag=5 Long  value=42 │</span>
+<span class="dim">      │ tag=0 invalid        │ ← 第二格自动跳过</span>
+<span class="dim">      └──────────────────────┘</span>
+<span class="grn">常量池长度 ≠ 项数量：64 位值占双槽</span>`);
+        S.detail.textContent='Integer/Float/Long/Double（:291/:297/:303/:315）；Long/Double 占双槽（:312/:324）。';
+        src(`<span class="dim">// classFileParser.cpp:303（Long 为例）</span>
+<span class="org">case JVM_CONSTANT_Long: {</span>
+<span class="org">  u8 l = cfs->get_u8_fast();</span>
+<span class="org">  cp->long_at_put(index, l);</span>
+<span class="org">  index++;   // :312 跳过第二槽</span>
+<span class="org">}</span>
+<span class="dim">// Double :315-325 同构（:324 index++）</span>
+<span class="grn">// 第二遍校验 :473：long/double 下一格必须 invalid</span>`);
+        scene('场景8：<b>数值直存，Long/Double 占双槽</b>');
+      }},
+    // 9 句柄类
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：还有四项「高级引用」（方法句柄、方法类型、动态常量、动态调用点）——都是 Java 7+ 动态能力用的，第一遍也只记索引，不深挖。
+四个分支（classFileParser.cpp:235/249/259/275）：<code>MethodHandle</code>（tag=15，:235）→ <code>method_handle_index_at_put</code>，存 kind + ref_index；<code>MethodType</code>（tag=16，:249）→ <code>method_type_index_at_put</code>，存 descriptor_index；<code>Dynamic</code>（tag=17，:259）→ <code>dynamic_constant_at_put</code>，存 bsm_index + name_and_type_index；<code>InvokeDynamic</code>（tag=18，:275）→ <code>invoke_dynamic_at_put</code>，同构。
+<b>一句话</b>：这几项都是"将来要调用 BootstrapMethods 干活"的占位符——它们的解析逻辑复杂，但类文件解析阶段一律先记索引，跟 Class/String 一样按兵不动。`,
+      fn:()=>{
+        faces(2); S.fnote.innerHTML='当前：关卡 ②<br>12 种项解析';
+        stage(`<span class="org">句柄与动态类（高级项）</span>
+<span class="dim">MethodHandle(15) :235  kind + ref_index</span>
+<span class="dim">MethodType(16)  :249  descriptor_index</span>
+<span class="org">Dynamic(17)     :259  bsm + name_and_type</span>
+<span class="org">InvokeDynamic(18):275 bsm + name_and_type</span>
+<span class="dim">共同点：都是"将来要干活"的占位符</span>
+<span class="dim">  → 记下索引，等 BootstrapMethods</span>
+<span class="grn">第一遍统统按兵不动，只记位置</span>`);
+        S.detail.textContent='MethodHandle/MethodType/Dynamic/InvokeDynamic（:235/:249/:259/:275）：一律先记索引。';
+        src(`<span class="dim">// classFileParser.cpp:235-275 四个 case</span>
+<span class="org">case JVM_CONSTANT_MethodHandle:</span>
+<span class="org">  cp->method_handle_index_at_put(index, kind, ref);</span>
+<span class="org">case JVM_CONSTANT_MethodType:</span>
+<span class="org">  cp->method_type_index_at_put(index, desc);</span>
+<span class="org">case JVM_CONSTANT_Dynamic:</span>
+<span class="org">  cp->dynamic_constant_at_put(index, bsm, nat);</span>
+<span class="org">case JVM_CONSTANT_InvokeDynamic:</span>
+<span class="org">  cp->invoke_dynamic_at_put(index, bsm, nat);</span>
+<span class="grn">// 真正解析要等 BootstrapMethods 属性（后续）</span>`);
+        scene('场景9：<b>四个高级项：句柄/动态，先记索引</b>');
+      }},
+    // 10 Module/Package 与非法 tag
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：还有两个「模块专用项」和一条兜底红线——普通类里见到 Module/Package 就算坏文件，非法 tag 直接拒绝加载。
+<code>JVM_CONSTANT_Module</code>（tag=19）/ <code>JVM_CONSTANT_Package</code>（tag=20）只允许出现在 <code>module-info.class</code>（classFileParser.cpp:372 附近记 bad constant）；<code>switch</code> 的 <code>default</code> 分支（:384）对任何未知 tag 直接 <code>classfile_parse_error</code>——类文件格式错误的最后一道闸。
+<b>边界即安全</b>：switch 没有"忽略未知 tag"的选项，遇到不认识的一律报错。这保证了 .class 文件的结构在解析入口就被钉死，后面所有阶段（链接/初始化）都可以放心假设常量池是合法的。`,
+      fn:()=>{
+        faces(2); S.fnote.innerHTML='当前：关卡 ②<br>12 种项解析';
+        stage(`<span class="org">Module/Package 与非法 tag（边界）</span>
+<span class="dim">Module(19)  :372  只在 module-info.class</span>
+<span class="dim">Package(20) :372  普通类里出现 = 坏文件</span>
+<span class="org">default     :384  classfile_parse_error</span>
+<span class="dim">┌──────────────────────────────┐</span>
+<span class="dim">│ 未知 tag → 直接抛错，绝不忽略 │</span>
+<span class="dim">└──────────────────────────────┘</span>
+<span class="grn">结构在入口钉死，后续阶段放心假设合法</span>`);
+        S.detail.textContent='Module/Package 限 module-info（:372）；default 分支 :384 对未知 tag 直接 classfile_parse_error。';
+        src(`<span class="dim">// classFileParser.cpp:372-390</span>
+<span class="org">case JVM_CONSTANT_Module:</span>
+<span class="org">case JVM_CONSTANT_Package:</span>
+<span class="org">  ...bad_constant = true;   // :372</span>
+<span class="org">  break;</span>
+<span class="org">default:</span>
+<span class="org">  classfile_parse_error(</span>
+<span class="org">    "Bad constant pool tag %u", tag); // :384</span>
+<span class="grn">// 没有"忽略"选项：未知即拒绝</span>`);
+        scene('场景10：<b>模块项限用 + 未知 tag 拒绝加载</b>');
+      }},
+    // 11 暂存态与两遍设计
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：第一遍跑完，Class 和 String 都还没「定稿」——内部 tag 还是 ClassIndex(101)/StringIndex(102)。为什么要第二遍？因为类名可能指向<b>后面</b>才读到的 Utf8，得等所有 Utf8 都进表才能转正。
+类文件里的 tag 是<b>外部格式</b>（classfile_constants.h.template:97-116：Utf8=1…InvokeDynamic=18, Module=19, Package=20）；HotSpot 在内存里另有<b>内部 tag</b>（constantTag.hpp:39-48）：<code>UnresolvedClass=100</code>、<code>ClassIndex=101</code>、<code>StringIndex=102</code>、<code>UnresolvedClassInError=103</code> 等——第一遍先以 101/102 暂存，第二遍按"Utf8 已全部就绪"的前提转正。
+<b>核心原因</b>：常量池是顺序读的，第 1 格的 Class 可能引用第 20 格的 Utf8——第一遍时第 20 格还没读，所以只能先存索引号，读完一圈再统一解析。`,
+      fn:()=>{
+        faces(3); S.fnote.innerHTML='当前：关卡 ③<br>两遍 fixup';
+        stage(`<span class="org">第一遍结束的暂存态</span>
+<span class="dim">外部 tag（class 文件里）    内部 tag（内存里）</span>
+<span class="blu">Class(7)   →  ClassIndex(101)   暂存 name_index</span>
+<span class="blu">String(8)  →  StringIndex(102)  暂存 string_index</span>
+<span class="dim">其他项    →  直接定稿（Utf8/ref/数值…）</span>
+<span class="dim">┌────────────────────────────────┐</span>
+<span class="dim">│ #1 Class 可能指向 #20 Utf8     │</span>
+<span class="dim">│ 顺序读时 #20 还没读到          │</span>
+<span class="dim">│ → 先记索引，第二遍再转正       │</span>
+<span class="dim">└────────────────────────────────┘</span>
+<span class="grn">两遍设计 = 顺序读的代价与解法</span>`);
+        S.detail.textContent='内部 tag：constantTag.hpp:39-48（ClassIndex=101/StringIndex=102/UnresolvedClass=100）；顺序读 → 前向引用 → 两遍 fixup。';
+        src(`<span class="dim">// constantTag.hpp:39-48 内部 tag 枚举</span>
+<span class="org">Invalid                = 0</span>
+<span class="org">UnresolvedClass        = 100</span>
+<span class="org">ClassIndex             = 101</span>
+<span class="org">StringIndex            = 102</span>
+<span class="org">UnresolvedClassInError = 103</span>
+<span class="dim">// 外部 tag 定义：classfile_constants.h.template:97-116</span>
+<span class="grn">// 内部 tag 是 HotSpot 私有，不出现在 .class 文件</span>`);
+        scene('场景11：<b>第一遍暂存态：ClassIndex/StringIndex</b>');
+      }},
+    // 12 fixup① ClassIndex → UnresolvedClass
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：第二遍开始「转正」：ClassIndex 升级成 UnresolvedClass（内部 tag 100），并给每个类项发一个「未来解析用的槽位号」（resolved_klass_index）。
+第二遍循环（classFileParser.cpp:436-441，index 从 1 重新扫）：遇 <code>JVM_CONSTANT_ClassIndex</code>（:501）→ <code>cp->unresolved_klass_at_put(index, class_index, num_klasses++)</code>（:507）——tag 变 100，同时把计数器的下一个值当作 resolved_klass_index 分配出去。这个 index 将来指向 <code>_resolved_klasses</code> 数组（constantPool.hpp:97）的哪个格，就是"这个类解析成真 Klass 后放哪"。
+<b>为什么现在就能分配</b>：所有 Utf8 已进表，name_index 可以放心解析成 Symbol；类还没加载（是"未解析类"），但槽位已预留——名字是确定的，位子先占好。`,
+      fn:()=>{
+        faces(3); S.fnote.innerHTML='当前：关卡 ③<br>两遍 fixup';
+        stage(`<span class="org">第二遍 fixup①：ClassIndex → UnresolvedClass</span>
+<span class="dim">for (index = 1; index < length; index++) {  :436</span>
+<span class="blu">  ClassIndex(101) ──(:507)──► UnresolvedClass(100)</span>
+<span class="org">  + 分配 resolved_klass_index = num_klasses++</span>
+<span class="dim">槽 #5 ┌──────────────────────────────┐</span>
+<span class="dim">      │ tag = 100 (UnresolvedClass)   │</span>
+<span class="org">      │ name_index = 3  "Dog"         │</span>
+<span class="org">      │ resolved_klass_index = 2      │──► _resolved_klasses[2]（预留）</span>
+<span class="dim">      └──────────────────────────────┘</span>
+<span class="grn">名字确定、位子先占，类本体等解析</span>`);
+        S.detail.textContent='fixup①（:501-508）：ClassIndex → UnresolvedClass + 分配 resolved_klass_index（指向 _resolved_klasses 数组）。';
+        src(`<span class="dim">// classFileParser.cpp:501-508</span>
+<span class="org">case JVM_CONSTANT_ClassIndex: {</span>
+<span class="org">  u2 class_index = cp->klass_index_at(index);</span>
+<span class="org">  cp->unresolved_klass_at_put(</span>
+<span class="org">      index, class_index, num_klasses++);</span>
+<span class="org">}</span>
+<span class="dim">// _resolved_klasses 数组：constantPool.hpp:97</span>
+<span class="grn">// 运行时解析成功 → release_store 写回（constantPool.cpp:713）</span>`);
+        scene('场景12：<b>ClassIndex 转正 UnresolvedClass，预留解析槽</b>');
+      }},
+    // 13 fixup② StringIndex → String + 校验
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：StringIndex 同样转正成 String（内容锁定到 Utf8 格）；顺带把 Long/Double 的「第二格必须是空的」校验掉，防坏文件。
+fixup②（classFileParser.cpp:510-517）：遇 <code>JVM_CONSTANT_StringIndex</code> → <code>cp->unresolved_string_at_put(index, sym)</code>，把 Utf8 Symbol 直接写进槽位（:516），tag 变 <code>JVM_CONSTANT_String</code>。另一处校验在 :473-480：Long/Double 的第二槽必须仍是 invalid，否则说明文件结构错乱。
+<b>两个转正都依赖同一前提</b>：Utf8 全部就绪。至此常量池表的所有项要么定稿、要么处于"未解析但槽位明确"状态——整个表对运行时完全可寻址了。`,
+      fn:()=>{
+        faces(3); S.fnote.innerHTML='当前：关卡 ③<br>两遍 fixup';
+        stage(`<span class="org">第二遍 fixup②：StringIndex → String</span>
+<span class="dim">for (index = 1; index < length; index++) {</span>
+<span class="blu">  StringIndex(102) ──(:516)──► String(8)</span>
+<span class="org">  槽里直接写 Utf8 Symbol</span>
+<span class="dim">另外 :473-480 校验：</span>
+<span class="org">  Long/Double 的第二槽必须 invalid</span>
+<span class="dim">槽 #7 ┌──────────────────────────┐</span>
+<span class="dim">      │ tag = 8 (String)          │</span>
+<span class="org">      │ Symbol "hello"（已去重）  │</span>
+<span class="dim">      └──────────────────────────┘</span>
+<span class="grn">全部项定稿或"未解析但槽位明确"</span>`);
+        S.detail.textContent='fixup②（:510-517）：StringIndex → String 写 Symbol；:473-480 校验 Long/Double 双槽。';
+        src(`<span class="dim">// classFileParser.cpp:510-517</span>
+<span class="org">case JVM_CONSTANT_StringIndex: {</span>
+<span class="org">  int string_index = cp->string_index_at(index);</span>
+<span class="org">  Symbol* sym = cp->symbol_at(string_index);</span>
+<span class="org">  cp->unresolved_string_at_put(index, sym);</span>
+<span class="org">}</span>
+<span class="dim">// :473-480 Long/Double 槽校验</span>
+<span class="org">if (tag == Long || Double) {</span>
+<span class="org">  if (cp->tag_at(index+1) != Invalid) error;</span>
+<span class="org">}</span>
+<span class="grn">// 表对运行时完全可寻址</span>`);
+        scene('场景13：<b>StringIndex 转正 + 双槽校验</b>');
+      }},
+    // 14 挂载
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：表建好了，最后一步是「挂到类身上」——常量池和类互相指认，之后这个类里所有字节码都能用 #index 查自己的常量池。
+classFileParser.cpp:3961 <code>_cp->set_pool_holder(this_klass)</code>（常量池记住"我属于哪个类"）+ :3962 <code>this_klass->set_constants(_cp)</code>（类记住"我的常量池是它"）。字段本身在 instanceKlass.hpp:218 <code>ConstantPool* _constants</code>。
+<b>为什么互指</b>：解析常量池时要知道"谁在用我"（pool_holder 决定访问权限、类加载器）；字节码执行时要 O(1) 找到自己的常量池（_constants）。一对双向指针，各取所需。`,
+      fn:()=>{
+        faces(4); S.fnote.innerHTML='当前：关卡 ④<br>挂载与闭环';
+        stage(`<span class="org">挂载：常量池 ↔ 类 互指</span>
+<span class="dim">┌──────────┐          ┌──────────────┐</span>
+<span class="dim">│ Constant │──(_pool_holder)──►│ InstanceKlass │</span>
+<span class="org">│   Pool   │◄─(_constants)───│   this_klass  │</span>
+<span class="dim">└──────────┘          └──────────────┘</span>
+<span class="dim">   :3961 set_pool_holder(this_klass)</span>
+<span class="dim">   :3962 this_klass->set_constants(_cp)</span>
+<span class="dim">   instanceKlass.hpp:218 _constants</span>
+<span class="grn">双向指针：解析时找"谁在用我"，执行时找"我的表"</span>`);
+        S.detail.textContent='挂载（:3961-3962）：set_pool_holder + set_constants，互指建立（instanceKlass.hpp:218 _constants）。';
+        src(`<span class="dim">// classFileParser.cpp:3961-3962</span>
+<span class="org">_cp->set_pool_holder(this_klass);</span>
+<span class="org">this_klass->set_constants(_cp);</span>
+<span class="dim">// instanceKlass.hpp:218</span>
+<span class="org">ConstantPool* _constants;  // 类自己的常量池</span>
+<span class="grn">// 字节码 #index 从此 = 这张表的下标</span>`);
+        scene('场景14：<b>常量池挂上 InstanceKlass，互指建立</b>');
+      }},
+    // 15 闭环 + 下一站
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：回头看 invokevirtual #12——#12 就是这张表里的第 12 格：一个 Methodref 项，双指针指向「Dog」和「speak()V」。但它现在还是<b>名字</b>，不是<b>人</b>。怎么把名字变成真方法？下一站。
+第一遍（:171）逐格读 tag 填表 → 第二遍（:436）fixup 转正 → 挂载（:3961）。现在 Dog 类里每个方法的第一条字节码都能用 #index 找到自己的常量池项。但注意：<code>#12</code> 指向的 Methodref 只告诉你<b>要调谁</b>（字面意思），不告诉你<b>真正执行谁</b>——接收者实际类型决定"真正执行谁"，那是方法调用五站（method-call 系列）的 runtime 分派干的事。
+<b>下一站预告</b>：运行时常量池与解析——#12 如何从「名字」变成「Method* 真身」，klass_at_impl（constantPool.cpp:631）如何把 UnresolvedClass 解析成 Klass 并写回 _resolved_klasses。`,
+      fn:()=>{
+        faces(4); S.fnote.innerHTML='当前：关卡 ④<br>挂载与闭环';
+        stage(`<span class="org">站末闭环：#12 现在是</span>
+<span class="dim">invokevirtual #12</span>
+<span class="dim">  └─► #12 Methodref（:215）</span>
+<span class="org">        ├─► #3  Class  "Dog"（:202 → :507 转 UnresolvedClass）</span>
+<span class="org">        └─► #9  NameAndType "speak" "()V"（:327）</span>
+<span class="dim">               ├─► #2 Utf8 "speak"（:334 → SymbolTable）</span>
+<span class="dim">               └─► #4 Utf8 "()V"</span>
+<span class="grn">全是名字。把名字变成 Method* = 下一站</span>
+<span class="dim">（运行时常量池解析 · constantPool.cpp:631）</span>`);
+        S.detail.textContent='闭环：#12 = Methodref → Class + NameAndType → Utf8；名字 → 真身的转换在下一站（运行时常量池解析）。';
+        src(`<span class="dim">// 本站全流程回顾</span>
+<span class="org">① :6046 读 cp_count → :6058 allocate</span>
+<span class="org">② :171 第一遍逐格读 tag，switch 分发</span>
+<span class="org">   Utf8 去重（:349 lookup_only / :358 new_symbols）</span>
+<span class="org">③ :436 第二遍 fixup：</span>
+<span class="org">   ClassIndex→UnresolvedClass（:507）</span>
+<span class="org">   StringIndex→String（:516）</span>
+<span class="org">④ :3961 挂载 set_pool_holder / set_constants</span>
+<span class="grn">⑤ 下一站：constantPool.cpp:631 klass_at_impl</span>
+<span class="grn">   名字 → Method*/Klass* 真身</span>`);
+        scene('场景15：<b>站末闭环：#12 是名字，解析在下一站</b>');
+      }},
+  ];
+
+  // ---------- 控件 ----------
+  let cur = 0, playing = false, timer = null;
+  const N = steps.length;
+  const pillEls = [];
+  steps.forEach((st, i) => {
+    const p = document.createElement('div');
+    p.className = 'step-pill';
+    p.textContent = String(i);
+    p.title = '第 ' + i + ' 步';
+    p.onclick = () => { go(i); };
+    S.pills.appendChild(p);
+    pillEls.push(p);
+  });
+
+  function go(i) {
+    cur = Math.max(0, Math.min(N - 1, i));
+    steps[cur].fn();
+    S.desc.innerHTML = steps[cur].d;
+    pillEls.forEach((p, j) => {
+      p.className = 'step-pill' + (j === cur ? ' active' : (j < cur ? ' done' : ''));
+    });
+    S.scene.innerHTML += ' <span style="opacity:.72;font-size:12.5px;margin-left:6px">第 ' + cur + ' / ' + (N - 1) + ' 步</span>';
+  }
+  function next() { go(cur + 1); }
+  function prev() { go(cur - 1); }
+  function reset() { go(0); }
+  function toggle() {
+    if (playing) { clearInterval(timer); playing = false; S.btnPlay.textContent = '▶'; }
+    else {
+      playing = true; S.btnPlay.textContent = '⏸';
+      timer = setInterval(() => { if (cur >= N - 1) { toggle(); } else { next(); } }, 2600);
+    }
+  }
+
+  S.btnPrev = document.getElementById('btnPrev');
+  S.btnPlay = document.getElementById('btnPlay');
+  S.btnNext = document.getElementById('btnNext');
+  S.btnReset = document.getElementById('btnReset');
+  S.btnPrev.onclick = prev;
+  S.btnPlay.onclick = toggle;
+  S.btnNext.onclick = next;
+  S.btnReset.onclick = reset;
+
+  S.face1.onclick = () => go(0);
+  S.face2.onclick = () => go(2);
+  S.face3.onclick = () => go(11);
+  S.face4.onclick = () => go(14);
+
+  document.addEventListener('keydown', (e) => {
+    if (e.code === 'Space') { e.preventDefault(); toggle(); }
+    else if (e.key === 'ArrowRight') { next(); }
+    else if (e.key === 'ArrowLeft') { prev(); }
+    else if (e.key.toLowerCase() === 'r') { reset(); }
+  });
+
+  go(0);
+})();
+</script>
+</body>
+</html>

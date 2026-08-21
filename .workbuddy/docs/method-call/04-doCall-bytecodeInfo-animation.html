@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>04 · 方法调用全链路：C2 去虚化与内联交互动画</title>
+<style>
+  :root{
+    --blue:#3b82f6; --purple:#8b5cf6; --orange:#f59e0b; --green:#10b981;
+    --bg:#f6f7fb; --card:#FFFFFF; --ink:#1f2937; --sub:#6b7280; --line:#e5e7eb;
+    --shadow:0 2px 6px rgba(17,24,39,.05);
+
+    --blue-bg:#eff6ff; --blue-bd:#bfdbfe;
+    --purple-bg:#f5f3ff; --purple-bd:#ddd6fe;
+    --orange-bg:#fffbeb; --orange-bd:#fde68a;
+    --green-bg:#ecfdf5; --green-bd:#a7f3d0;
+    --red:#ef4444; --red-bg:#fef2f2; --red-bd:#fecaca;
+    --ink-2:#6b7280; --ink-3:#9ca3af;
+    --code-bg:#111827; --code-ink:#e5e7eb;
+  }
+  header{text-align:center;margin-bottom:18px}
+  header h1{font-size:25px;letter-spacing:.5px}
+  header h1 .mono{font-family:Consolas,monospace;color:var(--blue)}
+  header .sub{color:var(--ink-2);font-size:13.5px;margin-top:6px}
+  .badges{margin-top:12px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+  header .badge{font-size:12px;padding:3px 12px;border-radius:999px;border:1px solid var(--blue-bd);
+    background:var(--blue-bg);color:var(--blue);font-family:Consolas,monospace}
+  header .badge.purple{border-color:var(--purple-bd);background:var(--purple-bg);color:var(--purple)}
+  header .badge.green{border-color:var(--green-bd);background:var(--green-bg);color:var(--green)}
+  header .badge.orange{border-color:var(--orange-bd);background:var(--orange-bg);color:var(--orange)}
+  header .badge.red{border-color:var(--red-bd);background:var(--red-bg);color:var(--red)}
+
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{background:var(--bg); color:var(--ink); font-family:'Segoe UI','Microsoft YaHei',sans-serif; padding:18px;}
+  .wrap{max-width:1180px; margin:0 auto;}
+
+  h1{font-size:22px; margin-bottom:4px;}
+  .sub{font-size:13px; color:var(--sub); margin-bottom:14px;}
+  .steps{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:16px; justify-content:center;}
+  .step-pill{font-size:11.5px; padding:5px 11px; border-radius:999px; cursor:pointer; border:1.5px solid var(--line); background:var(--card); color:var(--sub); display:flex; align-items:center; justify-content:center; transition:all .2s; user-select:none; white-space:nowrap; min-width:30px;}
+  .step-pill.active{border-color:var(--blue); background:var(--blue); color:#fff; box-shadow:0 4px 12px rgba(59,130,246,.35);}
+  .step-pill.done{border-color:var(--green); background:var(--green); color:#fff;}
+
+  .grid{display:grid; grid-template-columns:300px 1fr 310px; gap:12px; margin-bottom:12px;}
+  .panel{background:var(--card); border-radius:12px; padding:14px; box-shadow:var(--shadow);}
+  .panel h2{font-size:14px; margin-bottom:10px; padding-left:8px; border-left:4px solid var(--green);}
+  .panel.p2 h2{border-color:var(--orange);}
+  .panel.p3 h2{border-color:var(--blue);}
+
+  .face{display:flex; align-items:center; gap:8px; padding:10px 12px; border-radius:10px; margin-bottom:8px;
+        background:#eff6ff; cursor:pointer; transition:all .3s; border:1.5px solid transparent;}
+  .face .num{width:26px; height:26px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:bold; color:#fff; font-size:13px;}
+  .face .tt{font-size:13px; font-weight:bold;}
+  .face .ds{font-size:11px; color:var(--sub); margin-top:2px;}
+  .face.f1 .num{background:var(--orange);} .face.f2 .num{background:var(--blue);} .face.f3 .num{background:var(--purple);} .face.f4 .num{background:var(--green);}
+  .face.on{border-color:var(--orange); background:#fffbeb; box-shadow:var(--shadow);}
+  .face.f1.on{border-color:var(--orange);}
+  .face.f2.on{border-color:var(--blue);}
+  .face.f3.on{border-color:var(--purple); background:#f5f3ff;}
+  .face.f4.on{border-color:var(--green); background:#ecfdf5;}
+  .note{margin-top:10px; font-size:11.5px; color:var(--sub); background:#f3f4f6; border-radius:8px; padding:7px 9px;}
+
+  .stageBox{background:#111827; border-radius:10px; padding:10px 12px; font-family:Consolas,monospace; font-size:12px; line-height:1.75; color:#e5e7eb; min-height:220px; white-space:pre;}
+  .stageBox .hl{background:#4a3410; border-radius:3px; color:#fbbf24;}
+  .stageBox .dim{color:#64748b;}
+  .stageBox .grn{color:#a7f3d0;}
+  .stageBox .org{color:#fde68a;}
+  .stageBox .pur{color:#ddd6fe;}
+  .stageBox .blu{color:#bfdbfe;}
+  .stageBox .red{color:#fca5a5;}
+  .vrow{display:flex; align-items:center; gap:6px; padding:2px 0; font-size:11.5px; font-family:Consolas,monospace;}
+  .vslot{display:inline-block; min-width:64px; text-align:center; border-radius:6px; padding:2px 8px; font-size:11px; background:#1f2937; color:#d1d5db;}
+  .vslot.hot{background:#4a3410; color:#fbbf24;}
+  .vslot.empty{background:#374151; color:#6b7280; border:1px dashed #4b5563;}
+  .detail{margin-top:8px; font-size:12px; color:#4b5563; background:#f3f4f6; border-radius:8px; padding:7px 9px; min-height:34px;}
+
+  .src{background:#111827; border-radius:12px; padding:12px 14px; box-shadow:var(--shadow); margin-bottom:12px;}
+  .src h2{font-size:13px; color:#9ca3af; margin-bottom:8px;}
+  .src .code{font-family:Consolas,monospace; font-size:12px; line-height:1.7; white-space:pre; overflow-x:auto; color:#e5e7eb;}
+  .src .code .hl{background:#4a3410; border-radius:3px; color:#fbbf24;}
+  .src .code .dim{color:#64748b;}
+  .src .code .grn{color:#a7f3d0;}
+  .src .code .org{color:#fde68a;}
+  .src .code .pur{color:#ddd6fe;}
+  .src .code .blu{color:#bfdbfe;}
+  .scene{margin-top:8px; font-size:11px; color:#6b7280; background:#f3f4f6; border-radius:8px; padding:6px 8px;}
+
+  .ctl{display:flex; align-items:center; gap:10px; justify-content:center; padding:10px; background:var(--card); border-radius:12px; box-shadow:var(--shadow);}
+  .btn{width:44px; height:44px; border-radius:50%; border:none; background:var(--blue); color:#fff; font-size:16px; cursor:pointer; transition:all .15s; font-weight:bold;}
+  .btn:hover{transform:scale(1.08);}
+  .btn.green{background:var(--green);}
+  .btn.orange{background:var(--orange); width:52px; height:52px;}
+  .hint{font-size:12px; color:var(--sub);}
+  .stepDesc{font-size:14px; font-weight:normal; line-height:1.85; color:#334155; background:#eff6ff; border-radius:9px; padding:11px 16px; margin-bottom:12px; border-left:4px solid var(--blue);}
+  .stepDesc b{color:var(--blue); font-weight:600;}
+  .stepDesc code{color:#7c3aed; font-family:Consolas,monospace; background:rgba(139,92,246,.10); padding:0 5px; border-radius:4px; font-size:12.5px;}
+  .kbd{display:inline-block; border:1px solid var(--line); border-radius:4px; padding:0 6px; background:#fff; font-size:11px; color:#4b5563;}
+
+  @media(max-width:1000px){.grid{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1><span class="mono">C2 去虚化</span> · 方法调用全链路第四站：编译器怎么把调用抹平</h1>
+    <div class="sub">opto/doCall.cpp · optimize_virtual_call（:1169）· call_generator（:94）· callGenerator.cpp · bytecodeInfo.cpp · JDK 28</div>
+    <div class="badges">
+      <span class="badge orange">入口三问</span>
+      <span class="badge">四连问情报</span>
+      <span class="badge purple">决策总闸</span>
+      <span class="badge green">生成 IR</span>
+      <span class="badge red">内联成本账</span>
+    </div>
+  </header>
+
+  <div class="steps" id="pills"></div>
+  <div class="stepDesc" id="stepDesc">点击 ▶ 开始播放，Space 播放/暂停，← → 步进，R 重置</div>
+
+  <div class="grid">
+    <!-- 左：四关卡导航 -->
+    <div class="panel p1">
+      <h2>四关卡导航</h2>
+      <div class="face f1" id="face1"><span class="num">1</span><div><div class="tt">入口与准备</div><div class="ds">Parse::do_call :550</div></div></div>
+      <div class="face f2" id="face2"><span class="num">2</span><div><div class="tt">情报收集</div><div class="ds">optimize_virtual_call :1169</div></div></div>
+      <div class="face f3" id="face3"><span class="num">3</span><div><div class="tt">决策总闸</div><div class="ds">call_generator :94</div></div></div>
+      <div class="face f4" id="face4"><span class="num">4</span><div><div class="tt">生成 IR 与内联账</div><div class="ds">cg->generate + bytecodeInfo</div></div></div>
+      <div class="note" id="fnote">当前：关卡 ①<br>入口与准备</div>
+    </div>
+
+    <!-- 中：舞台 -->
+    <div class="panel p2">
+      <h2>机制舞台</h2>
+      <div class="stageBox" id="stage">// 当前关卡机制</div>
+      <div class="detail" id="detail">—</div>
+    </div>
+
+    <!-- 右：源码 -->
+    <div class="panel p3">
+      <h2>源码证据</h2>
+      <div class="src">
+        <div class="code" id="src">// 源码面板</div>
+      </div>
+      <div class="scene" id="scene">—</div>
+    </div>
+  </div>
+
+  <!-- 控制 -->
+  <div class="ctl">
+    <button class="btn" id="btnPrev" title="上一步">◀</button>
+    <button class="btn orange" id="btnPlay" title="播放/暂停 (Space)">▶</button>
+    <button class="btn" id="btnNext" title="下一步">▶</button>
+    <button class="btn green" id="btnReset" title="重置 (R)">↺</button>
+    <span class="hint"><span class="kbd">Space</span> 播放/暂停 · <span class="kbd">←</span> <span class="kbd">→</span> 步进 · <span class="kbd">R</span> 重置 · 点击步骤胶囊跳转</span>
+  </div>
+
+</div>
+
+<script>
+(() => {
+  const S = {
+    face1: document.getElementById('face1'),
+    face2: document.getElementById('face2'),
+    face3: document.getElementById('face3'),
+    face4: document.getElementById('face4'),
+    fnote: document.getElementById('fnote'),
+    stage: document.getElementById('stage'),
+    detail: document.getElementById('detail'),
+    src: document.getElementById('src'),
+    scene: document.getElementById('scene'),
+    desc: document.getElementById('stepDesc'),
+    pills: document.getElementById('pills'),
+  };
+  const COL = { blue:'#3b82f6', purple:'#8b5cf6', orange:'#f59e0b', green:'#10b981' };
+
+  function faces(n){
+    S.face1.className='face f1'+(n===1?' on':'');
+    S.face2.className='face f2'+(n===2?' on':'');
+    S.face3.className='face f3'+(n===3?' on':'');
+    S.face4.className='face f4'+(n===4?' on':'');
+  }
+  function stage(html){ S.stage.innerHTML = html; }
+  function src(html){ S.src.innerHTML = html; }
+  function scene(txt){ S.scene.innerHTML = txt; }
+
+  const steps = [
+    // 0 白话速览（先讲人话，再上源码）
+    { d:`<span style="display:inline-block;background:#dbeafe;color:#1d4ed8;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">白话速览</span> 这一站在演什么：<b>给老员工配速算卡</b>。
+<b>比喻</b>：「会计算账」被喊了 1 万次、每次都是老王 → 老员工（C2）决定：<b>赌「会计=老王」</b>，把整套算账流程<b>背下来直接做</b>，不再翻名册。赌输了（来了新会计）就撕卡退回老实人。
+<b>技术对照</b>：配速算卡 = C2 编译；赌 = 去虚化；背流程 = 内联；撕卡 = 反优化 trap。
+<b>记住一句</b>：C2 的哲学是「乐观假设 + 愿赌服输」。
+下面每一步都会用术语讲同一件事，忘了就把比喻拉回来。`,
+      fn:()=>{
+        faces(1); S.fnote.innerHTML='当前：白话速览<br>先讲人话';
+        stage(`<span class="blu">白话速览 · 配速算卡</span>\n<span class="dim">比喻：喊熟 → 赌「会计=老王」→ 背流程</span>\n<span class="dim">技术：profile → 去虚化 → 内联</span>\n<span class="dim">四关：①入口准备 ②情报收集</span>\n<span class="dim">      ③决策总闸 ④生成 IR 与内联账</span>\n<span class="grn">一句话：乐观假设，愿赌服输</span>`);
+        S.detail.textContent='这一站看 C2 怎么决定给哪个调用点配卡、配哪种卡（单态/双态/保留多态）。';
+        src(`<span class="dim">// 术语对照（人话 → 黑话）</span>\n<span class="blu">喊熟 1 万次</span>  → <span class="grn">Profile 统计</span>\n<span class="blu">赌「=老王」</span>  → <span class="grn">去虚化 devirtualization</span>\n<span class="blu">背流程</span>      → <span class="grn">内联 inlining</span>\n<span class="blu">赌输撕卡</span>    → <span class="grn">反优化 trap</span>`);
+        scene('白话速览：<b>给老员工配速算卡</b>');
+      }},
+    // 0 初始
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：这一站换成 C2（老员工）视角：方法跑热被编译时，编译器有权选择「不调用」——把查表抹平成直接干。
+前三站是<b>解释器视角</b>：01 解析（冷路径写缓存）→ 02 建表（vtable/itable）→ 03 热路径查表跳转。这一站换成 <b>C2（JIT）视角</b>：方法跑热被编译时，编译器有权<b>选择"不调用"</b>。
+<b>① 入口三问</b>：Parse::do_call（doCall.cpp:550）
+<b>② 情报收集</b>：optimize_virtual_call 四连问（:1169）
+<b>③ 决策总闸</b>：call_generator 分路（:94）
+<b>④ 生成 IR</b>：内联 / 直接调用 / 保留多态（callGenerator.cpp）
+核心问题：<code>invokevirtual #12</code> 跑热了，C2 为什么能把"查表"变成"不查表"？`,
+      fn:()=>{
+        faces(1); S.fnote.innerHTML='当前：关卡 ①<br>入口与准备';
+        stage(`<span class="org">关卡 ① 入口与准备（opto/doCall.cpp）</span>\n<span class="dim">Parse::do_call   :550  编译期 invoke 入口</span>\n<span class="dim">┌──────────────────────────────────────┐</span>\n<span class="blu">│ 三问：is_virtual? has_receiver?      │</span>\n<span class="blu">│       will_link?                    │</span>\n<span class="blu">│ 三件套：callee / vtable_index       │</span>\n<span class="blu">│        / call_does_dispatch         │</span>\n<span class="dim">└──────────────────────────────────────┘</span>\n<span class="grn">C2 哲学：先乐观假设"不分派"，逐问排除</span>`);
+        S.detail.textContent='C2 编译期遇到 invoke：三问定形态，三件套定初值，乐观假设不分派。';
+        src(`<span class="dim">// 第四站全景（doCall.cpp + bytecodeInfo.cpp + callGenerator.cpp）</span>\n<span class="org">① do_call(:550)</span> → <span class="org">② optimize_virtual_call(:1169)</span>\n<span class="org">              → </span><span class="pur">③ call_generator(:94)</span> → <span class="grn">④ cg->generate()</span>\n\n<span class="dim">// 核心概念：call_does_dispatch 标志</span>\n<span class="blu">false</span> = 不需运行时多态 → 直接调用/内联\n<span class="red">true</span>  = 仍多态 → profile 守卫或保留虚调用\n\n<span class="grn">// 最终产物（三种 IR 形态）</span>\nParseGenerator         → 内联展开（重新解析字节码）\nDirectCallGenerator    → CallStaticJavaNode（静态绑）\nVirtualCallGenerator   → CallDynamicJavaNode（保留多态）`);
+        scene('场景 0：<b>四关卡总览</b>');
+      }},
+    // 1 三问
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：C2 先问三句：是不是多态调用？有没有接收者？能不能链接？静态调用（invokestatic/special）直接出局，不进优化链。
+C2 解析 invoke 字节码的第一件事：<b>三问定形态</b>（doCall.cpp:557-559）。
+<b>① is_virtual</b>：字节码是 <code>invokevirtual</code> → 多态候选
+<b>② is_interface</b>：是 <code>invokeinterface</code> → 也是多态候选（is_virtual_or_interface 合并）
+<b>③ has_receiver</b>：<code>invokestatic</code> / <code>invokedynamic</code> 无 receiver——后面不做 null 检查、不做 receiver 类型分析
+<b>④ 为什么先问</b>：invokestatic / invokespecial 天然静态绑定，根本不用进优化链
+<b>⑤ 语义</b>：这三问决定了后面"要不要为多态操心"`,
+      fn:()=>{
+        faces(1);
+        stage(`<span class="org">三问定形态（doCall.cpp:557-559）</span>\n<span class="blu">const bool is_virtual = bc() == _invokevirtual;</span>\n<span class="blu">const bool is_virtual_or_interface =</span>\n<span class="blu">    is_virtual || bc() == _invokeinterface;</span>\n<span class="blu">const bool has_receiver = Bytecodes::has_receiver(bc());</span>\n<span class="dim">invokevirtual   → 多态候选 ✅</span>\n<span class="dim">invokeinterface → 多态候选 ✅</span>\n<span class="pur">invokestatic    → 无 receiver，静态绑定</span>\n<span class="pur">invokespecial   → 构造/private/super，静态绑定</span>\n<span class="grn">多态候选才需要后面的四连问</span>\n<span class="org">has_receiver=false → 免 null 检查、免 receiver 类型分析</span>`);
+        S.detail.textContent='三问：是不是多态、有没有 receiver——静态调用直接跳出优化链。';
+        src(`<span class="dim">// opto/doCall.cpp:557-559（原文）</span>\n  <span class="grn">const bool is_virtual = bc() == Bytecodes::_invokevirtual;</span>\n  <span class="grn">const bool is_virtual_or_interface = is_virtual || bc() == Bytecodes::_invokeinterface;</span>\n  <span class="grn">const bool has_receiver = Bytecodes::has_receiver(bc());</span>\n\n<span class="dim">// doCall.cpp:621（receiver 分析的前提）</span>\n  <span class="org">if (is_virtual_or_interface) {</span>\n    Node* receiver_node = stack(sp() - nargs);`);
+        scene('场景 1：<b>三问定形态</b>');
+      }},
+    // 2 拿目标 + will_link
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：拿字节码级目标（01 站解析结果）+ 链接检查：类还没加载完就不编译这个调用点，让解释器兜底——信息不全就不优化。
+第二件事：<b>拿字节码级目标</b>，并确认<b>能不能链接</b>（doCall.cpp:562-585）。
+<b>① orig_callee</b>：<code>iter().get_method(will_link, ...)</code>——01 站 linkResolver 解析出来的方法（符号层）
+<b>② holder_klass</b>：方法声明类的编译期镜像（ciInstanceKlass）
+<b>③ will_link</b>：类加载/链接检查——类还没加载完？
+<b>④ 失败处理</b>：<code>!will_link || can_not_compile_call_site</code> → <b>放弃编译这个调用点</b>（解释器继续兜底）
+<b>⑤ 原则</b>："不会出错的编译器"第一道防线：<b>信息不全就不优化</b>`,
+      fn:()=>{
+        faces(1);
+        stage(`<span class="org">拿目标 + 链接检查（doCall.cpp:562-585）</span>\n<span class="blu">orig_callee = iter().get_method(will_link, &declared_signature);</span>\n<span class="blu">holder_klass = orig_callee->holder();</span>\n<span class="dim">       └─ 01 站 linkResolver 的产物（符号 → Method*）</span>\n<span class="org">if (!will_link || can_not_compile_call_site(...)) {</span>\n<span class="red">    return;   // 不编译这个调用点，解释器兜底</span>\n<span class="org">}</span>\n<span class="grn">类未加载 / 链接失败 → 放弃优化，绝不冒险</span>\n<span class="dim">原则：信息不全就不优化（No-Go 防线）</span>`);
+        S.detail.textContent='拿符号层目标 + 链接检查：类没加载完就放弃编译这个调用点。';
+        src(`<span class="dim">// opto/doCall.cpp:562-567（原文）</span>\n  <span class="grn">ciMethod* orig_callee = iter().get_method(will_link, &declared_signature);</span>  <span class="dim">// callee in the bytecode</span>\n  <span class="grn">ciInstanceKlass* holder_klass = orig_callee->holder();</span>\n  <span class="grn">ciKlass* holder = iter().get_declared_method_holder();</span>\n\n<span class="dim">// doCall.cpp:577-585（链接失败 → 放弃）</span>\n  <span class="org">if (!will_link || can_not_compile_call_site(orig_callee, klass)) {</span>\n    <span class="red">return;</span>  <span class="dim">// 编译这个调用点失败，让解释器兜底</span>\n  <span class="org">}</span>`);
+        scene('场景 2：<b>链接检查</b>');
+      }},
+    // 3 三件套初始化
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：先假设最好：callee=字节码目标、vtable_index=无效、call_does_dispatch=false（不分派）——被证据驳回才认输。
+第三件事：<b>初始化三件套</b>（doCall.cpp:614-617）——注意默认值。
+<b>① callee</b>：先指向字节码目标（后面可能被优化成别的）
+<b>② vtable_index</b>：<code>invalid_vtable_index</code>——先假设不用查表
+<b>③ call_does_dispatch</b>：<code>false</code>——<b>乐观假设"不分派"</b>，让后面的优化链逐一验证
+<b>④ 谁改它</b>：<code>optimize_virtual_call</code> 是 out-参数：情报不足才翻回 true
+<b>⑤ 哲学</b>：先往最好的方向假设，被证据驳回才认输——<b>乐观优化</b>`,
+      fn:()=>{
+        faces(1);
+        stage(`<span class="org">初始化三件套（doCall.cpp:614-617）</span>\n<span class="dim">// Try to get the most accurate receiver type</span>\n<span class="blu">ciMethod* callee = orig_callee;              // ① 先指字节码目标</span>\n<span class="blu">int vtable_index = Method::invalid_vtable_index; // ② 先假设不用查表</span>\n<span class="blu">bool call_does_dispatch = false;             // ③ 先假设不分派！</span>\n<span class="dim">        │</span>\n<span class="dim">        ▼ 交给 optimize_virtual_call 逐一验证</span>\n<span class="grn">绑定成功 → 保持 false → 直接调用/内联</span>\n<span class="red">全部落空 → 翻回 true → 保持多态</span>\n<span class="org">乐观优化：先假设最好，被证据驳回才认输</span>`);
+        S.detail.textContent='三件套初值：callee=字节码目标、vtable_index=无效、call_does_dispatch=false（乐观）。';
+        src(`<span class="dim">// opto/doCall.cpp:614-617（原文）</span>\n  <span class="grn">ciMethod* callee             = orig_callee;</span>\n  <span class="grn">int       vtable_index       = Method::invalid_vtable_index;</span>\n  <span class="grn">bool      call_does_dispatch = false;</span>\n\n<span class="dim">// doCall.cpp:631-633（交给四连问，out-参数可能被改）</span>\n  <span class="grn">callee = C->optimize_virtual_call(method(), klass, holder, orig_callee,</span>\n<span class="grn">                                    receiver_type, is_virtual,</span>\n<span class="grn">                                    call_does_dispatch, vtable_index);</span>  <span class="dim">// out-parameters</span>`);
+        scene('场景 3：<b>三件套初始化</b>');
+      }},
+    // 4 静态绑定
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：四连问第一问：final/private/static 天生只有一个目标 → 直接绑死，多态链短路（final 类全部方法隐式 final）。
+关卡② 情报收集：<b>四连问第一问——能不能静态绑定</b>（doCall.cpp:1203）。
+<b>① 判定</b>：<code>can_be_statically_bound()</code>——final 方法、final 类的方法、private、static
+<b>② final 根源</b>：<code>Method::is_final_method</code>（method.cpp:859）= <code>is_final() || class.is_final()</code>——<b>final 类全部方法隐式 final</b>（08 篇闭环！）
+<b>③ 为什么不做 CHA</b>（:1199 注释）：final 槽位编译期锁死，查层次纯浪费，还可能被未加载类误伤
+<b>④ 结果</b>：命中 → 直接返回，<code>call_does_dispatch</code> 保持 false
+<b>⑤ 意义</b>：这是"final 方法可内联"的<b>编译期第一依据</b>`,
+      fn:()=>{
+        faces(2); S.fnote.innerHTML='当前：关卡 ②<br>情报收集';
+        stage(`<span class="org">四连问 ①：静态绑定（doCall.cpp:1203）</span>\n<span class="blu">if (callee->can_be_statically_bound()) {</span>\n<span class="blu">    return callee;   // 直接绑，不进 CHA</span>\n<span class="blu">}</span>\n<span class="dim">is_final_method（method.cpp:859）</span>\n<span class="grn">  = is_final() || class_access_flags.is_final()</span>\n<span class="dim">  ├─ 方法 final        → 绑</span>\n<span class="dim">  ├─ final class       → 全部方法隐式 final（08 篇）</span>\n<span class="dim">  ├─ private           → ciMethod.cpp:137 显式修正</span>\n<span class="dim">  └─ static            → 无 receiver，天然静态</span>\n<span class="org">命中 → call_does_dispatch=false（多态链短路）</span>\n<span class="dim">注释：final 不必做 CHA，还免去未加载类误判</span>`);
+        S.detail.textContent='第一问：final/private/static → can_be_statically_bound 直接绑，多态链短路。';
+        src(`<span class="dim">// opto/doCall.cpp:1199-1205（原文）</span>\n  <span class="dim">// If it is obviously final, do not bother to call find_monomorphic_target,</span>\n  <span class="dim">// because the class hierarchy checks are not needed...</span>\n  <span class="grn">if (callee->can_be_statically_bound()) {</span>\n    <span class="grn">return callee;</span>\n  <span class="grn">}</span>\n\n<span class="dim">// oops/method.cpp:854-860（final 判定真身）</span>\nbool Method::is_final_method(AccessFlags class_access_flags) const {\n  <span class="grn">return is_final() || class_access_flags.is_final();</span>\n}  <span class="dim">← 08 篇 final class 闭环</span>`);
+        scene('场景 4：<b>静态绑定</b>');
+      }},
+    // 5 receiver 情报 + 数组特例
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：第二问：编译器手里有没有「接收者类型」情报？没有就保持多态；数组+Object 方法（clone/equals）天然单态直接绑。
+第二问：<b>编译器手里有没有 receiver 的类型情报</b>（doCall.cpp:1207-1220）。
+<b>① 无情报</b>：<code>receiver_type == nullptr</code> → 返回 nullptr → <b>保持多态</b>
+<b>② 数组特例</b>：数组类型的方法全继承自 Object（clone/hashCode/equals…）→ <b>天然单态</b>，直接绑
+<b>③ 排除 finalize</b>：数组上调 finalize 是非法字节码——不能错误静态绑定（:1217 条件排除）
+<b>④ 为什么重要</b>：IR 类型系统（TypeOopPtr）越精确，后面 CHA/exact 判定越强
+<b>⑤ 情报来源</b>：字节码静态类型 + 之前分支分析的传播`,
+      fn:()=>{
+        faces(2);
+        stage(`<span class="org">四连问 ②：receiver 情报（doCall.cpp:1207-1220）</span>\n<span class="blu">if (receiver_type == nullptr) {</span>\n<span class="blu">    return nullptr;   // no receiver type info → 多态</span>\n<span class="blu">}</span>\n<span class="dim">// Array methods are all inherited from Object,</span>\n<span class="dim">// and are monomorphic.</span>\n<span class="grn">if (receiver_type->isa_aryptr() &&</span>\n<span class="grn">    callee->holder() == env()->Object_klass() &&</span>\n<span class="grn">    callee->name() != ciSymbols::finalize_method_name()) {</span>\n<span class="grn">    return callee;   // 数组方法天然单态 → 直接绑</span>\n<span class="grn">}</span>\n<span class="org">finalize 排除：数组上调它是非法字节码</span>\n<span class="dim">情报源：IR 类型系统（TypeOopPtr）传播</span>`);
+        S.detail.textContent='第二问：无 receiver 情报 → 多态；数组+Object 方法 → 天然单态直接绑（finalize 除外）。';
+        src(`<span class="dim">// opto/doCall.cpp:1207-1220（原文截取）</span>\n  <span class="grn">if (receiver_type == nullptr) {</span>\n    <span class="grn">return nullptr; // no receiver type info</span>\n  <span class="grn">}</span>\n\n  <span class="dim">// Array methods are all inherited from Object, and are monomorphic.</span>\n  <span class="grn">if (receiver_type->isa_aryptr() &&</span>\n<span class="grn">      callee->holder() == env()->Object_klass() &&</span>\n<span class="grn">      callee->name() != ciSymbols::finalize_method_name()) {</span>\n    <span class="grn">return callee;</span>  <span class="dim">// 数组方法直接绑（finalize 排除）</span>\n  <span class="grn">}</span>`);
+        scene('场景 5：<b>receiver 情报</b>');
+      }},
+    // 6 CHA
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：第三问：翻类层次档案找「唯一实现」——抽象类 A 只有 B 覆写了 m()，那调 A.m() 实际只可能是 B.m()。
+第三问：<b>CHA（类层次分析）能不能找出唯一实现</b>（doCall.cpp:1237-1238）。
+<b>① 输入</b>：接收者实际类（actual_receiver）+ 目标方法（callee）
+<b>② find_monomorphic_target</b>：沿接收者继承链往上找——只有一个类实现了这个方法？
+<b>③ 典型场景</b>：抽象类 A 有两个实现 B/C，但只有 B 覆写了 m()——调 A.m() 实际只可能是 B.m()
+<b>④ 为什么可行</b>：编译期快照当前类层次——这就是"CHA 假设"
+<b>⑤ 风险</b>：动态加载新类可能破坏假设 → 必须记依赖（下步）`,
+      fn:()=>{
+        faces(2);
+        stage(`<span class="org">四连问 ③：CHA 唯一实现（doCall.cpp:1237-1238）</span>\n<span class="blu">calling_klass = caller->holder();</span>\n<span class="blu">cha_monomorphic_target =</span>\n<span class="blu">    callee->find_monomorphic_target(</span>\n<span class="blu">        calling_klass, klass, actual_receiver, check_access);</span>\n<span class="dim">抽象类 A ◄── B（实现 m()）</span>\n<span class="dim">        ◄── C（没实现 m()）</span>\n<span class="grn">调 A.m() → 唯一可能是 B.m() → 硬绑！</span>\n<span class="org">编译期快照类层次 = CHA 假设</span>\n<span class="dim">风险：新类动态加载可能破坏假设 → 依赖机制兜底</span>`);
+        S.detail.textContent='第三问：CHA 沿接收者继承链找唯一实现——找到就硬绑，风险交给依赖机制。';
+        src(`<span class="dim">// opto/doCall.cpp:1237-1238（原文）</span>\n  <span class="grn">ciInstanceKlass* calling_klass = caller->holder();</span>\n  <span class="grn">ciMethod* cha_monomorphic_target =</span>\n<span class="grn">      callee->find_monomorphic_target(calling_klass, klass,</span>\n<span class="grn">                                       actual_receiver, check_access);</span>\n\n<span class="dim">// 接口单实现者变体（doCall.cpp:358）</span>\n  <span class="pur">ciInstanceKlass* singleton = declared_interface->unique_implementor();</span>`);
+        scene('场景 6：<b>CHA 唯一实现</b>');
+      }},
+    // 7 CHA 命中 + 依赖
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：找到了就硬绑，但必须把「B.m 是 A.m 的唯一实现」登记进依赖表——以后动态加载新类覆写了它，依赖失效自动撤回。
+CHA 命中后的关键一步：<b>硬绑 + 记录依赖</b>（doCall.cpp:1240-1253）。
+<b>① 硬绑</b>：<code>return cha_monomorphic_target</code>——编译器认为调用点就是它
+<b>② 依赖</b>：<code>dependencies()->assert_unique_concrete_method(...)</code>——把"该类层次只有唯一实现"登记进编译依赖表
+<b>③ 为什么</b>：Java 动态加载——编译后新类可能覆写这个槽位
+<b>④ 失效机制</b>：假设被破坏 → nmethod 标记失效 → <b>下次调用重新编译</b>（去优化）
+<b>⑤ 安全网</b>：这就是"乐观优化 + 安全回滚"的闭环——<b>敢乐观，因为有撤退路线</b>`,
+      fn:()=>{
+        faces(2);
+        stage(`<span class="org">CHA 命中：硬绑 + 记依赖（doCall.cpp:1240-1253）</span>\n<span class="blu">if (cha_monomorphic_target != nullptr) {</span>\n<span class="blu">    // Hardwiring a virtual.</span>\n<span class="grn">    dependencies()->assert_unique_concrete_method(</span>\n<span class="grn">        actual_receiver, cha_monomorphic_target, holder, callee);</span>\n<span class="grn">    return cha_monomorphic_target;   // 硬绑！</span>\n<span class="blu">}</span>\n<span class="dim">编译依赖表：</span>\n<span class="dim">  "B.m 是 A.m 的唯一实现" ← 登记</span>\n<span class="red">  ↓ 新类 D 加载，覆写了 m()</span>\n<span class="red">  ↓ 依赖失效 → nmethod 撤销 → 重新编译</span>\n<span class="org">乐观优化 + 安全回滚 —— 敢赌，因为有撤退路线</span>`);
+        S.detail.textContent='CHA 硬绑必须记依赖：动态加载破坏假设 → nmethod 失效 → 重新编译（去优化）。';
+        src(`<span class="dim">// opto/doCall.cpp:1240-1253（原文截取）</span>\n  <span class="grn">if (cha_monomorphic_target != nullptr) {</span>\n    <span class="dim">// Hardwiring a virtual.</span>\n    <span class="dim">// ...we are dependent on that target method not getting overridden</span>\n    <span class="dim">// by dynamic class loading...</span>\n    <span class="grn">dependencies()->assert_unique_concrete_method(</span>\n<span class="grn">        actual_receiver, cha_monomorphic_target, holder, callee);</span>\n    <span class="grn">return cha_monomorphic_target;</span>\n  <span class="grn">}</span>`);
+        scene('场景 7：<b>CHA 依赖记录</b>');
+      }},
+    // 8 exact
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：第四问：接收者类型「精确」（不可能有子类，如 new 出来的、final 类的实例）→ 直接解析绑定，连 CHA 都不用。
+第四问：<b>receiver 类型是否精确（exact）</b>（doCall.cpp:1255-1264）。
+<b>① exact 定义</b>：<code>klass_is_exact()</code>——该类<b>不可能有子类</b>（new 的直接结果、final class 实例）
+<b>② 做法</b>：exact → <code>resolve_invoke</code> 直接解析出方法——<b>不需要 CHA、不需要 vtable</b>
+<b>③ 呼应 08 篇</b>：final class 的实例就是 exact 类型（ciInstanceKlass.hpp:324 exact_klass）
+<b>④ 收尾</b>：到这里还没绑上 → <code>optimize_inlining</code> 返回 nullptr → <code>call_does_dispatch = true</code>（:1183-1185）
+<b>⑤ 四连问闭环</b>：全落空才认输——<b>真的多态</b>，交给决策总闸`,
+      fn:()=>{
+        faces(2);
+        stage(`<span class="org">四连问 ④：exact 类型（doCall.cpp:1255-1264）</span>\n<span class="blu">// If the type is exact, we can still bind the method w/o a vcall.</span>\n<span class="grn">if (actual_receiver_is_exact) {</span>\n<span class="grn">    exact_method = callee->resolve_invoke(</span>\n<span class="grn">        calling_klass, actual_receiver);</span>\n<span class="grn">    if (exact_method != nullptr) return exact_method;</span>\n<span class="grn">}</span>\n<span class="dim">exact = 不可能有子类</span>\n<span class="dim">  ├─ new Dog() 的直接结果</span>\n<span class="dim">  └─ final class 实例（08 篇 exact_klass）</span>\n<span class="org">exact → resolve 直绑，不查 CHA 不查 vtable</span>\n<span class="red">全落空 → call_does_dispatch=true → 真多态</span>`);
+        S.detail.textContent='第四问：receiver 类型 exact（不可能有子类）→ resolve 直绑；全落空才翻回多态。';
+        src(`<span class="dim">// opto/doCall.cpp:1255-1264（原文）</span>\n  <span class="dim">// If the type is exact, we can still bind the method w/o a vcall.</span>\n  <span class="dim">// (This case comes after CHA so we can see how much extra work it does.)</span>\n  <span class="grn">if (actual_receiver_is_exact) {</span>\n    <span class="grn">ciMethod* exact_method = callee->resolve_invoke(calling_klass, actual_receiver);</span>\n    <span class="grn">if (exact_method != nullptr) {</span>\n      <span class="grn">return exact_method;</span>\n    <span class="grn">}</span>\n  <span class="grn">}</span>\n\n  <span class="red">return nullptr;</span>  <span class="dim">← 保持多态</span>`);
+        scene('场景 8：<b>exact 直绑</b>');
+      }},
+    // 9 读 profile
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：决策前先读解释器留下的「正字档案」（MDO）：这个调用点被喊了多少次、头号接收者是谁、形态数多少。
+关卡③ 决策总闸：<code>call_generator</code>（doCall.cpp:94）先读<b>解释器留下的档案</b>。
+<b>① 档案来源</b>：03 站热路径那条 <code>profile_virtual_call</code>（:3468）——每次查表顺手写 MDO
+<b>② site_count</b>：这个调用点被调了多少次（:122）
+<b>③ receiver_count</b>：头号接收者的调用次数（:127）
+<b>④ morphism</b>：接收者形态数——1=单态 2=双态 ≥3=多态（:240，决策时才读）
+<b>⑤ 决策基础</b>：没有档案就没有"赌"的资本——<b>档案来自解释器，决定权在 C2</b>`,
+      fn:()=>{
+        faces(3); S.fnote.innerHTML='当前：关卡 ③<br>决策总闸';
+        stage(`<span class="org">读 profile（doCall.cpp:119-128）</span>\n<span class="blu">ciCallProfile profile =</span>\n<span class="blu">    caller->call_profile_at_bci(bci);</span>\n<span class="blu">int site_count = profile.count();</span>\n<span class="blu">int receiver_count = -1;</span>\n<span class="blu">if (call_does_dispatch && UseTypeProfile &&</span>\n<span class="blu">    profile.has_receiver(0)) {</span>\n<span class="blu">    receiver_count = profile.receiver_count(0);</span>\n<span class="blu">}</span>\n<span class="dim">档案从哪来？03 站热路径的 profile_virtual_call</span>\n<span class="grn">解释器每次查表 → 顺手写 MDO</span>\n<span class="grn">C2 编译 → 读 MDO → 决定赌不赌</span>\n<span class="org">档案在解释器，决定权在 C2</span>`);
+        S.detail.textContent='决策总闸先读 MDO：site_count/receiver_count 决定后面"赌不赌、赌多大"。';
+        src(`<span class="dim">// opto/doCall.cpp:119-128（原文截取）</span>\n  <span class="grn">ciCallProfile profile = caller->call_profile_at_bci(bci);</span>\n\n  <span class="dim">// See how many times this site has been invoked.</span>\n  <span class="grn">int site_count = profile.count();</span>\n  <span class="grn">int receiver_count = -1;</span>\n  <span class="grn">if (call_does_dispatch && UseTypeProfile && profile.has_receiver(0)) {</span>\n    <span class="dim">// Receivers in the profile structure are ordered by call counts</span>\n    <span class="grn">receiver_count = profile.receiver_count(0);</span>\n  <span class="grn">}</span>`);
+        scene('场景 9：<b>读档案</b>');
+      }},
+    // 10 intrinsic
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：第一条路：库里方法（StringBuilder.append、System.arraycopy）有 JIT 手写专用代码（intrinsic），比通用内联更强。
+第一条路：<b>内在函数（intrinsic）优先</b>（doCall.cpp:153-178）。
+<b>① find_intrinsic</b>：库里方法（StringBuilder.append、System.arraycopy…）有 JIT 手写 IR 模式
+<b>② 为什么最强</b>：intrinsic 直接换专用代码，比通用内联强得多（甚至生成 SIMD）
+<b>③ 虚拟分派型</b>（:169）：<code>does_virtual_dispatch()</code> 的 intrinsic（如 linkToVirtual）→ <b>寄存让路</b>，先让类型 profile 试试
+<b>④ 延迟内联</b>（:172）：IncrementalInline 下可 <code>for_late_inline</code> 推迟
+<b>⑤ 兜底</b>（:391）：没人认领 → 最后再回到 intrinsic`,
+      fn:()=>{
+        faces(3);
+        stage(`<span class="org">[0] intrinsic 优先（doCall.cpp:153-178）</span>\n<span class="blu">cg_intrinsic = nullptr;</span>\n<span class="blu">if (allow_inline && allow_intrinsics) {</span>\n<span class="blu">    cg = find_intrinsic(callee, call_does_dispatch);</span>\n<span class="grn">    if (cg->does_virtual_dispatch()) {</span>\n<span class="grn">        cg_intrinsic = cg;   // 寄存，让路</span>\n<span class="grn">        cg = nullptr;        // 先试类型 profile</span>\n<span class="grn">    } else {</span>\n<span class="grn">        return cg;           // 直接采用</span>\n<span class="grn">    }</span>\n<span class="blu">}</span>\n<span class="dim">库里方法有 JIT 手写 IR（如 StringBuilder → SIMD）</span>\n<span class="org">虚拟分派型 intrinsic：寄存，等 profile 失败再回来</span>`);
+        S.detail.textContent='intrinsic 最强（专用 IR），但会做虚拟分派的先寄存让路，让 profile 赌一把。';
+        src(`<span class="dim">// opto/doCall.cpp:153-177（原文截取）</span>\n  <span class="grn">CallGenerator* cg_intrinsic = nullptr;</span>\n  <span class="grn">if (allow_inline && allow_intrinsics) {</span>\n    <span class="grn">CallGenerator* cg = find_intrinsic(callee, call_does_dispatch);</span>
+    <span class="grn">if (cg != nullptr) {</span>
+      <span class="grn">if (cg->does_virtual_dispatch()) {</span>
+        <span class="grn">cg_intrinsic = cg;  cg = nullptr;</span>  <span class="dim">← 寄存让路</span>
+      <span class="grn">} else if (IncrementalInline && should_delay_vector_inlining(callee, jvms)) {</span>
+        <span class="grn">return CallGenerator::for_late_inline(callee, cg);</span>
+      <span class="grn">} else {</span>
+        <span class="grn">return cg;</span>  <span class="dim">← 直接采用</span>
+      <span class="grn">}</span>
+    <span class="grn">}</span>
+  <span class="grn">}</span>`);
+        scene('场景 10：<b>intrinsic 优先</b>');
+      }},
+    // 11 非多态内联
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：第二条路：确认不分派 → 试内联：把被调方法体展开进调用者 IR，调用点直接消失（成本账见 17 步）。
+第二条路：<b>非多态（call_does_dispatch=false）→ 试内联</b>（doCall.cpp:198-232）。
+<b>① 前提</b>：静态绑定/CHA/exact 已把 dispatch 抹平——可以放心把方法体展开
+<b>② ok_to_inline</b>：InlineTree 决策（bytecodeInfo.cpp:564，成本账见关卡④）
+<b>③ for_inline</b>：通过 → <code>CallGenerator::for_inline</code>（:202）→ ParseGenerator（重新解析字节码）
+<b>④ 虚调用内联的守卫</b>（:209-213）：CHA 说唯一，但 receiver 类型可能更宽 → 包一层 <code>for_guarded_call</code>（ReceiverConstraint 陷阱）
+<b>⑤ 延迟内联</b>（:219-229）：IncrementalInline 下可推迟（String/boxing/vector 等特例）`,
+      fn:()=>{
+        faces(3);
+        stage(`<span class="org">非多态 → 试内联（doCall.cpp:198-232）</span>\n<span class="blu">if (!call_does_dispatch) {</span>\n<span class="blu">    ilt = InlineTree::find_subtree_from_root(...);</span>\n<span class="grn">    if (ilt->ok_to_inline(callee, jvms, profile, should_delay)) {</span>\n<span class="grn">        cg = CallGenerator::for_inline(callee, expected_uses);</span>
+<span class="grn">        // 虚调用内联 → 包 receiver 约束守卫（:209-213）</span>
+<span class="grn">        cg = CallGenerator::for_guarded_call(</span>
+<span class="grn">                callee->holder(), trap_cg, cg);</span>
+<span class="grn">        return cg;   // ParseGenerator</span>
+<span class="grn">    }</span>
+<span class="blu">}</span>\n<span class="dim">ok_to_inline 的成本账（bytecodeInfo.cpp:564）→ 关卡④</span>\n<span class="org">内联 = 把被调方法字节码展开进调用者 IR</span>`);
+        S.detail.textContent='非多态 → ok_to_inline 通过就内联（ParseGenerator）；虚调用内联额外包 receiver 约束守卫。';
+        src(`<span class="dim">// opto/doCall.cpp:198-213（原文截取）</span>\n    <span class="grn">if (!call_does_dispatch) {</span>\n      <span class="grn">InlineTree* ilt = InlineTree::find_subtree_from_root(</span>\n<span class="grn">          this->ilt(), jvms->caller(), jvms->method());</span>
+      <span class="grn">if (ilt->ok_to_inline(callee, jvms, profile, should_delay)) {</span>
+        <span class="grn">CallGenerator* cg = CallGenerator::for_inline(callee, expected_uses);</span>
+        <span class="dim">// CHA can report a method as a unique target under an abstract method,</span>
+        <span class="dim">// but receiver type sometimes has a broader type...</span>
+        <span class="grn">if (cg != nullptr && is_virtual_or_interface && !callee->is_static()) {</span>
+          <span class="grn">cg = CallGenerator::for_guarded_call(callee->holder(), trap_cg, cg);</span>
+        <span class="grn">}</span>`);
+        scene('场景 11：<b>非多态内联</b>');
+      }},
+    // 12 profile 判断
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：第三条路：档案说「几乎总是 Dog」→ 按 Dog 赌一把：头号接收者占比≥90% 或单态/双态，就用概率换性能。
+第三条路：<b>多态 + 类型 profile 判断值不值得赌</b>（doCall.cpp:234-269）。
+<b>① have_major_receiver</b>：头号接收者占比 ≥ <code>TypeProfileMajorReceiverPercent</code>（90，c2_globals.hpp:700）
+<b>② morphism</b>：形态数——1 单态最理想；2 双态可赌（UseBimorphicInlining 默认开）
+<b>③ resolve_invoke</b>：用头号接收者解析出具体方法（:267-268）
+<b>④ 投机类型</b>（:241-254）：之前去优化累积的 speculative_receiver_type 优先用
+<b>⑤ 意义</b>：档案说"几乎总是 Dog" → 编译器就按 Dog 优化——<b>用概率换性能</b>`,
+      fn:()=>{
+        faces(3);
+        stage(`<span class="org">profile 判断（doCall.cpp:234-269）</span>\n<span class="blu">// 头号接收者占比 ≥ 90%</span>\n<span class="grn">have_major_receiver = profile.has_receiver(0) &&</span>\n<span class="grn">    (100.*profile.receiver_prob(0) >=</span>\n<span class="grn">     (float)TypeProfileMajorReceiverPercent);</span>
+<span class="blu">int morphism = profile.morphism();</span>
+<span class="dim">  morphism==1 → 单态（最理想）</span>
+<span class="dim">  morphism==2 → 双态（可内联两方法）</span>
+<span class="dim">  ≥3         → 真多态（不赌）</span>
+<span class="grn">if (have_major_receiver || morphism == 1 ||</span>
+<span class="grn">    (morphism == 2 && UseBimorphicInlining)) {</span>
+<span class="grn">    receiver_method = callee->resolve_invoke(</span>
+<span class="grn">        jvms->method()->holder(), profile.receiver(0));</span>
+<span class="grn">}</span>\n<span class="org">用概率换性能：档案说"几乎总是 Dog" → 按 Dog 优化</span>`);
+        S.detail.textContent='多态点赌不赌：头号接收者 ≥90% 或单态/双态 → 用档案赌一把，否则不赌。';
+        src(`<span class="dim">// opto/doCall.cpp:235-269（原文截取）</span>\n    <span class="grn">if (call_does_dispatch && site_count > 0 && UseTypeProfile) {</span>
+      <span class="dim">// The major receiver's count >= TypeProfileMajorReceiverPercent of site_count.</span>
+      <span class="grn">bool have_major_receiver = profile.has_receiver(0) &&</span>
+<span class="grn">          (100.*profile.receiver_prob(0) >= (float)TypeProfileMajorReceiverPercent);</span>
+      <span class="grn">int morphism = profile.morphism();</span>
+      <span class="dim">// ...</span>
+      <span class="grn">if (receiver_method == nullptr &&</span>
+<span class="grn">          (have_major_receiver || morphism == 1 ||</span>
+<span class="grn">           (morphism == 2 && UseBimorphicInlining))) {</span>
+        <span class="grn">receiver_method = callee->resolve_invoke(jvms->method()->holder(),</span>
+<span class="grn">                                                 profile.receiver(0));</span>
+      <span class="grn">}</span>`);
+        scene('场景 12：<b>profile 判断</b>');
+      }},
+    // 13 守卫菱形
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：赌就要有守卫：运行时查接收者类型——命中走内联（热），miss 走去优化陷阱（冷）或退普通虚调用；双态可叠两层。
+值得赌 → 组装<b>守卫菱形</b>：<code>for_predicted_call</code>（doCall.cpp:293-327）。
+<b>① hit 路径</b>：头号接收者命中 → 内联（ParseGenerator）
+<b>② miss 路径</b>：单态/双态 → <code>for_uncommon_trap</code>（去优化，:302）——撤太多次就重编译换策略
+<b>③ miss 兜底</b>：真多态（morphism≥3）→ miss 退普通虚调用（:307-308）
+<b>④ 双态特化</b>：第二个接收者也解析 → 再叠一层 <code>for_predicted_call</code>（:316）
+<b>⑤ 组装</b>（:322）：<code>for_predicted_call(k, miss_cg, hit_cg, hit_prob)</code>——运行时查类型，命中内联 miss 撤退`,
+      fn:()=>{
+        faces(3);
+        stage(`<span class="org">守卫菱形（doCall.cpp:293-327）</span>\n<span class="dim">单态/双态：miss → uncommon_trap（:302）</span>\n<span class="red">    Action_maybe_recompile：撤多了就重编译换策略</span>\n<span class="dim">真多态：miss → 普通虚调用（:307）</span>\n<span class="blu">cg = CallGenerator::for_predicted_call(</span>\n<span class="blu">        k,             // 预测接收者</span>\n<span class="blu">        miss_cg,       // 撤退路径</span>\n<span class="blu">        hit_cg,        // 内联路径</span>\n<span class="blu">        hit_prob);     // 命中概率（profile）</span>
+<span class="grn">        receiver 类型检查</span>
+<span class="grn">       /              \\</span>
+<span class="grn">   命中（内联）     miss（撤退）</span>
+<span class="grn">       \\              /</span>
+<span class="grn">        └─ Region(3)+Phi 汇合 ──┘</span>
+<span class="org">乐观优化的编译期形态：热路径拉直，冷路径变陷阱</span>`);
+        S.detail.textContent='守卫菱形：预测接收者命中→内联，miss→去优化陷阱或退虚调用；双态可叠两层。';
+        src(`<span class="dim">// opto/doCall.cpp:297-327（原文截取）</span>\n          <span class="grn">if ((morphism == 1 || (morphism == 2 && next_hit_cg != nullptr)) &&</span>
+<span class="grn">              !too_many_traps_or_recompiles(caller, bci, reason)) {</span>
+            <span class="dim">// Generate uncommon trap for class check failure path</span>
+            <span class="grn">miss_cg = CallGenerator::for_uncommon_trap(callee, reason,</span>
+<span class="grn">                        Deoptimization::Action_maybe_recompile);</span>
+          <span class="grn">} else {</span>
+            <span class="grn">miss_cg = CallGenerator::for_virtual_call(callee, vtable_index);</span>
+          <span class="grn">}</span>
+          <span class="grn">if (miss_cg != nullptr) {</span>
+            <span class="grn">cg = CallGenerator::for_predicted_call(k, miss_cg, hit_cg, hit_prob);</span>
+            <span class="grn">return cg;</span>
+          <span class="grn">}</span>`);
+        scene('场景 13：<b>守卫菱形</b>');
+      }},
+    // 14 兜底 + 接口单实现
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：所有招都失败 → 老实多态（保留虚调用）或直接调用（加 receiver 守卫）——能绑就绑，绑不上老实，永不错代码。
+所有优化失败后的<b>兜底路线</b>（doCall.cpp:397-419）+ CHA 接口特例（:346-387）。
+<b>① 多态兜底</b>（:399-407）：<code>for_virtual_call</code> → CallDynamicJavaNode——保留虚调用（编译代码里的多态）
+<b>② 延迟虚内联</b>：IncrementalInlineVirtual 开 → <code>for_late_inline_virtual</code> 以后补
+<b>③ 非多态兜底</b>（:408-418）：<code>for_direct_call</code> → CallStaticJavaNode + receiver 约束守卫
+<b>④ 接口单实现者</b>（:346-387）：<code>unique_implementor()</code> 找唯一实现类 → guarded_call + <b>双依赖</b>（implementor + concrete method）
+<b>⑤ 总原则</b>：能绑就绑，绑不上就老实多态——<b>永远不会生成错代码</b>`,
+      fn:()=>{
+        faces(3);
+        stage(`<span class="org">兜底路线（doCall.cpp:397-419）</span>\n<span class="red">多态兜底：for_virtual_call</span>\n<span class="red">  → CallDynamicJavaNode（保留虚调用）</span>\n<span class="pur">非多态兜底：for_direct_call</span>\n<span class="pur">  → CallStaticJavaNode + receiver 约束守卫</span>\n<span class="blu">CHA 接口单实现者（:346-387）</span>\n<span class="blu">  unique_implementor() → guarded_call</span>\n<span class="blu">  + assert_unique_implementor</span>\n<span class="blu">  + assert_unique_concrete_method（双依赖）</span>\n<span class="org">原则：能绑就绑，绑不上老实多态——永不错代码</span>`);
+        S.detail.textContent='兜底：多态保留虚调用（Dynamic 节点）、非多态直接调用（Static 节点）+ 接口单实现者守卫。';
+        src(`<span class="dim">// opto/doCall.cpp:397-418（原文截取）</span>\n  <span class="dim">// There was no special inlining tactic, or it bailed out.</span>\n  <span class="red">if (call_does_dispatch) {</span>
+    <span class="red">return CallGenerator::for_virtual_call(callee, vtable_index);</span>
+  <span class="red">} else {</span>
+    <span class="dim">// Class Hierarchy Analysis or Type Profile reveals a unique target...</span>
+    <span class="pur">CallGenerator* cg = CallGenerator::for_direct_call(callee,</span>
+<span class="pur">        should_delay_inlining(callee, jvms));</span>
+    <span class="pur">if (cg != nullptr && is_virtual_or_interface && !callee->is_static()) {</span>
+      <span class="pur">cg = CallGenerator::for_guarded_call(callee->holder(), trap_cg, cg);</span>
+    <span class="pur">}</span>
+    <span class="pur">return cg;</span>
+  <span class="red">}</span>`);
+        scene('场景 14：<b>兜底路线</b>');
+      }},
+    // 15 三种生成器
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：决策变 IR：内联展开（调用消失）/ 静态绑（CallStaticJavaNode）/ 保留多态（CallDynamicJavaNode）——同一条字节码，产物天差地别。
+关卡④ 生成 IR：<code>cg->generate</code>（doCall.cpp:721）把决策变成 IR——<b>三种生成器三种形态</b>。
+<b>① ParseGenerator</b>（callGenerator.cpp:128）：内联 = <b>重新解析被调方法字节码</b>，展开进调用者 IR——调用直接消失
+<b>② DirectCallGenerator</b>（:193）：<code>new CallStaticJavaNode</code>——静态绑定目标，直接调 + <code>set_optimized_virtual(true)</code>（:211）
+<b>③ VirtualCallGenerator</b>（:303）：<code>new CallDynamicJavaNode</code>——保留多态，机器码层是带内联缓存的虚调用
+<b>④ 共同点</b>：都做 receiver null 检查（:205/:289）
+<b>⑤ 意义</b>：同一条 invokevirtual，编译产物可以天差地别——<b>这就是 JIT 的"因地制宜"</b>`,
+      fn:()=>{
+        faces(4); S.fnote.innerHTML='当前：关卡 ④<br>生成 IR 与内联账';
+        stage(`<span class="org">cg->generate：三种 IR 形态（callGenerator.cpp）</span>\n<span class="grn">ParseGenerator（:116）</span>\n<span class="dim">  Parse parser(jvms, method(), _expected_uses);  ← 重新解析</span>\n<span class="dim">  → 内联：调用点直接消失</span>
+<span class="blu">DirectCallGenerator（:183）</span>\n<span class="dim">  new CallStaticJavaNode(tf(), target, method())  ← 静态绑</span>\n<span class="dim">  call->set_optimized_virtual(true)</span>
+<span class="pur">VirtualCallGenerator（:254）</span>\n<span class="dim">  new CallDynamicJavaNode(tf(), target, method(), vtable_index)</span>\n<span class="dim">  ← 保留多态（带内联缓存）</span>
+<span class="org">同一条字节码，编译产物天差地别——JIT 因地制宜</span>`);
+        S.detail.textContent='三种生成器：Parse 内联展开（调用消失）/ Direct 静态绑（Static 节点）/ Virtual 保留多态（Dynamic 节点）。';
+        src(`<span class="dim">// callGenerator.cpp:128（ParseGenerator：内联核心）</span>\n  <span class="grn">Parse parser(jvms, method(), _expected_uses);</span>  <span class="dim">← 重新解析字节码</span>
+\n<span class="dim">// callGenerator.cpp:193（DirectCallGenerator）</span>\n  <span class="grn">CallStaticJavaNode* call = new CallStaticJavaNode(kit.C, tf(), target, method());</span>
+  <span class="grn">call->set_optimized_virtual(true);</span>  <span class="dim">// :211 优化过的虚调用</span>
+\n<span class="dim">// callGenerator.cpp:301-303（VirtualCallGenerator）</span>\n  <span class="grn">address target = SharedRuntime::get_resolve_virtual_call_stub();</span>
+  <span class="grn">CallDynamicJavaNode* call = new CallDynamicJavaNode(tf(), target, method(), _vtable_index);</span>`);
+        scene('场景 15：<b>三种生成器</b>');
+      }},
+    // 16 守卫菱形 IR
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：守卫的 IR 形态 = 类型检查 + 双路控制流（命中/落空）+ Region(3)+Phi 汇合点——SSA 结构要求热冷路径汇合。
+守卫菱形（PredictedCallGenerator）的 <b>IR 形态</b>（callGenerator.cpp:1070）——类型检查 + 双路 + 汇合。
+<b>① 类型守卫</b>（:1093-1099）：<code>type_check_receiver</code>（exact 判定）或 <code>subtype_check_receiver</code>（子类判定）——产出慢路径控制流
+<b>② miss 路</b>（:1106）：<code>_if_missed->generate</code>——uncommon_trap 或虚调用（冷）
+<b>③ hit 路</b>（:1127）：<code>_if_hit->generate</code>——ParseGenerator 内联（热）
+<b>④ 汇合</b>（:1159-1167）：<code>RegionNode(3)</code> + <code>PhiNode</code>——两条控制流/内存汇合（菱形）
+<b>⑤ 为什么菱形</b>：热路径（内联）与冷路径（撤退）必须汇合回同一点——IR 的 SSA 结构要求`,
+      fn:()=>{
+        faces(4);
+        stage(`<span class="org">守卫菱形 IR（callGenerator.cpp:1070）</span>\n<span class="blu">receiver = kit.null_check_receiver_before_call(...)</span>\n<span class="grn">slow_ctl = type_check_receiver(</span>\n<span class="grn">    receiver, _predicted_receiver, _hit_prob, &casted_receiver);</span>
+<span class="dim">            ┌─ 类型检查 ─┐</span>
+<span class="red"> miss ─────┤            ├───── hit（内联）</span>
+<span class="dim"> slow_map    │            │    new_jvms</span>
+<span class="dim">            └─── Region(3) + Phi 汇合 ───┘</span>
+<span class="grn">RegionNode* region = new RegionNode(3);</span>
+<span class="grn">region->init_req(1, kit.control());</span>
+<span class="grn">region->init_req(2, slow_map->control());</span>
+<span class="org">热路径拉直，冷路径变陷阱——SSA 汇合点</span>`);
+        S.detail.textContent='守卫菱形 = 类型检查分叉 → miss 撤退/hit 内联 → Region(3)+Phi 汇合回同一点。';
+        src(`<span class="dim">// callGenerator.cpp:1093-1099 + 1159-1167（原文截取）</span>\n  <span class="grn">if (_exact_check) {</span>
+    <span class="grn">slow_ctl = kit.type_check_receiver(receiver, _predicted_receiver,</span>
+<span class="grn">                                       _hit_prob, &casted_receiver);</span>
+  <span class="grn">} else {</span>
+    <span class="grn">slow_ctl = kit.subtype_check_receiver(receiver, _predicted_receiver,</span>
+<span class="grn">                                          &casted_receiver);</span>
+  <span class="grn">}</span>
+  <span class="dim">// ...</span>
+  <span class="grn">RegionNode* region = new RegionNode(3);</span>
+  <span class="grn">region->init_req(1, kit.control());</span>
+  <span class="grn">region->init_req(2, slow_map->control());</span>
+  <span class="grn">kit.set_control(gvn.transform(region));</span>
+  <span class="grn">Node* iophi = PhiNode::make(region, kit.i_o(), Type::ABIO);</span>`);
+        scene('场景 16：<b>守卫菱形 IR</b>');
+      }},
+    // 17 内联账 should_inline
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：内不内联算笔账（should_inline）：freq≥0.25 放宽大小上限；已有编译代码且体积中等拒绝；超过大小上限拒绝——性价比裁决。
+要不要内联不是拍脑袋——<code>should_inline</code>（bytecodeInfo.cpp:116）管<b>热度与大小</b>这笔账。
+<b>① 强制内联</b>（:120-130）：CompileCommand / @ForceInline 注解——跳过一切检查
+<b>② 热度 freq</b>（:160-164）：<code>本调用点计数 / 方法总调用数</code>——这个点占多大比例
+<b>③ 热则放宽</b>（:167-183）：freq ≥ <code>InlineFrequencyRatio</code>（0.25）→ 大小上限放大为 freq_inline_size
+<b>④ 冷点拒绝</b>：已有编译代码且体积中等 → "already compiled into a medium method"（:178-181）
+<b>⑤ 大小裁决</b>（:184-191）：<code>size &gt; max_inline_size</code> → "too big" 拒绝——<b>收益（省调用）vs 成本（膨胀）</b>`,
+      fn:()=>{
+        faces(4);
+        stage(`<span class="org">should_inline：热度/大小账（bytecodeInfo.cpp:116）</span>\n<span class="dim">// 强制入口（:120-130）</span>\n<span class="grn">CompileCommand → force inline</span>\n<span class="grn">@ForceInline  → force inline by annotation</span>
+<span class="dim">// 热度（:160-164）</span>\n<span class="blu">freq = call_site_count / invoke_count;</span>
+<span class="dim">// 热则放宽（:167-183）</span>\n<span class="grn">freq >= 0.25 → max_inline_size = freq_inline_size</span>
+<span class="red">冷点 + 中等编译代码 → 拒绝</span>
+<span class="dim">// 大小裁决（:184-191）</span>\n<span class="red">size > max_inline_size → "too big"</span>
+<span class="org">账本：收益（省调用）vs 成本（IR 膨胀 + 编译时间）</span>`);
+        S.detail.textContent='should_inline 管热度/大小账：freq≥0.25 放宽上限，超大小拒绝——性价比裁决。';
+        src(`<span class="dim">// bytecodeInfo.cpp:160-191（原文截取）</span>\n  <span class="grn">int call_site_count = caller_method->scale_count(profile.count());</span>
+  <span class="grn">int invoke_count = caller_method->interpreter_invocation_count();</span>
+  <span class="grn">double freq = (double)call_site_count / (double)invoke_count;</span>
+\n  <span class="dim">// bump the max size if the call is frequent</span>
+  <span class="grn">if ((freq >= InlineFrequencyRatio) ||</span>
+<span class="grn">      is_unboxing_method(callee_method, C) ||</span>
+<span class="grn">      is_init_with_ea(callee_method, caller_method, C)) {</span>
+    <span class="grn">max_inline_size = C->freq_inline_size();</span>
+  <span class="grn">} else {</span>
+    <span class="grn">if (callee_method->has_compiled_code() &&</span>
+<span class="grn">        callee_method->inline_instructions_size() &gt; inline_small_code_size) {</span>
+      <span class="grn">set_msg("already compiled into a medium method");</span>
+      <span class="grn">return false;</span>
+    <span class="grn">}</span>
+  <span class="grn">}</span>
+  <span class="grn">if (size &gt; max_inline_size) {</span>
+    <span class="grn">set_msg("too big");  return false;</span>
+  <span class="grn">}</span>`);
+        scene('场景 17：<b>热度/大小账</b>');
+      }},
+    // 18 try_to_inline + 收尾闭环
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：最后一层账：getter/setter 无条件内联、深度/递归/累计预算超了拒绝；收尾登记内联——四站闭环：解析→建表→查表→抹平调用。
+最后一层账 <code>try_to_inline</code>（bytecodeInfo.cpp:364）+ <b>收尾 + 四站闭环</b>。
+<b>① accessor 特例</b>（:388-392）：getter/setter 无条件内联（太常见）
+<b>② 深度</b>（:430-441）：<code>inline_level() &gt; _max_inline_level</code> → "inlining too deep"
+<b>③ 递归</b>（:444-476）：沿 JVMS 链找同一个方法 → 递归太深拒绝（MaxRecursiveInlineLevel=1）
+<b>④ 累计</b>（:480-487）：已内联字节码总和 ≥ DesiredMethodLimit → 停（整个方法的预算）
+<b>⑤ 收尾</b>（doCall.cpp:742-765）：内联了 → <code>notice_inlined_method</code>；虚调用做了 null 检查 → <code>cast_not_null</code>
+<b>⑥ 四站闭环</b>：01 解析写缓存 → 02 建表 → 03 查表+写档案 → 04（本站）读档案+CHA 抹平调用——<b>一条 invokevirtual 的一生</b>`,
+      fn:()=>{
+        faces(4);
+        stage(`<span class="org">try_to_inline + 收尾（bytecodeInfo.cpp:364 / doCall.cpp:742）</span>\n<span class="grn">accessor（getter/setter）→ 无条件内联（:388）</span>\n<span class="red">深度：inline_level() > _max_inline_level → 拒绝（:430）</span>\n<span class="red">递归：JVMS 链同方法 ≥ MaxRecursiveInlineLevel(1) → 拒绝（:472）</span>\n<span class="red">累计：count_inline_bcs + size ≥ DesiredMethodLimit → 停（:480）</span>
+<span class="dim">// 收尾（doCall.cpp）</span>
+<span class="blu">cg->is_inline() → notice_inlined_method（:744）</span>
+<span class="blu">cg->is_virtual() → cast_not_null(receiver)（:763）</span>
+<span class="org">四站闭环：01 解析 → 02 建表 → 03 查表+写档案 → 04 抹平调用</span>\n<span class="grn">一条 invokevirtual：从每次查表，到查一次以后不查</span>`);
+        S.detail.textContent='try_to_inline 管深度/递归/累计预算；收尾登记内联 + 断言 receiver 非空；四站闭环达成。';
+        src(`<span class="dim">// bytecodeInfo.cpp:388-392 + 472-475（原文截取）</span>\n  <span class="grn">if (InlineAccessors && callee_method->is_accessor()) {</span>
+    <span class="grn">set_msg("accessor");  return true;</span>  <span class="dim">← getter/setter 无条件内联</span>
+  <span class="grn">}</span>
+  <span class="dim">// ...</span>
+  <span class="grn">if (inline_level() &gt; MaxRecursiveInlineLevel) {</span>
+    <span class="grn">set_msg("recursive inlining is too deep");  return false;</span>
+  <span class="grn">}</span>
+\n<span class="dim">// doCall.cpp:742-744 + 762-763（收尾）</span>
+  <span class="grn">if (cg->is_inline()) {</span>
+    <span class="grn">C->env()->notice_inlined_method(cg->method());</span>
+  <span class="grn">}</span>
+  <span class="grn">if (receiver != nullptr &amp;&amp; cg->is_virtual()) {</span>
+    <span class="grn">Node* cast = cast_not_null(receiver);</span>
+  <span class="grn">}</span>`);
+        scene('场景 18：<b>预算收尾 + 四站闭环</b>');
+      }},
+  ];
+
+  const N = steps.length;
+  let cur = 0;
+  let timer = null;
+  let playing = false;
+
+  const pillEls = [];
+  steps.forEach((st, i) => {
+    const p = document.createElement('div');
+    p.className = 'step-pill';
+    p.textContent = (i === 0 ? '▶ ' : '') + i;
+    p.title = '跳到第 ' + i + ' 步';
+    p.onclick = () => { go(i); };
+    S.pills.appendChild(p);
+    pillEls.push(p);
+  });
+
+  function go(i) {
+    cur = Math.max(0, Math.min(N - 1, i));
+    steps[cur].fn();
+    S.desc.innerHTML = steps[cur].d;
+    pillEls.forEach((p, j) => {
+      p.className = 'step-pill' + (j === cur ? ' active' : (j < cur ? ' done' : ''));
+    });
+    // 步数计数器追加到场景文案后（不覆盖 fn() 里 scene() 的描述）
+    S.scene.innerHTML += ' <span style="opacity:.72;font-size:12.5px;margin-left:6px">第 ' + cur + ' / ' + (N - 1) + ' 步</span>';
+  }
+  function next() { go(cur + 1); }
+  function prev() { go(cur - 1); }
+  function reset() { go(0); }
+  function toggle() {
+    if (playing) { clearInterval(timer); playing = false; S.btnPlay.textContent = '▶'; }
+    else {
+      playing = true; S.btnPlay.textContent = '⏸';
+      timer = setInterval(() => { if (cur >= N - 1) { toggle(); } else { next(); } }, 2600);
+    }
+  }
+
+  S.btnPrev = document.getElementById('btnPrev');
+  S.btnPlay = document.getElementById('btnPlay');
+  S.btnNext = document.getElementById('btnNext');
+  S.btnReset = document.getElementById('btnReset');
+  S.btnPrev.onclick = prev;
+  S.btnPlay.onclick = toggle;
+  S.btnNext.onclick = next;
+  S.btnReset.onclick = reset;
+
+  document.addEventListener('keydown', (e) => {
+    if (e.code === 'Space') { e.preventDefault(); toggle(); }
+    else if (e.key === 'ArrowRight') { next(); }
+    else if (e.key === 'ArrowLeft') { prev(); }
+    else if (e.key.toLowerCase() === 'r') { reset(); }
+  });
+
+  go(0);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,1319 @@
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+configure: Configuration created at Wed Aug 19 16:24:35     2026.
+checking for basename... /usr/bin/basename
+checking for dirname... /usr/bin/dirname
+checking for file... /usr/bin/file
+checking for ldd... /usr/bin/ldd
+checking for echo... echo [builtin]
+checking for tr... /usr/bin/tr
+checking for uname... /usr/bin/uname
+checking for wc... /usr/bin/wc
+checking for grep that handles long lines and -e... /usr/bin/grep
+checking for egrep... /usr/bin/grep -E
+checking for a sed that does not truncate output... /usr/bin/sed
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+checking for locale... /usr/bin/locale
+checking for cygpath... /usr/bin/cygpath
+checking for cmd.exe... /cygdrive/c/WINDOWS/system32/cmd.exe
+checking for lsb_release... [not found]
+checking build system type... x86_64-pc-cygwin
+checking host system type... x86_64-pc-cygwin
+checking target system type... x86_64-pc-cygwin
+checking openjdk-build os-cpu... windows-x86_64
+checking openjdk-target os-cpu... windows-x86_64
+checking compilation type... native
+checking Windows environment type... cygwin
+checking cygwin drive prefix... '/cygdrive'
+checking cygwin root directory as Windows path... 'C:\cygwin64'
+checking cygwin temp directory... /cygdrive/c/Users/EDY/AppData/Local/Temp
+checking cygwin release... 3.6.10-1.x86_64
+checking cygwin version... 2026-07-13 20:20 UTC
+checking Windows version... 10.0.26200.9168
+checking what kind of 'find' is first on the PATH... unix style
+checking for top-level directory... /cygdrive/d/project/jdk
+checking for bash... /usr/bin/bash
+checking for cat... /usr/bin/cat
+checking for chmod... /usr/bin/chmod
+checking for cp... /usr/bin/cp
+checking for cut... /usr/bin/cut
+checking for date... /usr/bin/date
+checking for gdiff... [not found]
+checking for diff... /usr/bin/diff
+checking for expr... /usr/bin/expr
+checking for find... /usr/bin/find
+checking for gunzip... /usr/bin/gunzip
+checking for pigz... [not found]
+checking for gzip... /usr/bin/gzip
+checking for head... /usr/bin/head
+checking for ln... /usr/bin/ln
+checking for ls... /usr/bin/ls
+checking for gmkdir... [not found]
+checking for mkdir... /usr/bin/mkdir
+checking for mktemp... /usr/bin/mktemp
+checking for mv... /usr/bin/mv
+checking for gawk... /usr/bin/gawk
+checking for printf... printf [builtin]
+checking for rm... /usr/bin/rm
+checking for rmdir... /usr/bin/rmdir
+checking for sh... /usr/bin/sh
+checking for sort... /usr/bin/sort
+checking for tail... /usr/bin/tail
+checking for gtar... [not found]
+checking for tar... /usr/bin/tar
+checking for tee... /usr/bin/tee
+checking for touch... /usr/bin/touch
+checking for xargs... /usr/bin/xargs
+checking for fgrep... /usr/bin/grep -F
+checking for cmake... [not found]
+checking for df... /usr/bin/df
+checking for git... $FIXPATH /cygdrive/c/users/edy/.workbuddy/binaries/portablegit/versions/1.2.0/mingw64/bin/git.exe
+checking for nice... /usr/bin/nice
+checking for greadlink... [not found]
+checking for readlink... /usr/bin/readlink
+checking for whoami... /usr/bin/whoami
+checking for cmp... /usr/bin/cmp
+checking for uniq... /usr/bin/uniq
+checking for build environment type... dev, default (calculated from 'auto')
+checking for locale to use... C.UTF-8 (recommended)
+checking if custom source is suppressed (openjdk-only)... disabled, default
+checking for --enable-debug... disabled, default
+checking which debug level to use... release
+checking which variants of the JVM to build... server
+checking if absolute paths should be allowed in the build output... no, release build
+checking for toolchain path... 
+checking for sysroot... 
+checking for extra path... 
+checking where to store configuration... in default location
+checking what configuration name to use... windows-x86_64-server-release
+checking for zypper... [not found]
+checking for apt-get... [not found]
+checking for yum... [not found]
+checking for brew... [not found]
+checking for port... [not found]
+checking for pkgutil... [not found]
+checking for pkgadd... [not found]
+checking for pacman... [not found]
+checking for apk... [not found]
+checking for pandoc... [not found]
+checking for gmake... [not found]
+checking for make... /usr/bin/make
+configure: Testing potential make at /usr/bin/make, found using make in PATH
+configure: Using GNU make at /usr/bin/make (version: GNU Make 4.4.1)
+checking if make --output-sync is supported... yes
+checking for make --output-sync value... none, default
+checking if find supports -delete... yes
+checking what type of tar was found... gnu
+checking that grep (/usr/bin/grep) -Fx handles empty lines in the pattern list correctly... yes
+checking for unzip... /usr/bin/unzip
+checking for zip... /usr/bin/zip
+checking for greadelf... [not found]
+checking for readelf... /usr/bin/readelf
+checking for dot... [not found]
+checking for stat... /usr/bin/stat
+checking for time... time [builtin]
+checking for flock... /usr/bin/flock
+checking for dtrace... [not found]
+checking for gpatch... [not found]
+checking for patch... [not found]
+checking if date is a GNU compatible version... yes
+checking bash version... 5.2.21
+checking if bash supports pipefail... yes
+checking if bash supports errexit (-e)... yes
+checking for pkg-config... /usr/bin/pkg-config
+checking pkg-config is at least version 0.9.0... yes
+checking for default LOG value... 
+checking for JMOD compression type... zip-6, default
+checking whether or not a JDK suitable for linking from the run-time image should be produced... disabled, default
+checking if packaged modules are kept... enabled, default
+checking for --with-extra-jlink-flags... <disabled>, default
+checking for --with-build-user... EDY, default
+checking for --with-jdk-rc-name... OpenJDK Platform, default
+checking for --with-vendor-name... N/A, default
+checking for --with-jdk-rc-company-name... N/A, default
+checking for --with-vendor-url... https://openjdk.org/, default
+checking for --with-vendor-bug-url... https://bugreport.java.com/bugreport/, default
+checking for --with-vendor-vm-bug-url... https://bugreport.java.com/bugreport/crash.jsp, default
+checking for --with-version-string... <none>, default
+checking for --with-version-feature... 28, default
+checking for --with-version-date... 2027-03-23, default
+checking for --with-vendor-version-string... <disabled>, default
+checking for --with-macosx-bundle-name-base... OpenJDK, default
+checking for --with-macosx-bundle-id-base... net.java.openjdk-internal, default
+checking for --with-macosx-bundle-build-version... 0, default
+checking for version string... 28-internal-adhoc.EDY.jdk
+configure: Found potential Boot JDK using configure arguments
+checking for Boot JDK... /cygdrive/c/Users/EDY/.jdks/openjdk-ea-27-ea+34-2321
+checking Boot JDK version... openjdk version "27-ea" 2026-09-15 OpenJDK Runtime Environment (build 27-ea+34-2321) OpenJDK 64-Bit Server VM (build 27-ea+34-2321, mixed mode, sharing)
+checking for java [Boot JDK]... $BOOT_JDK/bin/java
+checking for javac [Boot JDK]... $BOOT_JDK/bin/javac
+checking for javadoc [Boot JDK]... $BOOT_JDK/bin/javadoc
+checking for jar [Boot JDK]... $BOOT_JDK/bin/jar
+checking if Boot JDK jar supports --date=TIMESTAMP... true
+checking if Boot JDK is 32 or 64 bits... 64
+checking for docs-reference JDK... no, using interim javadoc for the docs-reference targets
+checking what source date to use... 1787128092, from 'current' (default)
+checking if we should build with sound support... enabled, default
+checking if we should build headless-only (no GUI)... disabled, default
+checking if linker should clean out unused code (linktime-gc)... disabled, default
+checking for graphviz dot... no, cannot generate full docs or man pages
+checking for pandoc... no, cannot generate full docs or man pages
+checking for --enable-full-docs... disabled, from default 'auto'
+checking for cacerts file... default
+checking for cacerts source... default
+checking for --enable-unlimited-crypto... enabled, default
+checking for jni library path... default
+configure: Using default toolchain microsoft (Microsoft Visual Studio)
+configure: Found Visual Studio installation at /cygdrive/c/progra~1/micros~2/2022/Community using well-known name
+configure: Found Microsoft Visual Studio 2022
+configure: Trying to extract Visual Studio environment variables for x86_64
+configure: using /cygdrive/c/progra~1/micros~2/2022/Community/vc/auxiliary/build/vcvars64.bat 
+configure: Setting extracted environment variables for x86_64
+checking that Visual Studio variables have been correctly extracted... ok
+checking for cl... $FIXPATH /cygdrive/c/progra~1/micros~2/2022/community/vc/tools/msvc/14.44.35207/bin/hostx64/x64/cl.exe
+checking resolved symbolic links for CC... no symlink
+configure: Using microsoft C compiler version 19.44.35228 [Microsoft (R) C/C++ Optimizing Compiler Version 19.44.35228 for x64]
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+cat: conftest.er1: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+checking whether the C compiler works... D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+yes
+checking for C compiler default output file name... conftest.exe
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+checking for suffix of executables... configure: error: in '/cygdrive/d/project/jdk':
+configure: error: cannot compute suffix of executables: cannot compile and link
+See 'config.log' for more details
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+configure exiting with result code 1
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+l: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+checking for suffix of object files... D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+obj
+checking whether /cygdrive/d/project/jdk/build/windows-x86_64-server-release/fixpath exec /cygdrive/c/progra~1/micros~2/2022/community/vc/tools/msvc/14.44.35207/bin/hostx64/x64/cl.exe accepts -g... D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+yes
+checking for cl... $FIXPATH /cygdrive/c/progra~1/micros~2/2022/community/vc/tools/msvc/14.44.35207/bin/hostx64/x64/cl.exe
+checking resolved symbolic links for CXX... no symlink
+configure: Using microsoft C++ compiler version 19.44.35228 [Microsoft (R) C/C++ Optimizing Compiler Version 19.44.35228 for x64]
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+checking whether /cygdrive/d/project/jdk/build/windows-x86_64-server-release/fixpath exec /cygdrive/c/progra~1/micros~2/2022/community/vc/tools/msvc/14.44.35207/bin/hostx64/x64/cl.exe accepts -g... D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+yes
+checking how to run the C preprocessor... D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+/cygdrive/d/project/jdk/build/windows-x86_64-server-release/fixpath exec /cygdrive/c/progra~1/micros~2/2022/community/vc/tools/msvc/14.44.35207/bin/hostx64/x64/cl.exe -E
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+checking how to run the C++ preprocessor... D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+/cygdrive/d/project/jdk/build/windows-x86_64-server-release/fixpath exec /cygdrive/c/progra~1/micros~2/2022/community/vc/tools/msvc/14.44.35207/bin/hostx64/x64/cl.exe -E
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+checking for link... $FIXPATH /cygdrive/c/progra~1/micros~2/2022/community/vc/tools/msvc/14.44.35207/bin/hostx64/x64/link.exe
+checking if the found link.exe is actually the Visual Studio linker... yes
+configure: Using microsoft linker version 14.44.35228.0 [Microsoft (R) Incremental Linker Version 14.44.35228.0]
+checking for ml64... $FIXPATH /cygdrive/c/progra~1/micros~2/2022/community/vc/tools/msvc/14.44.35207/bin/hostx64/x64/ml64.exe
+checking for lib... $FIXPATH /cygdrive/c/progra~1/micros~2/2022/community/vc/tools/msvc/14.44.35207/bin/hostx64/x64/lib.exe
+checking for mt... $FIXPATH /cygdrive/c/progra~2/wi3cf2~1/10/bin/100261~1.0/x64/mt.exe
+checking for rc... $FIXPATH /cygdrive/c/progra~2/wi3cf2~1/10/bin/100261~1.0/x64/rc.exe
+checking for dumpbin... $FIXPATH /cygdrive/c/progra~1/micros~2/2022/community/vc/tools/msvc/14.44.35207/bin/hostx64/x64/dumpbin.exe
+checking for gobjdump... [not found]
+checking for objdump... /usr/bin/objdump
+checking for jtreg... [not found]
+checking for jtreg test harness... no, not found
+checking for jtreg jdk... no, using BOOT_JDK
+checking for jmh (Java Microbenchmark Harness)... no, disabled
+checking for jib... no
+checking for tidy... [not found]
+checking for stdio.h... D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+yes
+checking for stdlib.h... D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+yes
+checking for string.h... D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+yes
+checking for inttypes.h... D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+yes
+checking for stdint.h... D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+yes
+checking for strings.h... D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+no
+checking for sys/stat.h... D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+yes
+checking for sys/types.h... D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+yes
+checking for unistd.h... D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+no
+checking for stdio.h... (cached) yes
+checking size of int *... D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+8
+checking for target address size... 64 bits
+checking whether byte ordering is bigendian... D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+no
+checking for --enable-branch-protection... disabled, default
+checking for --with-native-debug-symbols-level... <invalid>, not available
+checking for --enable-warnings-as-errors... disabled, from command line
+checking if CC supports "-experimental:deterministic"... D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+yes
+checking if CXX supports "-experimental:deterministic"... D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+yes
+checking if both CC and CXX support "-experimental:deterministic"... yes
+checking if CC supports "-pathmap:/cygdrive/d/project/jdk=s"... D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+yes
+checking if CXX supports "-pathmap:/cygdrive/d/project/jdk=s"... D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+yes
+checking if both CC and CXX support "-pathmap:/cygdrive/d/project/jdk=s"... yes
+checking how to prevent absolute paths in output... using compiler options
+checking if BUILD_CC supports "-experimental:deterministic"... D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+yes
+checking if BUILD_CXX supports "-experimental:deterministic"... D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+yes
+checking if both BUILD_CC and BUILD_CXX support "-experimental:deterministic"... yes
+checking if BUILD_CC supports "-pathmap:/cygdrive/d/project/jdk=s"... D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+yes
+checking if BUILD_CXX supports "-pathmap:/cygdrive/d/project/jdk=s"... D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+yes
+checking if both BUILD_CC and BUILD_CXX support "-pathmap:/cygdrive/d/project/jdk=s"... yes
+checking how to prevent absolute paths in output... using compiler options
+checking if linker supports "-experimental:deterministic"... D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+yes
+checking for --enable-aarch64-sve... disabled, from default 'auto'
+checking what type of native debug symbols to use... external
+checking if debuginfo compression with objcopy is done... disabled, default
+checking if we should add external native debug symbols to the shipped bundles... no (default)
+checking if native coverage is available... no
+checking for --enable-native-coverage... disabled, default
+checking for --with-jcov-modules... <disabled>, default
+checking if AddressSanitizer (asan) is available... yes
+checking for --enable-asan... disabled, default
+checking for --with-additional-ubsan-checks... <disabled>, default
+checking if UndefinedBehaviorSanitizer (ubsan) is available... no
+checking for --enable-ubsan... disabled, default
+checking if LeakSanitizer (lsan) is available... no
+checking for --enable-lsan... disabled, default
+checking if static analyzer is available... no
+checking for --enable-static-analyzer... disabled, default
+checking if fallback linker enabled... disabled, default
+configure: Found vcruntime140.dll at /cygdrive/c/progra~1/micros~2/2022/community/vc/redist/msvc/14.44.35112//x64/microsoft.vc143.crt/vcruntime140.dll using well-known location in VCINSTALLDIR
+checking found vcruntime140.dll architecture... ok
+checking for vcruntime140.dll... /cygdrive/c/progra~1/micros~2/2022/community/vc/redist/msvc/14.44.35112//x64/microsoft.vc143.crt/vcruntime140.dll
+configure: Found msvcp140.dll at /cygdrive/c/progra~1/micros~2/2022/community/vc/redist/msvc/14.44.35112//x64/microsoft.vc143.crt/msvcp140.dll using well-known location in VCINSTALLDIR
+checking found msvcp140.dll architecture... ok
+checking for msvcp140.dll... /cygdrive/c/progra~1/micros~2/2022/community/vc/redist/msvc/14.44.35112//x64/microsoft.vc143.crt/msvcp140.dll
+configure: Found vcruntime140_1.dll at /cygdrive/c/progra~1/micros~2/2022/community/vc/redist/msvc/14.44.35112//x64/microsoft.vc143.crt/vcruntime140_1.dll using well-known location in VCINSTALLDIR
+checking found vcruntime140_1.dll architecture... ok
+checking for vcruntime140_1.dll... /cygdrive/c/progra~1/micros~2/2022/community/vc/redist/msvc/14.44.35112//x64/microsoft.vc143.crt/vcruntime140_1.dll
+checking for UCRT DLL dir... /cygdrive/c/progra~2/wi3cf2~1/10//redist/10.0.26100.0/ucrt/dlls/x64
+checking for which libjpeg to use... bundled
+checking for which giflib to use... bundled
+checking for PNG... yes
+checking for which libpng to use... bundled
+checking for compress in -lz... D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+no
+checking for which zlib to use... bundled
+checking for which lcms to use... bundled
+checking for which harfbuzz to use... bundled
+Using freetype: bundled
+checking for --enable-hsdis-bundling... disabled, default
+checking what hsdis backend to use... 'none', hsdis will not be built
+checking if hsdis should be bundled... no
+checking for --with-print-assembly-options... <none>, default
+checking for --enable-libffi-bundling... disabled, default
+checking for dlopen in -ldl... D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+no
+checking for JVM features enabled by the user... none
+checking for JVM features disabled by the user... none
+checking if platform is supported by CDS... yes
+checking if JVM feature 'cds' is available... yes
+checking for dtrace tool and platform support... no
+checking for sys/sdt.h... D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+no
+configure: Cannot enable dtrace with missing dependencies. See above.
+checking if JVM feature 'dtrace' is available... no
+checking if platform is supported by Shenandoah... yes
+checking if JVM feature 'shenandoahgc' is available... yes
+checking if platform is supported by ZGC... yes
+checking if Windows APIs required for ZGC is present... D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+yes
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+checking if JVM feature 'zgc' is available... yes
+checking JVM features to use for variant 'server'... 'cds compiler1 compiler2 epsilongc g1gc jfr jni-check jvmti management parallelgc serialgc services shenandoahgc vm-structs zgc'
+checking what hotspot build time to use... 2026-08-19T08:23:59Z (from --with-source-date)
+checking if the jtreg failure handler is available... no (jtreg not present)
+checking if the jtreg failure handler should be built... disabled, default
+checking if the jtreg test thread factory is available... no (jtreg not present)
+checking if the jtreg test thread factory should be built... disabled, from default 'auto'
+checking if the CDS classlist generation should be enabled... enabled, from default 'auto'
+checking if any translations should be excluded... no
+checking if CDS archive is available... yes
+checking if a default CDS archive should be generated... enabled, from default 'auto'
+checking if CDS archive with no compact object headers is available... yes
+checking if default CDS archives for no compact object headers should be generated... enabled, from default 'auto'
+checking if default CDS archives for no compressed oops should be generated... enabled, default
+checking if default CDS archives for preview should be generated... enabled, default
+checking if CDS archive is available... yes
+checking if compatible cds region alignment enabled... disabled, default
+checking for --with-signing-hook... <disabled>, default
+checking for signing hook... none
+checking for --enable-java-warnings-as-errors... enabled, default
+checking for number of cores... 16
+checking for memory size... 32609 MB
+checking for appropriate number of jobs to run in parallel... 16
+checking whether to use javac server... enabled, default
+checking flags for boot jdk java command ...  -Duser.language=en -Duser.country=US -Xlog:all=off:stdout -Xlog:all=warning:stderr 
+checking flags for boot jdk java command for big workloads...  -Xms64M -Xmx2048M
+checking flags for bootcycle boot jdk java command for big workloads... -Xms64M -Xmx2048M
+checking flags for boot jdk java command for small workloads...  -Xms32M -Xmx512M -XX:TieredStopAtLevel=1
+checking for --enable-icecc... disabled, default
+checking if precompiled headers are available... yes
+checking for --enable-precompiled-headers... enabled, from default 'auto'
+checking for ccache... [not found]
+checking if ccache is available... no, not supported for toolchain type microsoft
+checking if ccache is enabled... disabled, default
+checking for sccache... [not found]
+checking if sccache is available... no, sccache binary missing or not executable
+checking if sccache is enabled... disabled, default
+checking if build directory is on local disk... yes
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+configure: creating /cygdrive/d/project/jdk/build/windows-x86_64-server-release/configure-support/config.status
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+config.status: creating /cygdrive/d/project/jdk/build/windows-x86_64-server-release/spec.gmk
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+config.status: error: could not create /cygdrive/d/project/jdk/build/windows-x86_64-server-release/spec.gmk
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required
+configure exiting with result code 1
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 4: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 5: set: pipefail: invalid option name
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 6: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 9: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 12: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 15: /cygdrive/d/workBuddy/resources/app.asar.unpacked/cli/vendor/shim/safe-bin/safe-delete-common.sh: No such file or directory
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 16: $'\r': command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 17: safe_delete_main: command not found
+D:\workBuddy\resources\app.asar.unpacked\cli\vendor\shim\safe-bin/rm: line 18: exit: 127: numeric argument required

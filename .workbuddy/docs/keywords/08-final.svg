@@ -1,0 +1,143 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900" font-family="'Segoe UI','Microsoft YaHei',sans-serif">
+  <defs>
+    <pattern id="dots" width="16" height="16" patternUnits="userSpaceOnUse">
+      <circle cx="1.5" cy="1.5" r="1.2" fill="#E4DCC8"/>
+    </pattern>
+    <filter id="shadow" x="-4%" y="-4%" width="108%" height="112%">
+      <feDropShadow dx="0" dy="2.5" stdDeviation="3" flood-color="#B8A98A" flood-opacity="0.35"/>
+    </filter>
+    <marker id="arrB" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+      <path d="M0,0 L8,4.5 L0,9 Z" fill="#4C6FAF"/>
+    </marker>
+    <marker id="arrO" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+      <path d="M0,0 L8,4.5 L0,9 Z" fill="#E08A3C"/>
+    </marker>
+    <marker id="arrG" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+      <path d="M0,0 L8,4.5 L0,9 Z" fill="#3E9E6B"/>
+    </marker>
+    <marker id="arrP" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+      <path d="M0,0 L8,4.5 L0,9 Z" fill="#8E5BB5"/>
+    </marker>
+  </defs>
+
+  <!-- 底 -->
+  <rect width="1200" height="900" fill="#FAF6EF"/>
+  <rect width="1200" height="900" fill="url(#dots)"/>
+
+  <!-- 标题 -->
+  <text x="60" y="50" font-size="27" font-weight="bold" fill="#3A3A3A">final：不可变的三副面孔</text>
+  <text x="60" y="78" font-size="14.5" fill="#8A7F6A">ConstantValue（classFileParser.cpp:1270）· 不进 vtable（Object.java:471）· JMM freeze（parse1.cpp:1069）</text>
+
+  <!-- ==================== 面孔 1（绿） ==================== -->
+  <rect x="60" y="110" width="360" height="330" rx="14" fill="#FFFFFF" stroke="#3E9E6B" stroke-width="2" filter="url(#shadow)"/>
+  <rect x="60" y="110" width="7" height="330" rx="3.5" fill="#3E9E6B"/>
+  <text x="84" y="142" font-size="16" font-weight="bold" fill="#3E9E6B">面孔 ① static final 常量</text>
+  <text x="84" y="166" font-size="12" fill="#4A4A4A">Java：<tspan font-family="monospace">static final int MAX = 100;</tspan></text>
+
+  <rect x="84" y="184" width="312" height="96" rx="9" fill="#EEF7F1" stroke="#3E9E6B" stroke-width="1.5"/>
+  <text x="100" y="206" font-size="12" font-weight="bold" fill="#2E7A50">class 文件：ConstantValue 属性</text>
+  <text x="100" y="228" font-size="11.5" fill="#4A4A4A">仅 static final（is_static && tag_constant_value）</text>
+  <text x="100" y="248" font-size="11.5" fill="#4A4A4A">长度固定 2 · 索引指向常量池</text>
+  <text x="100" y="268" font-size="11" fill="#8A7F6A">classFileParser.cpp:1270-1284</text>
+
+  <rect x="84" y="296" width="312" height="56" rx="9" fill="#FFFFFF" stroke="#3E9E6B" stroke-width="1.5"/>
+  <text x="100" y="318" font-size="12" font-weight="bold" fill="#2E7A50">运行期：零成本</text>
+  <text x="100" y="338" font-size="11.5" fill="#4A4A4A">javac 常量折叠 → 无 getstatic，直接内联字面量</text>
+
+  <rect x="84" y="368" width="312" height="52" rx="9" fill="#FFF6EC" stroke="#E08A3C" stroke-width="1.5"/>
+  <text x="100" y="390" font-size="11.5" font-weight="bold" fill="#B06A20">坑：改 MAX 需重编译使用方</text>
+  <text x="100" y="408" font-size="11" fill="#8A7F6A">FieldInfo.initializer_index 存索引（:6443）</text>
+
+  <!-- ==================== 面孔 2（蓝） ==================== -->
+  <rect x="440" y="110" width="340" height="330" rx="14" fill="#FFFFFF" stroke="#4C6FAF" stroke-width="2" filter="url(#shadow)"/>
+  <rect x="440" y="110" width="7" height="330" rx="3.5" fill="#4C6FAF"/>
+  <text x="464" y="142" font-size="16" font-weight="bold" fill="#4C6FAF">面孔 ② final 方法</text>
+  <text x="464" y="166" font-size="12" fill="#4A4A4A">Java：<tspan font-family="monospace">private final native void wait0(...)</tspan></text>
+
+  <rect x="464" y="184" width="292" height="96" rx="9" fill="#F2F6FC" stroke="#4C6FAF" stroke-width="1.5"/>
+  <text x="480" y="206" font-size="12" font-weight="bold" fill="#3D5A99">vtable 没有它的槽位</text>
+  <text x="480" y="228" font-size="11.5" fill="#4A4A4A">ACC_FINAL 方法不进虚分派表</text>
+  <text x="480" y="248" font-size="11.5" fill="#4A4A4A">链接期从 vtable 布局中排除</text>
+  <text x="480" y="268" font-size="11" fill="#8A7F6A">Object.java:471 注释铁证</text>
+
+  <rect x="464" y="296" width="292" height="56" rx="9" fill="#FFFFFF" stroke="#4C6FAF" stroke-width="1.5"/>
+  <text x="480" y="318" font-size="12" font-weight="bold" fill="#3D5A99">C2：目标唯一 → 直接内联</text>
+  <text x="480" y="338" font-size="11.5" fill="#4A4A4A">无需分派查表，性能 + 安全双保证</text>
+
+  <rect x="464" y="368" width="292" height="52" rx="9" fill="#F2F6FC" stroke="#4C6FAF" stroke-width="1.5"/>
+  <text x="480" y="390" font-size="11.5" font-weight="bold" fill="#3D5A99">final class：整类禁继承</text>
+  <text x="480" y="408" font-size="11" fill="#8A7F6A">链接期 Verifier 拒绝子类化</text>
+
+  <!-- ==================== 面孔 3（橙） ==================== -->
+  <rect x="800" y="110" width="340" height="330" rx="14" fill="#FFFFFF" stroke="#E08A3C" stroke-width="2" filter="url(#shadow)"/>
+  <rect x="800" y="110" width="7" height="330" rx="3.5" fill="#E08A3C"/>
+  <text x="824" y="142" font-size="16" font-weight="bold" fill="#E08A3C">面孔 ③ final 实例字段</text>
+  <text x="824" y="166" font-size="12" fill="#4A4A4A">Java：<tspan font-family="monospace">final int id; id = 42;</tspan></text>
+
+  <rect x="824" y="184" width="292" height="96" rx="9" fill="#FFF6EC" stroke="#E08A3C" stroke-width="1.5"/>
+  <text x="840" y="206" font-size="12" font-weight="bold" fill="#B06A20">JMM freeze 语义</text>
+  <text x="840" y="228" font-size="11.5" fill="#4A4A4A">构造器出口插内存屏障</text>
+  <text x="840" y="248" font-size="11.5" fill="#4A4A4A">final 写入卡在发布之前</text>
+  <text x="840" y="268" font-size="11" fill="#8A7F6A">Parse::do_exits（parse1.cpp:1069）</text>
+
+  <rect x="824" y="296" width="292" height="56" rx="9" fill="#FFFFFF" stroke="#E08A3C" stroke-width="1.5"/>
+  <text x="840" y="318" font-size="12" font-weight="bold" fill="#B06A20">屏障：MemBarStoreStore/Release</text>
+  <text x="840" y="338" font-size="11.5" fill="#4A4A4A">x86 上空编码（TSO）· 零成本语义</text>
+
+  <rect x="824" y="368" width="292" height="52" rx="9" fill="#FFF6EC" stroke="#E08A3C" stroke-width="1.5"/>
+  <text x="840" y="390" font-size="11.5" font-weight="bold" fill="#B06A20">异常路径不插屏障</text>
+  <text x="840" y="408" font-size="11" fill="#8A7F6A">构造器抛异常对象不发布（:1103-1106）</text>
+
+  <!-- ==================== strict 交互（紫） ==================== -->
+  <text x="60" y="478" font-size="16" font-weight="bold" fill="#8E5BB5">JDK 28 新交互：strict static fields 与 ConstantValue（异常/机制域 · 紫）</text>
+
+  <rect x="60" y="494" width="1080" height="120" rx="12" fill="#FFFFFF" stroke="#8E5BB5" stroke-width="2" filter="url(#shadow)"/>
+  <rect x="60" y="494" width="7" height="120" rx="3.5" fill="#8E5BB5"/>
+
+  <rect x="88" y="514" width="470" height="82" rx="9" fill="#FAF4FD" stroke="#8E5BB5" stroke-width="1.5"/>
+  <text x="104" y="538" font-size="12.5" font-weight="bold" fill="#6A4B8F">initializer_index != 0（带 ConstantValue）</text>
+  <text x="104" y="560" font-size="11.5" fill="#4A4A4A">编译期常量必然有值 → 不标记 unset</text>
+  <text x="104" y="580" font-size="11.5" fill="#4A4A4A">strict 校验自动豁免（classFileParser.cpp:6444）</text>
+
+  <line x1="560" y1="555" x2="616" y2="555" stroke="#8E5BB5" stroke-width="2.5" marker-end="url(#arrP)"/>
+
+  <rect x="624" y="514" width="494" height="82" rx="9" fill="#FAF4FD" stroke="#8E5BB5" stroke-width="1.5"/>
+  <text x="640" y="538" font-size="12.5" font-weight="bold" fill="#6A4B8F">initializer_index == 0（无 ConstantValue）</text>
+  <text x="640" y="560" font-size="11.5" fill="#4A4A4A">标记 strict_static_unset → clinit 结束逐位检查</text>
+  <text x="640" y="580" font-size="11.5" fill="#4A4A4A">未赋值 → 抛 strict 异常（instanceKlass.cpp:1587）</text>
+
+  <!-- ==================== 对比表（橙蓝绿） ==================== -->
+  <text x="60" y="652" font-size="16" font-weight="bold" fill="#E08A3C">三面孔速查</text>
+
+  <rect x="60" y="668" width="1080" height="210" rx="12" fill="#FFFFFF" stroke="#E08A3C" stroke-width="2" filter="url(#shadow)"/>
+
+  <!-- 表头 -->
+  <rect x="88" y="690" width="200" height="40" rx="7" fill="#FFF6EC" stroke="#E08A3C" stroke-width="1.5"/>
+  <text x="188" y="716" text-anchor="middle" font-size="13" font-weight="bold" fill="#B06A20">维度</text>
+  <rect x="296" y="690" width="262" height="40" rx="7" fill="#EEF7F1" stroke="#3E9E6B" stroke-width="1.5"/>
+  <text x="427" y="716" text-anchor="middle" font-size="13" font-weight="bold" fill="#2E7A50">static final 常量</text>
+  <rect x="566" y="690" width="262" height="40" rx="7" fill="#F2F6FC" stroke="#4C6FAF" stroke-width="1.5"/>
+  <text x="697" y="716" text-anchor="middle" font-size="13" font-weight="bold" fill="#3D5A99">final 方法</text>
+  <rect x="836" y="690" width="282" height="40" rx="7" fill="#FFF6EC" stroke="#E08A3C" stroke-width="1.5"/>
+  <text x="977" y="716" text-anchor="middle" font-size="13" font-weight="bold" fill="#B06A20">final 实例字段</text>
+
+  <text x="100" y="760" font-size="12" fill="#555">编译期产物</text>
+  <text x="310" y="760" font-size="12" fill="#444">ConstantValue 属性</text>
+  <text x="580" y="760" font-size="12" fill="#444">ACC_FINAL + 无 vtable 槽</text>
+  <text x="850" y="760" font-size="12" fill="#444">ACC_FINAL 标志</text>
+
+  <text x="100" y="790" font-size="12" fill="#555">运行期机制</text>
+  <text x="310" y="790" font-size="12" fill="#444">零成本（常量折叠）</text>
+  <text x="580" y="790" font-size="12" fill="#444">C2 直接内联</text>
+  <text x="850" y="790" font-size="12" fill="#444">构造器出口屏障一次 freeze</text>
+
+  <text x="100" y="820" font-size="12" fill="#555">核心锚点</text>
+  <text x="310" y="820" font-size="12" fill="#3E9E6B">classFileParser:1270</text>
+  <text x="580" y="820" font-size="12" fill="#4C6FAF">Object.java:471</text>
+  <text x="850" y="820" font-size="12" fill="#E08A3C">parse1.cpp:1069</text>
+
+  <text x="100" y="850" font-size="12" fill="#555">类比</text>
+  <text x="310" y="850" font-size="12" fill="#8A7F6A">编译期写入</text>
+  <text x="580" y="850" font-size="12" fill="#8A7F6A">分派表特权</text>
+  <text x="850" y="850" font-size="12" fill="#8A7F6A">发布前冻结</text>
+</svg>

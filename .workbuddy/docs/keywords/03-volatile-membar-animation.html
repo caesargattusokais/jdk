@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>volatile 内存屏障 · 交互动画 — JDK 28 源码跟读</title>
+<style>
+  :root {
+    --blue: #3b82f6;   --blue-bg: #eff6ff;   --blue-bd: #bfdbfe;
+    --purple: #8b5cf6; --purple-bg: #f5f3ff; --purple-bd: #ddd6fe;
+    --orange: #f59e0b; --orange-bg: #fffbeb; --orange-bd: #fde68a;
+    --green: #10b981;  --green-bg: #ecfdf5;  --green-bd: #a7f3d0;
+    --red: #ef4444;    --red-bg: #fef2f2;    --red-bd: #fecaca;
+    --ink: #1f2937;    --ink-2: #6b7280;     --ink-3: #9ca3af;
+    --line: #e5e7eb;   --card: #ffffff;      --bg: #f6f7fb;
+    --code-bg: #111827; --code-ink: #e5e7eb;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Segoe UI", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
+    background: linear-gradient(180deg, var(--bg), #eef1f7);
+    color: var(--ink); padding: 24px 16px 48px; line-height: 1.6;
+  }
+  .wrap { max-width: 1120px; margin: 0 auto; }
+
+  header { text-align: center; margin-bottom: 22px; }
+  header h1 { font-size: 25px; letter-spacing: .5px; }
+  header h1 .mono { font-family: Consolas, monospace; color: var(--blue); }
+  header .sub { color: var(--ink-2); font-size: 14px; margin-top: 6px; }
+  .badges { margin-top: 12px; display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+  .badge {
+    font-size: 12px; padding: 3px 12px; border-radius: 999px;
+    border: 1px solid var(--blue-bd); background: var(--blue-bg); color: var(--blue);
+    font-family: Consolas, monospace;
+  }
+  .badge.purple { border-color: var(--purple-bd); background: var(--purple-bg); color: var(--purple); }
+  .badge.green  { border-color: var(--green-bd);  background: var(--green-bg);  color: var(--green); }
+  .badge.orange { border-color: var(--orange-bd); background: var(--orange-bg); color: var(--orange); }
+  .badge.red    { border-color: var(--red-bd);    background: var(--red-bg);    color: var(--red); }
+
+  .steps { display: flex; justify-content: center; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
+  .step-pill {
+    font-size: 11.5px; padding: 5px 11px; border-radius: 999px; cursor: pointer;
+    border: 1.5px solid var(--line); background: var(--card); color: var(--ink-2);
+    transition: all .2s; user-select: none; white-space: nowrap;
+  }
+  .step-pill:hover { border-color: var(--blue); color: var(--blue); }
+  .step-pill.done { border-color: var(--green-bd); background: var(--green-bg); color: var(--green); }
+  .step-pill.active {
+    border-color: var(--blue); background: var(--blue); color: #fff;
+    box-shadow: 0 4px 12px rgba(59,130,246,.35);
+  }
+
+  .stage { display: grid; grid-template-columns: 1.15fr .85fr; gap: 16px; margin-bottom: 16px; }
+  @media (max-width: 900px) { .stage { grid-template-columns: 1fr; } }
+
+  .card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 18px; box-shadow: 0 2px 10px rgba(17,24,39,.05);
+  }
+  .card h3 {
+    font-size: 13px; color: var(--ink-2); font-weight: 600;
+    text-transform: uppercase; letter-spacing: .8px; margin-bottom: 12px;
+  }
+  .card h3 .file { color: var(--ink-3); text-transform: none; letter-spacing: 0; font-weight: 400; }
+
+  /* ===== 共享内存区 ===== */
+  .mem-var {
+    display: flex; align-items: center; gap: 12px; padding: 10px 14px;
+    border-radius: 12px; border: 2px solid var(--line); background: var(--bg);
+    margin-bottom: 10px; transition: all .35s;
+  }
+  .mem-var.volatile { border-color: var(--orange); background: var(--orange-bg); }
+  .mem-var .vname { font-family: Consolas, monospace; font-size: 13px; font-weight: 700; min-width: 92px; }
+  .mem-var .vname small { display: block; font-size: 10px; font-weight: 400; color: var(--ink-3); }
+  .mem-var .vval {
+    font-family: Consolas, monospace; font-size: 19px; font-weight: 800;
+    padding: 3px 16px; border-radius: 9px; background: var(--card);
+    border: 2px solid var(--line); transition: all .3s; min-width: 64px; text-align: center;
+  }
+  .mem-var .vval.green { border-color: var(--green); color: var(--green); }
+  .mem-var .vval.orange { border-color: var(--orange); color: var(--orange); }
+  .mem-var .vval.red { border-color: var(--red); color: var(--red); }
+  .mem-var .vtag { font-size: 11px; color: var(--ink-3); }
+
+  /* 屏障条 */
+  .barrier-row { display: flex; align-items: center; gap: 10px; margin: 8px 0; min-height: 34px; }
+  .barrier {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-family: Consolas, monospace; font-size: 12px; font-weight: 700;
+    padding: 5px 14px; border-radius: 999px; opacity: 0; transform: translateX(-8px);
+    transition: all .35s;
+  }
+  .barrier.show { opacity: 1; transform: translateX(0); }
+  .barrier.blue   { background: var(--blue-bg);   border: 1.5px solid var(--blue);   color: var(--blue); }
+  .barrier.purple { background: var(--purple-bg); border: 1.5px solid var(--purple); color: var(--purple); }
+  .barrier.orange { background: var(--orange-bg); border: 1.5px solid var(--orange); color: var(--orange); }
+  .barrier.red    { background: var(--red-bg);    border: 1.5px solid var(--red);    color: var(--red); }
+  .barrier .empty-tag { font-size: 10px; font-weight: 400; color: var(--ink-3); }
+
+  /* store buffer */
+  .sb { border: 2px dashed var(--blue-bd); background: var(--blue-bg); border-radius: 12px; padding: 8px 12px; margin-top: 6px; }
+  .sb .sb-title { font-size: 11px; color: var(--blue); font-weight: 700; font-family: Consolas, monospace; margin-bottom: 6px; }
+  .sb .sb-row { display: flex; gap: 8px; flex-wrap: wrap; min-height: 28px; }
+  .sb .sb-item {
+    font-family: Consolas, monospace; font-size: 11.5px; padding: 3px 10px;
+    border-radius: 7px; background: var(--card); border: 1.5px solid var(--blue-bd);
+    color: var(--blue); opacity: 0; transform: translateY(-4px); transition: all .3s;
+  }
+  .sb .sb-item.show { opacity: 1; transform: translateY(0); }
+  .sb .sb-item.drain { border-color: var(--green); color: var(--green); background: var(--green-bg); }
+
+  /* 状态提示 */
+  .verdict {
+    margin-top: 10px; padding: 10px 14px; border-radius: 10px;
+    font-size: 13px; font-weight: 600; display: none; align-items: center; gap: 8px;
+  }
+  .verdict.show { display: flex; }
+  .verdict.ok   { background: var(--green-bg);  border: 1.5px solid var(--green);  color: #065f46; }
+  .verdict.fail { background: var(--red-bg);    border: 1.5px solid var(--red);    color: #b91c1c; }
+  .verdict.info { background: var(--blue-bg);   border: 1.5px solid var(--blue);   color: #1d4ed8; }
+
+  /* ===== 线程泳道 ===== */
+  .lane { border: 2px solid var(--line); border-radius: 12px; padding: 10px 12px; margin-bottom: 10px; transition: all .3s; }
+  .lane.active { border-color: var(--purple); box-shadow: 0 0 0 3px var(--purple-bg); }
+  .lane .lane-title { font-size: 12.5px; font-weight: 700; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+  .lane .lane-title .dot { width: 9px; height: 9px; border-radius: 50%; }
+  .lane.a .lane-title .dot { background: var(--purple); }
+  .lane.b .lane-title .dot { background: var(--blue); }
+  .ops { display: flex; flex-direction: column; gap: 7px; }
+  .op {
+    font-family: Consolas, monospace; font-size: 12.5px; padding: 6px 12px;
+    border-radius: 8px; border: 1.5px solid var(--line); background: var(--bg);
+    display: flex; align-items: center; gap: 8px; transition: all .3s; opacity: .45;
+  }
+  .op.run { opacity: 1; border-color: var(--purple); background: var(--purple-bg); box-shadow: 0 0 0 3px var(--purple-bg); }
+  .op.done { opacity: 1; border-color: var(--green-bd); background: var(--green-bg); }
+  .op.fail { opacity: 1; border-color: var(--red); background: var(--red-bg); }
+  .op .tag {
+    font-size: 9.5px; padding: 1px 8px; border-radius: 999px; font-weight: 700;
+    background: var(--ink-2); color: #fff; letter-spacing: .5px;
+  }
+  .op .tag.vol { background: var(--orange); }
+  .op .tag.norm { background: var(--green); }
+  .op .tag.bar { background: var(--blue); }
+  .op .tag.cpu { background: var(--purple); }
+
+  /* 代码面板 */
+  .code-panel {
+    background: var(--code-bg); border-radius: 14px; padding: 16px 18px;
+    font-family: Consolas, "Cascadia Code", monospace; font-size: 13px;
+    box-shadow: 0 2px 10px rgba(17,24,39,.15);
+  }
+  .code-panel .code-title {
+    color: var(--code-ink); opacity: .7; font-size: 11.5px; letter-spacing: 1px;
+    text-transform: uppercase; margin-bottom: 10px;
+  }
+  .code-panel .code-title .file { opacity: .55; text-transform: none; }
+  .code-panel pre { overflow-x: auto; }
+  .code-line { color: #94a3b8; white-space: pre; padding: 1px 0; transition: background .3s; border-radius: 4px; }
+  .code-line.hl { background: rgba(59,130,246,.22); color: #e2e8f0; }
+  .code-line .kw { color: #c084fc; }
+  .code-line .fn { color: #60a5fa; }
+  .code-line .cm { color: #64748b; font-style: italic; }
+  .code-line .num { color: #fbbf24; }
+  .code-line .str { color: #34d399; }
+
+  /* 控制栏 */
+  .controls {
+    display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 18px; flex-wrap: wrap;
+  }
+  .ctrl-btn {
+    width: 46px; height: 46px; border-radius: 12px; border: 1.5px solid var(--line);
+    background: var(--card); font-size: 17px; cursor: pointer; transition: all .2s;
+    display: flex; align-items: center; justify-content: center; color: var(--ink);
+  }
+  .ctrl-btn:hover { border-color: var(--blue); color: var(--blue); transform: translateY(-1px); }
+  .ctrl-btn.play {
+    width: 58px; height: 58px; font-size: 22px; border-color: var(--blue);
+    background: var(--blue); color: #fff; box-shadow: 0 6px 16px rgba(59,130,246,.35);
+  }
+  .ctrl-btn.play:hover { background: #2563eb; color: #fff; }
+  .ctrl-btn.reset { color: var(--red); }
+  .ctrl-btn.reset:hover { border-color: var(--red); color: var(--red); }
+  .ctrl-hint { font-size: 11.5px; color: var(--ink-3); text-align: center; margin-top: 10px; }
+  .ctrl-hint kbd {
+    font-family: Consolas, monospace; background: var(--card); border: 1px solid var(--line);
+    border-bottom-width: 2px; border-radius: 5px; padding: 1px 6px; font-size: 10.5px;
+  }
+
+  .cur-step { text-align: center; font-size: 13px; color: var(--ink-2); margin-bottom: 12px; font-weight: 600; }
+  .cur-step b { color: var(--blue); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1><span class="mono">volatile</span> 内存屏障 · 交互动画</h1>
+    <div class="sub">JDK 28 源码跟读 · keywords 系列 03 · 配套文档 <span class="mono">03-volatile.md</span></div>
+    <div class="badges">
+      <span class="badge">MO_SEQ_CST</span>
+      <span class="badge orange">lock addl [rsp],0</span>
+      <span class="badge purple">MemBarRelease / Acquire</span>
+      <span class="badge green">x86 空编码</span>
+    </div>
+  </header>
+
+  <div class="steps" id="steps"></div>
+  <div class="cur-step" id="curStep"></div>
+
+  <div class="stage">
+    <!-- 左：共享内存 + store buffer -->
+    <div class="card">
+      <h3>共享内存 <span class="file">· 线程 A 写 / 线程 B 读</span></h3>
+
+      <div class="mem-var" id="mvX">
+        <div class="vname">x <small>普通字段</small></div>
+        <div class="vval" id="xVal">0</div>
+        <div class="vtag">生产的数据</div>
+      </div>
+
+      <div class="mem-var" id="mvReady">
+        <div class="vname">ready <small id="readyTag">普通字段</small></div>
+        <div class="vval" id="readyVal">false</div>
+        <div class="vtag">就绪标志</div>
+      </div>
+
+      <div class="barrier-row">
+        <div class="barrier blue" id="barRel">MemBarRelease <span class="empty-tag">（写前 · x86 空编码）</span></div>
+      </div>
+      <div class="barrier-row">
+        <div class="barrier orange" id="barVol">MemBarVolatile = lock addl [rsp],0 <span class="empty-tag">（写后 · StoreLoad）</span></div>
+      </div>
+      <div class="barrier-row">
+        <div class="barrier purple" id="barAcq">MemBarAcquire <span class="empty-tag">（读后 · x86 空编码）</span></div>
+      </div>
+
+      <div class="sb" id="sbBox">
+        <div class="sb-title">⚡ 线程 A 的 Store Buffer（写缓冲）</div>
+        <div class="sb-row" id="sbRow"></div>
+      </div>
+
+      <div class="verdict" id="verdict"></div>
+    </div>
+
+    <!-- 右：线程泳道 -->
+    <div class="card">
+      <h3>线程操作序列 <span class="file">· 谁在做什么</span></h3>
+
+      <div class="lane a" id="laneA">
+        <div class="lane-title"><span class="dot"></span>线程 A（生产者）</div>
+        <div class="ops">
+          <div class="op" id="a1"><span class="tag norm">WRITE</span>x = 1</div>
+          <div class="op" id="a2"><span class="tag" id="a2tag">WRITE</span>ready = true</div>
+          <div class="op" id="a3"><span class="tag bar">BAR</span>lock addl [rsp],0</div>
+        </div>
+      </div>
+
+      <div class="lane b" id="laneB">
+        <div class="lane-title"><span class="dot"></span>线程 B（消费者）</div>
+        <div class="ops">
+          <div class="op" id="b1"><span class="tag">READ</span>if (ready) {</div>
+          <div class="op" id="b2"><span class="tag norm">READ</span>y = x;  // 期望 1</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 代码/指令面板 -->
+  <div class="code-panel">
+    <div class="code-title">真实源码 · <span class="file" id="codeFile">barrierSetC2.cpp</span></div>
+    <pre id="codeBox"></pre>
+  </div>
+
+  <div class="controls">
+    <button class="ctrl-btn reset" id="btnReset" title="重置 (R)">↺</button>
+    <button class="ctrl-btn" id="btnPrev" title="上一步 (←)">‹</button>
+    <button class="ctrl-btn play" id="btnPlay" title="播放/暂停 (Space)">▶</button>
+    <button class="ctrl-btn" id="btnNext" title="下一步 (→)">›</button>
+  </div>
+  <div class="ctrl-hint"><kbd>Space</kbd> 播放/暂停 · <kbd>←</kbd> <kbd>→</kbd> 步进 · <kbd>R</kbd> 重置 · 点击步骤胶囊跳转</div>
+
+</div>
+
+<script>
+// polyfill: 原生 DOM 无 jQuery 的 show/hide，自包含 HTML 不引 jQuery，这里补上
+if(!Element.prototype.show){Element.prototype.show=function(){this.style.display='';};}
+if(!Element.prototype.hide){Element.prototype.hide=function(){this.style.display='none';};}
+const STEPS = [
+  { // 1
+    title: "场景：无 volatile 的隐患",
+    desc: "共享变量 x=0、ready=false。线程 A 负责生产（写 x=1 再置 ready=true），线程 B 负责消费（先看 ready，再看 x）。两个字段都声明为普通字段——一切要靠硬件自觉。",
+    code: `// 共享状态（对照版：没有 volatile）
+int x = 0;          // 生产的数据
+boolean ready = false; // 就绪标志
+
+// 线程 A                     // 线程 B
+x = 1;                     // if (ready) {
+ready = true;              //   y = x;   // 期望 1
+                           // }`,
+    file: "Demo.java · 对照版",
+    set(s) {
+      s.resetAll();
+      s.setReadyType('norm'); s.x=0; s.ready=false;
+      s.verdict('info', '无 volatile 版本：线程 A 两次普通写，线程 B 两次普通读');
+    }
+  },
+  { // 2
+    title: "A 执行 x=1（普通写）",
+    desc: "线程 A 把 x 写为 1。在 x86 上这是一条普通 mov，写入后先落在 A 的 Store Buffer（写缓冲）里，尚未冲刷到缓存/主存。",
+    code: `// 线程 A（普通写）
+x = 1;          // mov $1, [x]  → 先进 Store Buffer
+ready = true;   // 还没执行`,
+    file: "Demo.java · 线程 A",
+    set(s) {
+      s.resetAll(); s.setReadyType('norm');
+      s.x=1; s.mark('a1','done'); s.sbPush('x = 1');
+      s.verdict('info', 'A 写 x=1，先落进 Store Buffer，未对 B 可见');
+    }
+  },
+  { // 3
+    title: "A 执行 ready=true —— 隐患爆发",
+    desc: "A 接着写 ready=true。危险来了：CPU 允许把后写的 ready 先冲刷、把先写的 x 留在缓冲（StoreLoad 重排的硬件侧表现）。若 B 此刻读到 ready=true 再读 x，会看到 x=0！",
+    code: `// 线程 A：两次普通写，硬件可重排
+x = 1;          // ① 先写，但可能滞留在 Store Buffer
+ready = true;   // ② 后写，却可能先被 B 看到 ← 重排！`,
+    file: "Demo.java · 线程 A",
+    set(s) {
+      s.resetAll(); s.setReadyType('norm');
+      s.x=1; s.ready=true;
+      s.mark('a1','done'); s.mark('a2','done');
+      s.sbPush('ready = true');
+      s.verdict('fail', '⚠ StoreLoad 重排：B 可能先看到 ready=true，却看不到 x=1');
+    }
+  },
+  { // 4
+    title: "B 读到半成品 ❌",
+    desc: "线程 B 读到 ready=true，然后读 x——由于 A 的 x=1 还滞留在 Store Buffer，B 的缓存里 x 仍是 0。消息丢失！这就是无 volatile 的经典竞态。",
+    code: `// 线程 B（普通读）
+if (ready) {        // true —— 但 x=1 还没冲刷出来
+    y = x;          // y == 0 ❌ 读到旧值！
+}`,
+    file: "Demo.java · 线程 B",
+    set(s) {
+      s.resetAll(); s.setReadyType('norm');
+      s.x=0; s.ready=true;
+      s.mark('a1','done'); s.mark('a2','done');
+      s.mark('b1','run'); s.mark('b2','fail');
+      s.xVal.classList.add('red');
+      s.verdict('fail', '❌ B 读到 y = 0 —— x=1 被重排吞掉');
+    }
+  },
+  { // 5
+    title: "修复：给 ready 加 volatile",
+    desc: "把 ready 声明为 volatile。从这一刻起，编译器（C2）会给 ready 的读写插入内存屏障节点——字节码层面没有任何新指令，变化全在 JIT 编译期。",
+    code: `// 修复后：ready 加 volatile
+int x = 0;
+volatile boolean ready = false;   // ← 只有这里变了
+
+// classFileParser.cpp:4626
+const bool is_volatile = (flags & JVM_ACC_VOLATILE) != 0;`,
+    file: "Demo.java · volatile 版",
+    set(s) {
+      s.resetAll(); s.setReadyType('vol');
+      s.x=0; s.ready=false;
+      s.verdict('info', 'ready 变 volatile：C2 读 ACC_VOLATILE 标志 → MO_SEQ_CST');
+    }
+  },
+  { // 6
+    title: "A 写 x=1（普通写）",
+    desc: "A 依旧先写普通字段 x=1。它照常进 Store Buffer——volatile 不改变单条写的执行方式，改变的是后续屏障的插入。",
+    code: `// 线程 A：普通写 x=1
+x = 1;          // mov $1, [x]  → Store Buffer`,
+    file: "Demo.java · 线程 A",
+    set(s) {
+      s.resetAll(); s.setReadyType('vol');
+      s.x=1; s.mark('a1','done'); s.sbPush('x = 1');
+      s.verdict('info', 'x=1 照常写入，但这次后面会有屏障兜底');
+    }
+  },
+  { // 7
+    title: "A 写 ready=true（volatile 写）→ 屏障触发",
+    desc: "A 写 volatile ready=true。C2 在写后插入 MemBarVolatile（写前还有 MemBarRelease，x86 上空编码）。MemBarVolatile 在 x86 上变成一条真实指令：lock addl [rsp],0 —— 这条指令排空 Store Buffer！",
+    code: `// barrierSetC2.cpp:280-287  写前
+} else if (is_write) {
+  if (is_volatile || is_release) {
+    _leading_membar = kit->insert_mem_bar(Op_MemBarRelease);
+  }
+}
+// barrierSetC2.cpp:345-352  写后（x86：MemBarVolatile）
+if (is_volatile && !support_IRIW_for_not_multiple_copy_atomic_cpu) {
+  Node* mb = kit->insert_mem_bar(Op_MemBarVolatile, n);
+}`,
+    file: "barrierSetC2.cpp",
+    set(s) {
+      s.resetAll(); s.setReadyType('vol');
+      s.x=1; s.ready=true;
+      s.mark('a1','done'); s.mark('a2','done'); s.mark('a3','run');
+      s.barRel.show(); s.barVol.show();
+      s.sbPush('ready = true');
+      s.verdict('info', '屏障插入：写前 MemBarRelease（空），写后 MemBarVolatile（真指令）');
+    }
+  },
+  { // 8
+    title: "lock addl 排空 Store Buffer",
+    desc: "lock addl [rsp],0 是全屏障：CPU 把 Store Buffer 里的 x=1 和 ready=true 全部冲刷进缓存/内存，并让所有核都能看到。这正是 assembler_x86.cpp:239-240 的那条 lock; addl。",
+    code: `// assembler_x86.cpp:208-241
+void Assembler::membar(Membar_mask_bits order_constraint) {
+  // We only have to handle StoreLoad
+  if (order_constraint & StoreLoad) {
+    int offset = -VM_Version::L1_line_size();
+    if (offset < -128) offset = -128;
+    lock();
+    addl(Address(rsp, offset), 0);  // ← lock addl $0,-128(%rsp)
+  }
+}`,
+    file: "assembler_x86.cpp",
+    set(s) {
+      s.resetAll(); s.setReadyType('vol');
+      s.x=1; s.ready=true;
+      s.mark('a1','done'); s.mark('a2','done'); s.mark('a3','done');
+      s.barVol.show();
+      s.sbDrain();
+      s.verdict('ok', 'lock addl 执行：Store Buffer 全部冲刷，x=1 与 ready=true 对 B 可见');
+    }
+  },
+  { // 9
+    title: "B 读 ready=true ✓",
+    desc: "B 读 volatile ready —— 读后插入 MemBarAcquire（x86 上空编码，硬件本身足够）。这次读到 true，且由于 happens-before 链，能保证 x 也可见。",
+    code: `// barrierSetC2.cpp:353-360  读后
+} else {
+  if (is_volatile || is_acquire) {
+    Node* mb = kit->insert_mem_bar(Op_MemBarAcquire, n);
+    mb->as_MemBar()->set_trailing_load();
+  }
+}`,
+    file: "barrierSetC2.cpp",
+    set(s) {
+      s.resetAll(); s.setReadyType('vol');
+      s.x=1; s.ready=true;
+      s.mark('a1','done'); s.mark('a2','done'); s.mark('a3','done');
+      s.mark('b1','run'); s.barAcq.show();
+      s.verdict('ok', 'B 读到 ready=true —— happens-before 链建立（A 写 → B 读）');
+    }
+  },
+  { // 10
+    title: "B 读 x = 1 ✓ 消息必达",
+    desc: "因为 A 的 x=1 已经被 lock addl 排空，且 volatile 读建立了 happens-before，B 读 x 必然得到 1。消息必达，重排被彻底阻断。",
+    code: `// 线程 B（volatile 版本）
+if (ready) {        // true —— happens-before 成立
+    y = x;          // y == 1 ✓ 必然是最新值！
+}`,
+    file: "Demo.java · 线程 B",
+    set(s) {
+      s.resetAll(); s.setReadyType('vol');
+      s.x=1; s.ready=true;
+      s.mark('a1','done'); s.mark('a2','done'); s.mark('a3','done');
+      s.mark('b1','done'); s.mark('b2','done');
+      s.xVal.classList.add('green'); s.readyVal.classList.add('green');
+      s.barVol.show();
+      s.verdict('ok', '✅ y = 1 —— volatile 完整承诺：可见性 + 有序性');
+    }
+  },
+  { // 11
+    title: "硬件视角：为什么只有 lock addl？",
+    desc: "x86 是 TSO（强内存模型）：普通 load 不与普通 load/store 重排，store 不与更早的 store 重排——只有 store 可能晚于后续 load 被看到（StoreLoad）。所以 Acquire/Release 空编码就够，唯独写后需要 lock addl。",
+    code: `// x86.ad:8855-8888  Acquire / Release —— 空编码
+instruct membar_acquire() %{
+  match(MemBarAcquire);
+  ins_cost(0);
+  size(0);
+  format %{ "MEMBAR-acquire ! (empty encoding)" %}
+  ins_encode();
+%}
+// x86.ad:8916-8929  Volatile —— 唯一真指令
+instruct membar_volatile(rFlagsReg cr) %{
+  match(MemBarVolatile);
+  $$emit$$"lock addl [rsp + #0], 0\\t! membar_volatile"
+%}`,
+    file: "x86.ad",
+    set(s) {
+      s.resetAll(); s.setReadyType('vol');
+      s.x=1; s.ready=true;
+      s.mark('a1','done'); s.mark('a2','done'); s.mark('a3','done');
+      s.mark('b1','done'); s.mark('b2','done');
+      s.barRel.show(); s.barVol.show(); s.barAcq.show();
+      s.verdict('info', '三个屏障节点：Release 空 · Volatile=lock addl · Acquire 空 —— 成本集中在写侧一条指令');
+    }
+  },
+  { // 12
+    title: "总结：volatile 的真实成本",
+    desc: "在 x86 上：volatile 读 = 普通 mov（零额外指令）；volatile 写 = 普通 mov + 一条 lock addl。这就是 JMM 承诺的全部硬件代价——远小于教科书渲染的“每次读写都上锁”。",
+    code: `// 无 volatile：                        // 有 volatile：
+x = 1;             mov $1,[x]            x = 1;             mov $1,[x]
+ready = true;      mov $1,[ready]        ready = true;      mov $1,[ready]
+                                          lock addl [rsp],0  ← 唯一新增
+// B 可能读到 x=0 ❌                     // B 必然读到 x=1 ✅`,
+    file: "x86 汇编对比 · JDK 28",
+    set(s) {
+      s.resetAll(); s.setReadyType('vol');
+      s.x=1; s.ready=true;
+      s.mark('a1','done'); s.mark('a2','done'); s.mark('a3','done');
+      s.mark('b1','done'); s.mark('b2','done');
+      s.barVol.show();
+      s.verdict('ok', 'volatile 写 = 1 条 lock addl；volatile 读 = 0 条额外指令。读完 03-volatile.md 第 4 节回顾全链路');
+    }
+  },
+];
+
+/* ---------- 舞台状态机 ---------- */
+const el = id => document.getElementById(id);
+const s = {
+  x: 0, ready: false,
+  resetAll() {
+    document.querySelectorAll('.op').forEach(o => o.className = 'op');
+    document.querySelectorAll('.barrier').forEach(b => b.classList.remove('show'));
+    document.querySelectorAll('.sb-item').forEach(i => i.remove());
+    el('verdict').className = 'verdict';
+    el('xVal').className = 'vval';
+    el('readyVal').className = 'vval';
+    el('readyTag').textContent = '普通字段';
+    el('mvReady').classList.remove('volatile');
+    el('a2tag').textContent = 'WRITE';
+    el('a2tag').className = 'tag norm';
+    el('xVal').textContent = '0';
+    el('readyVal').textContent = 'false';
+    this.mark('a1','done');
+  },
+  setReadyType(t) {
+    if (t === 'vol') {
+      el('mvReady').classList.add('volatile');
+      el('readyTag').textContent = 'volatile 字段';
+      el('a2tag').textContent = 'VOL-WRITE';
+      el('a2tag').className = 'tag vol';
+    }
+  },
+  mark(id, state) {
+    const n = el(id);
+    n.classList.remove('run','done','fail');
+    if (state === 'run') n.classList.add('run');
+    if (state === 'done') n.classList.add('done');
+    if (state === 'fail') n.classList.add('fail');
+  },
+  sbPush(text) {
+    const row = el('sbRow');
+    const it = document.createElement('div');
+    it.className = 'sb-item show';
+    it.textContent = text;
+    row.appendChild(it);
+  },
+  sbDrain() {
+    document.querySelectorAll('.sb-item').forEach((it, i) => {
+      setTimeout(() => it.classList.add('drain'), i * 250);
+      setTimeout(() => it.style.opacity = '0.3', i * 250 + 800);
+    });
+  },
+  verdict(type, text) {
+    const v = el('verdict');
+    v.className = 'verdict show ' + type;
+    v.innerHTML = (type === 'ok' ? '✅ ' : type === 'fail' ? '⚠️ ' : '💡 ') + text;
+  },
+  get xVal() { return el('xVal'); },
+  get readyVal() { return el('readyVal'); },
+  get barRel() { return el('barRel'); },
+  get barVol() { return el('barVol'); },
+  get barAcq() { return el('barAcq'); },
+};
+const barEls = { barRel: el('barRel'), barVol: el('barVol'), barAcq: el('barAcq') };
+
+/* ---------- 步骤渲染 ---------- */
+let cur = 0, playing = false, timer = null;
+const stepsBox = el('steps');
+
+STEPS.forEach((st, i) => {
+  const p = document.createElement('div');
+  p.className = 'step-pill';
+  p.textContent = (i + 1) + ' · ' + st.title;
+  p.onclick = () => go(i);
+  stepsBox.appendChild(p);
+});
+
+function renderStep() {
+  const st = STEPS[cur];
+  // 步骤胶囊状态
+  document.querySelectorAll('.step-pill').forEach((p, i) => {
+    p.className = 'step-pill' + (i < cur ? ' done' : '') + (i === cur ? ' active' : '');
+  });
+  // 当前步骤标题
+  el('curStep').innerHTML = '<b>' + (cur + 1) + '/' + STEPS.length + '</b> · ' + st.title;
+  // 代码面板
+  el('codeFile').textContent = st.file;
+  const codeLines = st.code.split('\n');
+  let hlIdx = st.hl != null ? st.hl : -1;
+  el('codeBox').innerHTML = codeLines.map((ln, i) =>
+    '<div class="code-line' + (i === hlIdx ? ' hl' : '') + '">' +
+    ln.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/(\/\/.*)$/, '<span class="cm">$1</span>')
+      .replace(/\b(volatile|int|boolean|if)\b/g, '<span class="kw">$1</span>')
+      .replace(/\b(\d+)\b/g, '<span class="num">$1</span>')
+    + '</div>'
+  ).join('');
+  // 舞台
+  st.set(s);
+}
+
+function go(i) {
+  cur = Math.max(0, Math.min(STEPS.length - 1, i));
+  renderStep();
+}
+
+function play() {
+  if (playing) { pause(); return; }
+  playing = true;
+  el('btnPlay').textContent = '⏸';
+  timer = setInterval(() => {
+    if (cur >= STEPS.length - 1) { pause(); return; }
+    go(cur + 1);
+  }, 3800);
+}
+function pause() {
+  playing = false;
+  clearInterval(timer);
+  el('btnPlay').textContent = '▶';
+}
+
+/* 键盘控制 */
+document.addEventListener('keydown', e => {
+  if (e.code === 'Space') { e.preventDefault(); play(); }
+  else if (e.code === 'ArrowRight') { pause(); go(cur + 1); }
+  else if (e.code === 'ArrowLeft') { pause(); go(cur - 1); }
+  else if (e.code === 'KeyR') { pause(); go(0); }
+});
+el('btnPlay').onclick = play;
+el('btnNext').onclick = () => { pause(); go(cur + 1); };
+el('btnPrev').onclick = () => { pause(); go(cur - 1); };
+el('btnReset').onclick = () => { pause(); go(0); };
+
+/* 初始渲染 */
+renderStep();
+</script>
+</body>
+</html>

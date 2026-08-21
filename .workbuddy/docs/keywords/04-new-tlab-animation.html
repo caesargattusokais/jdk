@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>new / TLAB 对象诞生全链路 · 交互动画</title>
+<style>
+  :root{
+    --blue:#3b82f6;   --blue-bg:#eff6ff;   --blue-bd:#bfdbfe;
+    --purple:#8b5cf6; --purple-bg:#f5f3ff; --purple-bd:#ddd6fe;
+    --orange:#f59e0b; --orange-bg:#fffbeb; --orange-bd:#fde68a;
+    --green:#10b981;  --green-bg:#ecfdf5;  --green-bd:#a7f3d0;
+    --red:#ef4444;    --red-bg:#fef2f2;    --red-bd:#fecaca;
+    --ink:#1f2937;    --ink-2:#6b7280;     --ink-3:#9ca3af;
+    --line:#e5e7eb;   --card:#ffffff;      --bg:#f6f7fb;
+    --code-bg:#111827; --code-ink:#e5e7eb;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI','Microsoft YaHei',sans-serif;background:var(--bg);color:var(--ink);padding:20px}
+  header{text-align:center;margin-bottom:18px}
+  header h1{font-size:25px;letter-spacing:.5px}
+  header h1 .mono{font-family:Consolas,monospace;color:var(--blue)}
+  header .sub{color:var(--ink-2);font-size:13.5px;margin-top:6px}
+  .badges{margin-top:12px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+  .badge{font-size:12px;padding:3px 12px;border-radius:999px;border:1px solid var(--blue-bd);
+    background:var(--blue-bg);color:var(--blue);font-family:Consolas,monospace}
+  .badge.purple{border-color:var(--purple-bd);background:var(--purple-bg);color:var(--purple)}
+  .badge.green{border-color:var(--green-bd);background:var(--green-bg);color:var(--green)}
+  .badge.orange{border-color:var(--orange-bd);background:var(--orange-bg);color:var(--orange)}
+  .badge.red{border-color:var(--red-bd);background:var(--red-bg);color:var(--red)}
+  .steps{display:flex;justify-content:center;gap:6px;flex-wrap:wrap;margin-bottom:16px}
+  .step-pill{font-size:11.5px;padding:5px 11px;border-radius:999px;cursor:pointer;
+    border:1.5px solid var(--line);background:var(--card);color:var(--ink-2);
+    transition:all .2s;user-select:none;white-space:nowrap}
+  .step-pill:hover{border-color:var(--blue);color:var(--blue)}
+  .step-pill.done{border-color:var(--green-bd);background:var(--green-bg);color:var(--green)}
+  .step-pill.active{border-color:var(--blue);background:var(--blue);color:#fff;
+    box-shadow:0 4px 12px rgba(59,130,246,.35)}
+  .controls{display:flex;justify-content:center;align-items:center;gap:10px;
+    background:var(--card);border:1px solid var(--line);border-radius:14px;
+    padding:12px 16px;margin-bottom:16px;box-shadow:0 2px 10px rgba(17,24,39,.05);flex-wrap:wrap}
+  .btn{border:1.5px solid var(--line);background:#fff;color:var(--ink);font-size:14px;
+    padding:7px 16px;border-radius:10px;cursor:pointer;transition:all .15s;min-width:44px;font-family:inherit}
+  .btn:hover:not(:disabled){border-color:var(--blue);color:var(--blue)}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+  .btn.primary{background:var(--blue);border-color:var(--blue);color:#fff;font-weight:600}
+  .btn.primary:hover:not(:disabled){background:#2563eb;color:#fff}
+  .btn.reset{color:var(--ink-2)}
+  .prog{flex:1;max-width:280px;height:6px;background:var(--line);border-radius:3px;overflow:hidden}
+  .prog i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--blue),var(--purple));transition:width .3s}
+  .step-count{font-size:13px;color:var(--ink-2);font-family:Consolas,monospace;white-space:nowrap}
+  .stage{display:grid;grid-template-columns:1.05fr 1.35fr;gap:14px}
+  @media(max-width:980px){.stage{grid-template-columns:1fr}}
+  .card{background:var(--card);border:1.5px solid var(--line);border-radius:12px;padding:14px}
+  .card h2{font-size:14px;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+  .tag{font-size:10px;padding:2px 8px;border-radius:10px;color:#fff;font-weight:normal}
+  .tag.blue{background:var(--blue)} .tag.orange{background:var(--orange)} .tag.purple{background:var(--purple)} .tag.green{background:var(--green)} .tag.red{background:var(--red)}
+  .code-panel{background:var(--code-bg);border-radius:12px;overflow:hidden;
+    font-family:Consolas,"Courier New",monospace;font-size:12px;box-shadow:0 2px 10px rgba(17,24,39,.15)}
+  .code-head{display:flex;justify-content:space-between;align-items:center;padding:8px 14px;
+    background:rgba(255,255,255,.06);color:#9ca3af;font-size:11px}
+  .code-head .file{color:var(--green)}
+  .code-body{padding:12px 14px;overflow-x:auto}
+  .code-line{color:var(--code-ink);white-space:pre;padding:1px 0;transition:background .3s;border-radius:4px}
+  .code-line .ln{display:inline-block;width:30px;color:#4b5563;user-select:none}
+  .code-line.hl{background:rgba(245,158,11,.22);color:#fbbf24}
+  .code-line.hlb{background:rgba(59,130,246,.22);color:#93c5fd}
+  .code-line.hlg{background:rgba(16,185,129,.22);color:#6ee7b7}
+  .code-line .kw{color:#c084fc} .code-line .fn{color:#60a5fa}
+  .code-line .cm{color:#64748b;font-style:italic} .code-line .num{color:#fbbf24} .code-line .str{color:#34d399}
+  .navi{font-size:13px;color:var(--ink);min-height:48px;margin-top:12px;
+    background:var(--card);border:1px solid var(--line);border-radius:12px;
+    padding:12px 14px;line-height:1.7;box-shadow:0 2px 10px rgba(17,24,39,.05)}
+  .navi b{color:var(--blue)}
+  /* 堆内存视图 */
+  .heap{position:relative;background:var(--orange-bg);border:1.5px solid var(--orange);border-radius:10px;
+    height:300px;overflow:hidden}
+  .heap-title{position:absolute;top:8px;left:12px;font-size:12px;font-weight:bold;color:var(--orange);z-index:3}
+  .eden{position:absolute;top:38px;bottom:14px;left:14px;width:58%;border:2px solid var(--blue);
+    border-radius:8px;background:var(--blue-bg)}
+  .eden-label{position:absolute;top:44px;left:20px;font-size:11px;color:var(--blue);font-weight:bold}
+  .tlab{position:absolute;top:56px;bottom:22px;left:30px;width:44%;background:rgba(245,158,11,.16);
+    border:2px dashed var(--orange);border-radius:6px;transition:all .4s}
+  .tlab-label{position:absolute;top:-22px;left:0;font-size:10.5px;color:var(--orange);white-space:nowrap}
+  .tlab-obj{position:absolute;top:6px;height:calc(100% - 12px);background:linear-gradient(180deg,#fde68a,#fcd34d);
+    border:2px solid #d97706;border-radius:4px;transition:left .5s ease,width .5s ease;z-index:2}
+  .tlab-obj .olabel{position:absolute;top:-18px;left:0;font-size:10px;color:#b45309;white-space:nowrap;font-weight:bold}
+  .tlab-top{position:absolute;top:-2px;bottom:-2px;width:2px;background:var(--red);z-index:4;transition:left .5s ease}
+  .tlab-top::after{content:"top";position:absolute;top:-20px;left:-10px;font-size:9.5px;color:var(--red);font-weight:bold}
+  .tlab-end{position:absolute;top:-2px;bottom:-2px;width:2px;background:var(--purple);z-index:4;transition:left .5s ease}
+  .tlab-end::after{content:"end";position:absolute;top:-20px;left:-10px;font-size:9.5px;color:var(--purple);font-weight:bold}
+  .old{position:absolute;top:38px;bottom:14px;left:75%;width:22%;border:2px solid var(--purple);border-radius:8px;
+    background:repeating-linear-gradient(45deg,var(--purple-bg),var(--purple-bg) 8px,var(--purple-bd) 8px,var(--purple-bd) 16px)}
+  .old-label{position:absolute;top:44px;left:76.5%;font-size:11px;color:var(--purple);font-weight:bold}
+  .bigobj{position:absolute;width:16%;height:44px;border:2px solid var(--purple);background:var(--purple-bg);border-radius:4px;
+    display:none;z-index:2;transition:all .5s}
+  .bigobj .olabel{position:absolute;top:-17px;left:0;font-size:9.5px;color:var(--purple);white-space:nowrap}
+  .vthread{position:absolute;left:8px;bottom:8px;font-size:10px;color:var(--ink-2)}
+  .ptab{position:absolute;left:66%;bottom:14px;font-size:10px;color:var(--ink-2);background:#fff;
+    border:1px solid var(--line);padding:5px 9px;border-radius:6px;line-height:1.5;z-index:3}
+  .ptab b{color:var(--orange)}
+  /* Foo 内存布局图（第①步） */
+  .fooDia{position:absolute;top:30px;left:8px;right:8px;bottom:8px;display:none;z-index:5;
+    background:#fff;border-radius:8px;padding:4px 6px;overflow:auto}
+  .fooDia svg{width:100%;height:100%;display:block}
+  /* 线程泳道 */
+  .thread{display:flex;align-items:center;gap:10px;margin-top:12px;padding:9px 12px;
+    background:var(--card);border:1.5px solid var(--line);border-radius:9px}
+  .thread .avatar{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    color:#fff;font-weight:bold;font-size:13px}
+  .thread .info{flex:1;font-size:12px;line-height:1.5}
+  .thread .state{font-size:11px;padding:3px 10px;border-radius:12px;font-weight:bold}
+  .st-running{background:var(--green-bg);color:#065f46}
+  .st-wait{background:var(--red-bg);color:#b91c1c}
+  .st-done{background:var(--blue-bg);color:#1d4ed8}
+  .st-c2{background:var(--purple-bg);color:#6d28d9}
+  /* 决策面板 */
+  .decide{display:none;margin-top:12px;background:var(--red-bg);border:1.5px solid var(--red);border-radius:10px;padding:12px}
+  .decide h3{font-size:13px;color:#b91c1c;margin-bottom:8px}
+  .gauge{height:14px;background:#fff;border:1px solid var(--line);border-radius:7px;overflow:hidden;margin:6px 0}
+  .gauge .fill{height:100%;background:var(--red);transition:width .5s}
+  .branch-row{display:flex;gap:10px;margin:12px 0}
+  .branch{flex:1;border:1.5px solid var(--line);border-radius:10px;padding:10px;background:#fff;transition:all .3s;opacity:.35}
+  .branch.active{opacity:1;box-shadow:0 3px 12px rgba(17,24,39,.12)}
+  .branch.keep.active{border-color:var(--green);box-shadow:0 3px 12px rgba(16,185,129,.22)}
+  .branch.retire.active{border-color:var(--orange);box-shadow:0 3px 12px rgba(245,158,11,.22)}
+  .branch .b-title{font-size:11.5px;font-weight:bold;margin-bottom:6px}
+  .branch.keep .b-title{color:var(--green)}
+  .branch.retire .b-title{color:var(--orange)}
+  .branch .b-bar{height:16px;border:1px solid var(--line);border-radius:5px;background:var(--bg);overflow:hidden;margin:6px 0;position:relative}
+  .branch .b-fill{position:absolute;top:0;bottom:0;left:0}
+  .branch.keep .b-fill{width:46%;background:repeating-linear-gradient(45deg,var(--green-bg),var(--green-bg) 5px,var(--green-bd) 5px,var(--green-bd) 10px)}
+  .branch.retire .b-fill{width:8%;background:repeating-linear-gradient(45deg,var(--orange-bg),var(--orange-bg) 5px,var(--orange-bd) 5px,var(--orange-bd) 10px)}
+  .branch .b-txt{font-size:10.5px;color:var(--ink-2);line-height:1.55}
+  .branch .b-txt b{color:var(--ink)}
+  .kbd{display:inline-block;border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;
+    padding:1px 6px;font-size:11px;background:#fff;color:var(--ink-2);font-family:Consolas,monospace}
+</style>
+</head>
+<body>
+
+<header>
+  <h1><span class="mono">new / TLAB</span> 对象诞生全链路</h1>
+  <div class="sub">OpenJDK 28 · 字节码 → bump-pointer → 慢路径三段式 → 对象头 → 构造器 → C2 消灭</div>
+  <div class="badges">
+    <span class="badge">0xbb new</span>
+    <span class="badge orange">TLAB bump</span>
+    <span class="badge purple">慢路径三段式</span>
+    <span class="badge green">C2 标量替换</span>
+  </div>
+</header>
+
+<div class="controls">
+  <button id="resetBtn" class="btn reset">↺ 重置</button>
+  <button id="prevBtn" class="btn">← 上一步</button>
+  <button id="playBtn" class="btn primary">▶ 播放</button>
+  <button id="nextBtn" class="btn">下一步 →</button>
+  <div class="prog"><i id="prog"></i></div>
+  <span class="step-count" id="stepCount">1 / 12</span>
+</div>
+
+<div class="steps" id="steps"></div>
+
+<div class="stage">
+  <!-- 左：代码 -->
+  <div class="card">
+    <h2><span class="tag blue">源码</span> Foo f = new Foo();</h2>
+    <div class="code-panel">
+      <div class="code-head"><span>源码跟读</span><span class="file" id="codeFile">bytecode</span></div>
+      <pre class="code-body" id="codePanel"></pre>
+    </div>
+    <div class="navi" id="navi"></div>
+  </div>
+
+  <!-- 右：堆视图 -->
+  <div class="card">
+    <h2><span class="tag orange">堆</span> Eden 区 · TLAB 分配</h2>
+    <div class="heap" id="heap">
+      <div class="heap-title">Java Heap（新生代 Eden 局部）</div>
+      <div class="eden"><div class="eden-label">Eden</div></div>
+      <div class="tlab" id="tlab">
+        <div class="tlab-label" id="tlabLabel">TLAB（线程 T 私有）</div>
+        <div class="tlab-obj" id="obj"></div>
+        <div class="tlab-top" id="topMark"></div>
+        <div class="tlab-end" id="endMark"></div>
+      </div>
+      <div class="old"><div class="old-label">Old / Humongous</div></div>
+      <div class="bigobj" id="bigObj"><div class="olabel">大对象 Foo[10_000]</div></div>
+      <div class="ptab" id="ptab"></div>
+      <div class="vthread" id="vthread">分配线程：T（主线程）</div>
+
+      <!-- Foo 字节级内存布局图（仅第①步显示） -->
+      <div class="fooDia" id="fooDia">
+        <svg viewBox="0 0 680 300" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <marker id="ah" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+              <path d="M0,0 L8,3 L0,6 Z" fill="#8b5cf6"/>
+            </marker>
+          </defs>
+
+          <text x="340" y="24" text-anchor="middle" font-size="15" font-weight="bold" fill="#1f2937">Foo 实例 oop 的内存布局（64-bit · 压缩指针开启）</text>
+          <text x="40" y="48" font-size="11" fill="#6b7280">Java Heap 内 · 实例 oop（3 个堆字 = 24 字节，8 字节对齐）</text>
+
+          <!-- 主条 -->
+          <rect x="40" y="64" width="200" height="58" rx="6" fill="#3b82f6" stroke="#fff" stroke-width="2"/>
+          <rect x="240" y="64" width="100" height="58" rx="6" fill="#8b5cf6" stroke="#fff" stroke-width="2"/>
+          <rect x="340" y="64" width="100" height="58" rx="6" fill="#f59e0b" stroke="#fff" stroke-width="2"/>
+          <rect x="440" y="64" width="100" height="58" rx="6" fill="#10b981" stroke="#fff" stroke-width="2"/>
+          <rect x="540" y="64" width="100" height="58" rx="6" fill="#e5e7eb" stroke="#9ca3af" stroke-width="1.5" stroke-dasharray="4 3"/>
+
+          <text x="140" y="88" text-anchor="middle" font-size="13" font-weight="bold" fill="#fff">mark word</text>
+          <text x="140" y="106" text-anchor="middle" font-size="12" fill="#fff">8 字节</text>
+          <text x="140" y="120" text-anchor="middle" font-size="9.5" fill="#e0e7ff">哈希 · 锁 · GC</text>
+
+          <text x="290" y="92" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#fff">klass 指针</text>
+          <text x="290" y="110" text-anchor="middle" font-size="11" fill="#fff">4B(压缩)</text>
+
+          <text x="390" y="92" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#fff">int x</text>
+          <text x="390" y="110" text-anchor="middle" font-size="11" fill="#fff">4B =0</text>
+
+          <text x="490" y="92" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#fff">int[] arr</text>
+          <text x="490" y="110" text-anchor="middle" font-size="10.5" fill="#fff">4B 引用=null</text>
+
+          <text x="590" y="92" text-anchor="middle" font-size="12" font-weight="bold" fill="#6b7280">对齐填充</text>
+          <text x="590" y="110" text-anchor="middle" font-size="11" fill="#6b7280">4B</text>
+
+          <!-- 字节偏移标尺 -->
+          <g stroke="#6b7280" stroke-width="1">
+            <line x1="40" y1="122" x2="40" y2="130"/>
+            <line x1="240" y1="122" x2="240" y2="130"/>
+            <line x1="340" y1="122" x2="340" y2="130"/>
+            <line x1="440" y1="122" x2="440" y2="130"/>
+            <line x1="540" y1="122" x2="540" y2="130"/>
+            <line x1="640" y1="122" x2="640" y2="130"/>
+            <line x1="40" y1="130" x2="640" y2="130"/>
+          </g>
+          <g font-size="11" fill="#6b7280" text-anchor="middle">
+            <text x="40" y="144">0</text>
+            <text x="240" y="144">+8</text>
+            <text x="340" y="144">+12</text>
+            <text x="440" y="144">+16</text>
+            <text x="540" y="144">+20</text>
+            <text x="640" y="144">+24</text>
+          </g>
+
+          <!-- klass 指针 → InstanceKlass 箭头 -->
+          <path d="M290 122 C 290 152, 585 138, 585 168" fill="none" stroke="#8b5cf6" stroke-width="2" marker-end="url(#ah)"/>
+          <text x="430" y="150" font-size="10.5" fill="#8b5cf6">klass 指针 →</text>
+
+          <!-- InstanceKlass 框 -->
+          <rect x="495" y="170" width="185" height="104" rx="8" fill="#f5f3ff" stroke="#8b5cf6" stroke-width="2"/>
+          <text x="587" y="192" text-anchor="middle" font-size="13" font-weight="bold" fill="#8b5cf6">InstanceKlass</text>
+          <text x="587" y="208" text-anchor="middle" font-size="10" fill="#6b7280">元空间 Metaspace（类元数据）</text>
+          <g font-size="11" fill="#374151">
+            <text x="508" y="228">• layout_helper（算对象大小）</text>
+            <text x="508" y="246">• init_state（&lt;clinit&gt; 跑没跑）</text>
+            <text x="508" y="264">• 字段表 / 方法表 / 常量池 / 父类</text>
+          </g>
+
+          <!-- 说明框 -->
+          <rect x="40" y="158" width="410" height="112" rx="8" fill="#f9fafb" stroke="#d1d5db" stroke-width="1.5"/>
+          <text x="52" y="180" font-size="12" font-weight="bold" fill="#1f2937">new 此刻干了什么？</text>
+          <g font-size="11" fill="#374151">
+            <text x="52" y="200">① 向堆切出 24 字节 oop（bump-pointer 从 TLAB.top 拿）</text>
+            <text x="52" y="218">② 对象头填默认：mark=prototype(unlocked) · klass → Foo</text>
+            <text x="52" y="236">③ 字段清零：x=0 · arr=null（还没跑 &lt;init&gt;）</text>
+            <text x="52" y="258" font-weight="bold" fill="#b45309">→ 此刻是「半初始化对象」，引用 f 还不能用</text>
+          </g>
+        </svg>
+      </div>
+    </div>
+
+    <div class="thread" id="threadRow">
+      <div class="avatar" style="background:var(--blue)">T</div>
+      <div class="info"><b>线程 T</b> —— 执行 <code>new Foo()</code> 的主线程，持有私有 TLAB</div>
+      <div class="state" id="tState">运行中</div>
+    </div>
+
+    <!-- 决策面板 -->
+    <div class="decide" id="decide">
+      <h3>⚠ 慢路径决策：TLAB 剩余空间值得保留吗？</h3>
+      <div style="font-size:12px;color:#3A3A3A">TLAB 剩余 <b id="freeVal">0</b> &gt; refill_waste_limit <b id="wasteVal">0</b> ？</div>
+      <div class="gauge"><div class="fill" id="wasteGauge" style="width:0%"></div></div>
+      <div class="branch-row">
+        <div class="branch keep" id="branchKeep">
+          <div class="b-title">① 剩余多（free &gt; waste）</div>
+          <div class="b-bar"><div class="b-fill"></div></div>
+          <div class="b-txt">便签纸还空大半，<b>舍不得扔</b> → <b>保留</b> TLAB，当前大对象改走 <b>Eden 公共区（堆内，非 off-heap）</b>，剩余空间留给后面小对象。</div>
+        </div>
+        <div class="branch retire" id="branchRetire">
+          <div class="b-title">② 剩余少（free &lt; waste）</div>
+          <div class="b-bar"><div class="b-fill"></div></div>
+          <div class="b-txt">便签纸只剩一条缝，<b>扔了不可惜</b> → <b>退休</b> 旧 TLAB，申请新 TLAB，对象放在新 TLAB 头部。</div>
+        </div>
+      </div>
+      <div style="font-size:11.5px;color:var(--ink-2);line-height:1.6" id="decideText"></div>
+    </div>
+  </div>
+</div>
+
+<div style="margin-top:12px;font-size:11px;color:var(--ink-2);text-align:center">
+  <span class="kbd">Space</span> 播放/暂停 · <span class="kbd">←</span> <span class="kbd">→</span> 步进 · <span class="kbd">R</span> 重置 · 点击步骤胶囊跳转。数据为教学示意，非真实字节数。
+</div>
+
+<script>
+const CODE = {
+  java: `// Foo.java
+class Foo {
+  int x;
+  int[] arr = new int[1000];   // 大数组：TLAB 装不下
+  Foo(int v) { x = v; }        // 构造器
+}
+// main 中：
+Foo f = new Foo(42);`,
+  bytecode: ` 0: new             #7   // class Foo     ← 0xbb
+ 3: dup
+ 4: invokespecial  #12  // Method "<init>"
+ 7: astore_1`,
+  check: `// templateTable_x86.cpp:3732
+void TemplateTable::_new() {
+  __ cmpb(tags[rdx], JVM_CONSTANT_Class);   // ① CP 已解析?
+  __ load_resolved_klass_at_index(...);     // ② 拿 InstanceKlass
+  __ clinit_barrier(rcx, ...);              // ③ 类已初始化?
+  __ testl(rdx, _lh_instance_slow_path_bit);// ④ 无慢路径标志?
+  if (UseTLAB) {
+    __ tlab_allocate(...);                  // ← 快路径!`,
+  bump: `// barrierSetAssembler_x86.cpp:296
+  __ movptr(obj, [r15 + tlab_top]);   // obj = TLAB.top
+  __ lea(end, [obj + size]);          // end = obj + size
+  __ cmpptr(end, [r15 + tlab_end]);   // end <= TLAB.end ?
+  __ jcc(above, slow_case);           //   不够 → 慢路径
+  __ movptr([r15 + tlab_top], end);   // top = end  ← 分配完成`,
+  zero: `// templateTable_x86.cpp:3792
+  __ xorl(rcx, rcx);            // 清零寄存器
+  // 8 字节一组循环清零字段
+  __ movptr([rax + rdx*8], rcx);
+  // 对象头：
+  __ movptr([rax + mark], prototype); // mark = unlocked
+  __ store_klass(rax, rcx);           // klass 指针`,
+  ctor: ` 4: invokespecial  #12  // Method "<init>"
+// templateTable_x86.cpp:3496
+// <init> 执行：
+//   this.x = 42;   → 字段写
+//   this.arr = ... → 数组分配（newarray）`,
+  slow1: `// memAllocator.cpp:327
+HeapWord* MemAllocator::mem_allocate(...) {
+  if (UseTLAB) {
+    mem = mem_allocate_inside_tlab_fast(); // ① 再试一次
+    if (mem) return mem;
+  }
+  if (UseTLAB) {
+    mem = mem_allocate_inside_tlab_slow(); // ② refill
+    if (mem) return mem;
+  }
+  return mem_allocate_outside_tlab(...);   // ③ Eden 公共区（堆内，非 off-heap）`,
+  slow2: `// memAllocator.cpp:274
+  // Retain tlab and allocate object in shared space if
+  // the amount free in the tlab is too large to discard.
+  if (tlab.free() > tlab.refill_waste_limit()) {
+    tlab.record_slow_allocation();   // 保留 TLAB
+    return nullptr;                   // → 回到上层走 shared space（Eden 公共区，仍在堆内）
+  }
+  // 剩余太少 → 退休 TLAB 换新的
+  _thread->retire_tlab();
+  new_size = tlab.compute_size(obj_size);
+  mem = heap->allocate_new_tlab(...);`,
+  big: `// memAllocator.cpp:235
+HeapWord* MemAllocator::
+    mem_allocate_outside_tlab(...) const {
+  HeapWord* mem =
+    Universe::heap()->mem_allocate(_word_size);
+  // 大对象 → 向 GC 堆（Eden 公共区）要内存，仍属堆内，
+  // 可能触发 GC / 进 Humongous 区`,
+  c2: `// C2 世界：逃逸分析
+// escape.cpp:416
+if (has_scalar_replaceable_candidates &&
+    EliminateAllocations) { ... }
+// 未逃逸对象 → 标量替换：
+//   new 的分配被整体删除!
+//   x 变成寄存器里的 42
+//   (锁消除联动：EliminateLocks)
+// macro.cpp:2413 expand_allocate`,
+};
+
+const STEPS = [
+  {cap:"① Foo 是什么", navi:"Foo 在 JVM 眼里是<b>两样东西</b>：① 元空间里的 <b>InstanceKlass</b>（户口本：字段表 / 方法表 / 常量池 / 父类 + 两个关键字段 <code>layout_helper</code> 算大小、<code>init_state</code> 记 &lt;clinit&gt; 跑没跑）；② 堆上的<b>实例 oop</b>——右图是字节级内存布局：<code>mark 8B</code> / 压缩 <code>klass 4B</code> / <code>int x 4B</code> / <code>arr 引用 4B</code> / 对齐填充 4B = <b>24 字节</b>（klass 指针指向右上的 InstanceKlass）。<b>new 此刻只切出 oop 并填默认值</b>（x=0、arr=null），还没初始化完，所以叫「半初始化对象」。", code:"java", java:true,
+   act:"fooView"},
+  {cap:"② new 字节码", navi:"<b>new</b> 在字节码里只有一条指令（0xbb），后跟<b>常量池下标 #7</b> 指向 Foo 的符号引用。它此时<b>只申请空间</b>，构造器 &lt;init&gt; 还没跑——所以对象此刻是「半初始化」的。", code:"bytecode", java:true,
+   act:"bytecode"},
+  {cap:"③ 检查·CP tag", navi:"四连查第 1 关（templateTable_x86.cpp:3746 <code>cmpb</code>）：常量池第 7 项现在存的是「Foo 的名字」（<b>符号引用</b>）还是已解析好的<b>内存地址</b>？HotSpot 解析一次后就改写 tag。<b>已是解析态 → 放行</b>；仍是符号引用 → <b>跳慢路径</b>做完整解析（顺带触发类加载）。", code:"check", java:false,
+   act:"check1"},
+  {cap:"④ 检查·klass", navi:"第 2 关（:3750 <code>load_resolved_klass_at_index</code>）：从已解析项取出真正的 <b>InstanceKlass*</b>（Foo 户口本）存进寄存器备用（后面写对象头要靠它）。前提：Foo 至少<b>加载 + 链接</b>完才知道布局——类没加载的话，上一关解析时已连带触发。", code:"check", java:false,
+   act:"check2"},
+  {cap:"⑤ 检查·clinit", navi:"第 3 关（:3756 <code>clinit_barrier</code>）：JVM 规范保证「使用一个类前，其 &lt;clinit&gt;（静态赋值 + static{}）必须跑完」。new 是「使用类」动作，须确认 <b>init_state == fully_initialized</b>；没跑过 → <b>跳慢路径</b>由 runtime 去执行 / 等待 &lt;clinit&gt;。<b>静态语义就是这一关兜底。</b>", code:"check", java:false,
+   act:"check3"},
+  {cap:"⑥ 检查·layout", navi:"第 4 关（:3759 <code>testl(rdx, _lh_instance_slow_path_bit)</code>）：<code>layout_helper</code> 编码对象大小 / 是否数组 / 字段偏移，带一个专门的「慢路径位」。普通对象 = 0 → 走标准快分配；带 <code>finalize()</code> 或 Valhalla 特殊类型会置 1。<b>该位 = 0 → 放行，四关全过 → tlab_allocate 快路径！</b>", code:"check", java:false,
+   act:"check4"},
+  {cap:"⑦ bump-pointer", navi:"TLAB 快路径核心：<b>mov obj=top → lea end=obj+size → cmp end vs tlab_end → mov top=end</b>。线程私有，零锁。", code:"bump", java:false,
+   act:"bump"},
+  {cap:"⑧ 指针前移", navi:"<b>top 指针前移 size</b>，对象在 TLAB 里落地。剩余空间 = end - top。", code:"bump", java:false,
+   act:"move"},
+  {cap:"⑨ 对象头", navi:"对象头初始化：<b>mark word = prototype（unlocked 01）</b> + <b>klass 指针</b> + 字段 8 字节一组清零。出生即 unlocked——这正是 02 锁升级的起点。", code:"zero", java:false,
+   act:"header"},
+  {cap:"⑩ 构造器", navi:"<b>invokespecial &lt;init&gt;</b>：x=42 写入字段，arr 数组走 newarray 分配。对象完全初始化，引用可用。", code:"ctor", java:true,
+   act:"ctor"},
+  {cap:"⑪ TLAB 不够", navi:"场景切换：这次 <code>new int[1000]</code> 太大，<b>end 越过 tlab_end</b> → 跳慢路径。", code:"slow1", java:false,
+   act:"fail"},
+  {cap:"⑫ 决策", navi:"慢路径第一问，本质是在问：<b>TLAB 里剩下的空间，值不值得为这次分配而丢掉？</b><br><br>• <b>剩余多（free &gt; waste）</b>：便签纸还空大半，<b>舍不得扔</b> → 保留 TLAB，当前大对象改走 Eden 公共区（堆内，非 off-heap），剩余空间留给后面小对象。<br>• <b>剩余少（free &lt; waste）</b>：便签纸只剩一条缝，<b>扔了不可惜</b> → 退休旧 TLAB，申请新 TLAB，对象放新 TLAB 头部。<br><br>源码 memAllocator.cpp:274 注释原话：<i>「too large to discard」（多到不值得丢弃）→ 保留走 Eden 公共区（堆内）；否则退休换新</i>。", code:"slow2", java:false,
+   act:"decide"},
+  {cap:"⑬ refill", navi:"剩余太少 → <b>退休旧 TLAB</b>，按 ResizeTLAB 规则计算新大小（refill 多次自动翻倍，最多 16×），<b>allocate_new_tlab</b> 换新 TLAB，对象在头部落地。", code:"slow2", java:false,
+   act:"refill"},
+  {cap:"⑭ 大对象", navi:"剩余空间多时走 <b>③ Eden 公共区分配</b>（outside_tlab）：绕过本线程 TLAB，向 <b>GC 堆的 Eden 共享区</b> 要内存（仍在堆内，非 off-heap）；超大数组（&gt; region 一半）才直接进老年代 <b>Humongous 区</b>。", code:"big", java:false,
+   act:"big"},
+  {cap:"⑮ 慢路径汇合", navi:"无论哪条路，最终都回到对象头初始化 → 构造器。<b>分配路径不同，初始化路径相同。</b>", code:"zero", java:false,
+   act:"merge"},
+  {cap:"⑯ C2 消灭", navi:"终极彩蛋：<b>逃逸分析</b>发现 f 未逃逸 → <b>标量替换</b>把 new 整个删除，x 变成寄存器里的 42；锁消除联动删除未逃逸对象上的 synchronized。", code:"c2", java:true,
+   act:"c2"},
+];
+
+let step = 0, playing = false, timer = null;
+
+const $ = id => document.getElementById(id);
+
+function renderCode() {
+  const s = STEPS[step];
+  const code = CODE[s.code];
+  // 高亮：按步骤类型
+  let lines = code.split('\n');
+  let html = lines.map((l,i)=>{
+    let cls = '';
+    if (s.code==='bump' && s.act==='move' && (i===1||i===5)) cls='hl';
+    if (s.code==='bytecode' && i===0) cls='hlb';
+    if (s.code==='slow1' && i===10) cls='hl';
+    if (s.code==='zero' && (i===5||i===6)) cls='hlg';
+    if (s.code==='c2' && (i===3||i===6)) cls='hl';
+    if (s.code==='check' && s.act==='check1' && i===2) cls='hl';
+    if (s.code==='check' && s.act==='check2' && i===3) cls='hl';
+    if (s.code==='check' && s.act==='check3' && i===4) cls='hl';
+    if (s.code==='check' && s.act==='check4' && i===5) cls='hl';
+    const esc = l.replace(/&/g,'&amp;').replace(/</g,'&lt;');
+    return `<div class="code-line ${cls}"><span class="ln">${i+1}</span> ${esc}</div>`;
+  }).join('');
+  $('codePanel').innerHTML = html;
+  $('codeFile').textContent = CODE_FILE[s.code] || s.code;
+  $('navi').innerHTML = s.navi;
+}
+
+const CODE_FILE = {
+  java:'Foo.java', bytecode:'bytecode', check:'templateTable_x86.cpp',
+  bump:'barrierSetAssembler_x86.cpp', zero:'templateTable_x86.cpp',
+  ctor:'bytecode', slow1:'memAllocator.cpp', slow2:'memAllocator.cpp',
+  big:'memAllocator.cpp', c2:'escape.cpp'
+};
+
+function layout(){
+  // TLAB 容器坐标
+  const tlab = $('tlab');
+  const w = tlab.clientWidth, h = tlab.clientHeight;
+  return {w,h};
+}
+
+// 对象位置：占总宽比例
+function setObj(leftPct, widthPct){
+  const o = $('obj');
+  o.style.left = leftPct + '%';
+  o.style.width = widthPct + '%';
+  o.innerHTML = `<div class="olabel">Foo 对象</div>`;
+}
+function setMarks(topPct, endPct){
+  $('topMark').style.left = topPct + '%';
+  $('endMark').style.left = endPct + '%';
+}
+
+function runAct(act){
+  const t = $('tState');
+  const ptab = $('ptab');
+  $('fooDia').style.display='none';
+  $('obj').style.display='';
+  $('obj').style.opacity='1';
+  switch(act){
+    case 'fooView':
+      $('bigObj').style.display='none';
+      $('decide').style.display='none';
+      $('obj').style.display='none';
+      $('fooDia').style.display='block';
+      t.className='state st-running'; t.textContent='Foo 结构';
+      break;
+    case 'bytecode':
+      setObj(6, 12); setMarks(24, 92);
+      ptab.innerHTML = 'TLAB.top = 24%<br>TLAB.end = 92%<br>空闲 = 68%';
+      t.className='state st-running'; t.textContent='运行中';
+      $('bigObj').style.display='none';
+      $('decide').style.display='none';
+      break;
+    case 'check1':
+      t.className='state st-running'; t.textContent='检查 ① CP tag';
+      ptab.innerHTML = '① <b>CP tag</b><br>符号引用→已解析?<br>✓ 放行';
+      break;
+    case 'check2':
+      t.className='state st-running'; t.textContent='检查 ② klass';
+      ptab.innerHTML = '① CP ✓<br>② <b>取 InstanceKlass</b><br>✓ 户口本就位';
+      break;
+    case 'check3':
+      t.className='state st-running'; t.textContent='检查 ③ clinit';
+      ptab.innerHTML = '① CP ✓ ② klass ✓<br>③ <b>clinit 屏障</b><br>init_state=fully? ✓';
+      break;
+    case 'check4':
+      t.className='state st-running'; t.textContent='检查 ④ layout';
+      ptab.innerHTML = '①②③ ✓<br>④ <b>layout_helper 慢路径位</b><br>=0 ✓ → 快路径!';
+      break;
+    case 'bump':
+      setObj(6, 12);
+      ptab.innerHTML = 'obj = top = 24%<br>end = obj + size = 36%';
+      break;
+    case 'move':
+      setObj(24, 12);
+      setMarks(36, 92);
+      ptab.innerHTML = 'TLAB.top: 24% → 36%<br>剩余 = 56%<br>✅ 3 条指令完成';
+      t.className='state st-running'; t.textContent='分配完成';
+      break;
+    case 'header':
+      setObj(24, 12);
+      ptab.innerHTML = '<b>mark = prototype</b><br>unlocked(01) · hash=0<br>klass → Foo · 字段=0';
+      t.className='state st-running'; t.textContent='初始化对象头';
+      break;
+    case 'ctor':
+      setObj(24, 12);
+      ptab.innerHTML = '<b>&lt;init&gt; 执行中</b><br>x = 42 · arr 分配';
+      t.className='state st-done'; t.textContent='构造器完成';
+      break;
+    case 'fail':
+      setObj(70, 40);
+      setMarks(70, 92);
+      ptab.innerHTML = 'new int[1000] 需要 40%<br>top+size = 110%<br><b style="color:#D64545">❌ 110% &gt; end 92% → 超限，跳慢路径</b><br><span style="color:#8A8272">后续按剩余空间分流：退休换新 / Eden 公共区</span>';
+      t.className='state st-wait'; t.textContent='慢路径';
+      $('decide').style.display='none';
+      break;
+    case 'decide':
+      $('decide').style.display='block';
+      $('freeVal').textContent='46%';
+      $('wasteVal').textContent='30%';
+      $('wasteGauge').style.width='46%';
+      $('branchKeep').classList.add('active');
+      $('branchRetire').classList.remove('active');
+      $('decideText').innerHTML='<b style="color:var(--green)">free=46% &gt; waste=30%</b> → 剩余多，<b>保留</b> TLAB，当前对象走 ③ Eden 公共区（堆内，非 off-heap），TLAB 留给后面小对象。左卡「保留」已点亮。';
+      setMarks(46, 92);
+      t.className='state st-wait'; t.textContent='决策中';
+      ptab.innerHTML = 'free=46% &gt; waste=30%<br><b style="color:#16a34a">→ 保留，走 Eden 公共区（堆内）</b>';
+      break;
+    case 'refill':
+      $('decide').style.display='block';
+      $('freeVal').textContent='8%';
+      $('wasteVal').textContent='30%';
+      $('wasteGauge').style.width='8%';
+      $('branchRetire').classList.add('active');
+      $('branchKeep').classList.remove('active');
+      $('decideText').innerHTML='<b style="color:var(--orange)">free=8% &lt; waste=30%</b> → 剩余少，<b>退休</b> 旧 TLAB，按 ResizeTLAB 计算新大小（refill 多 → 自动翻倍，最多 16×），对象放新 TLAB 头部。右卡「退休」已点亮。';
+      setObj(6, 12); setMarks(84, 92);
+      ptab.innerHTML = '旧 TLAB 退休<br><b>新 TLAB 分配</b><br>对象在头部落地';
+      t.className='state st-running'; t.textContent='refill 成功';
+      break;
+    case 'big':
+      $('decide').style.display='none';
+      const big = $('bigObj');
+      big.style.display='block';
+      big.style.left='62%'; big.style.top='180px';
+      setObj(6, 6); setMarks(20, 92);
+      ptab.innerHTML = '数组 → <b>Humongous</b><br>Eden 共享区分配（堆内）<br>TLAB 保留给小对象';
+      t.className='state st-done'; t.textContent='大对象入堆';
+      break;
+    case 'merge':
+      $('bigObj').style.display='none';
+      setObj(24, 12); setMarks(36, 92);
+      ptab.innerHTML = '<b>殊途同归</b><br>mark + klass + 清零<br>→ &lt;init&gt;';
+      t.className='state st-running'; t.textContent='汇合';
+      break;
+    case 'c2':
+      setObj(24, 12); setMarks(36, 92);
+      $('obj').style.opacity='0.25';
+      ptab.innerHTML = '<b>C2 标量替换</b><br>new 被删除<br>x → 寄存器 42<br>无分配发生!';
+      t.className='state st-c2'; t.textContent='Escape Analysis';
+      break;
+  }
+}
+
+function render(){
+  const s = STEPS[step];
+  renderCode();
+  runAct(s.act);
+  // 胶囊
+  document.querySelectorAll('.step-pill').forEach((c,i)=>{
+    c.className='step-pill';
+    if(i<step) c.className='step-pill done';
+    if(i===step) c.className='step-pill active';
+  });
+  const pct = step/(STEPS.length-1)*100;
+  $('prog').style.width = pct+'%';
+  $('stepCount').textContent = (step+1)+' / '+STEPS.length;
+}
+
+function buildCaps(){
+  const steps = $('steps');
+  steps.innerHTML = '';
+  STEPS.forEach((s,i)=>{
+    const d = document.createElement('div');
+    d.className='step-pill'; d.textContent=s.cap;
+    d.onclick=()=>{step=i;stop();render();};
+    steps.appendChild(d);
+  });
+}
+
+function play(){ if(playing) return; playing=true;
+  $('playBtn').textContent='⏸ 暂停';
+  timer=setInterval(()=>{
+    if(step<STEPS.length-1){step++;render();} else stop();
+  },2600);
+}
+function stop(){ playing=false; clearInterval(timer);
+  $('playBtn').textContent='▶ 播放'; }
+
+document.addEventListener('keydown',e=>{
+  if(e.code==='Space'){e.preventDefault(); playing?stop():play();}
+  else if(e.code==='ArrowRight'){stop();if(step<STEPS.length-1){step++;render();}}
+  else if(e.code==='ArrowLeft'){stop();if(step>0){step--;render();}}
+  else if(e.code==='KeyR'){stop();step=0;render();}
+});
+$('playBtn').onclick=()=>playing?stop():play();
+$('prevBtn').onclick=()=>{stop();if(step>0){step--;render();}};
+$('nextBtn').onclick=()=>{stop();if(step<STEPS.length-1){step++;render();}};
+$('resetBtn').onclick=()=>{stop();step=0;render();};
+
+buildCaps(); render();
+</script>
+</body>
+</html>

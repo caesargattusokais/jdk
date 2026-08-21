@@ -265,7 +265,9 @@ else
   JAVAC_CP=$CP
 fi
 
-$BOOT_JDK/bin/$JAVAC -d $JAVAC_CLASSES -sourcepath $JAVAC_SOURCE_PATH -cp $JAVAC_CP $JAVAC_SOURCE_FILE
+# --release 25: IDEA 的 Ant 面板默认跟随项目 SDK (JDK 25) 运行,
+# 若用 boot JDK (27) 默认参数编译会生成 class 71, 触发 UnsupportedClassVersionError。
+$BOOT_JDK/bin/$JAVAC --release 25 -d $JAVAC_CLASSES -sourcepath $JAVAC_SOURCE_PATH -cp $JAVAC_CP $JAVAC_SOURCE_FILE
 
 if [ "x$WSL_DISTRO_NAME" != "x" ]; then
   rm -rf $ANT_TEMP

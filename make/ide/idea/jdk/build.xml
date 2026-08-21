@@ -9,9 +9,15 @@
         <attribute name="dir"/>
         <attribute name="args"/>
         <sequential>
-            <exec executable="make" dir="@{dir}" failonerror="true">
+            <!-- Windows + Cygwin: Ant 是原生 Windows 进程, PATH 里没有 Cygwin,
+                 必须用绝对路径指向 Cygwin 的 make.exe (Git Bash 的 make 不兼容本构建)。
+                 同时显式注入含 Cygwin bin 的 PATH: Cygwin make 被原生进程拉起时不会自动
+                 获得 /usr/bin, Makefile 里的 bash/rm 等裸命令会 No such file or directory。
+                 注: spec.gmk 中 CC/LD/MT/RC 均为绝对路径, 覆盖 PATH 不影响 VS 工具链。 -->
+            <exec executable="C:/cygwin64/bin/make.exe" dir="@{dir}" failonerror="true">
                 <arg line="@{args}"/>
                 <env key="CLASSPATH" value = ""/>
+                <env key="PATH" value="C:\cygwin64\bin;C:\cygwin64\usr\bin;C:\WINDOWS\system32;C:\WINDOWS"/>
             </exec>
         </sequential>
     </macrodef>

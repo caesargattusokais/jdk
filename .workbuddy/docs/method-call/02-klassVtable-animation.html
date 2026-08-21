@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>02 · 方法调用全链路：vtable/itable 分派表交互动画</title>
+<style>
+  :root{
+    --blue:#3b82f6; --purple:#8b5cf6; --orange:#f59e0b; --green:#10b981;
+    --bg:#f6f7fb; --card:#FFFFFF; --ink:#1f2937; --sub:#6b7280; --line:#e5e7eb;
+    --shadow:0 2px 6px rgba(17,24,39,.05);
+
+    --blue-bg:#eff6ff; --blue-bd:#bfdbfe;
+    --purple-bg:#f5f3ff; --purple-bd:#ddd6fe;
+    --orange-bg:#fffbeb; --orange-bd:#fde68a;
+    --green-bg:#ecfdf5; --green-bd:#a7f3d0;
+    --red:#ef4444; --red-bg:#fef2f2; --red-bd:#fecaca;
+    --ink-2:#6b7280; --ink-3:#9ca3af;
+    --code-bg:#111827; --code-ink:#e5e7eb;
+  }
+  header{text-align:center;margin-bottom:18px}
+  header h1{font-size:25px;letter-spacing:.5px}
+  header h1 .mono{font-family:Consolas,monospace;color:var(--blue)}
+  header .sub{color:var(--ink-2);font-size:13.5px;margin-top:6px}
+  .badges{margin-top:12px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+  header .badge{font-size:12px;padding:3px 12px;border-radius:999px;border:1px solid var(--blue-bd);
+    background:var(--blue-bg);color:var(--blue);font-family:Consolas,monospace}
+  header .badge.purple{border-color:var(--purple-bd);background:var(--purple-bg);color:var(--purple)}
+  header .badge.green{border-color:var(--green-bd);background:var(--green-bg);color:var(--green)}
+  header .badge.orange{border-color:var(--orange-bd);background:var(--orange-bg);color:var(--orange)}
+  header .badge.red{border-color:var(--red-bd);background:var(--red-bg);color:var(--red)}
+
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{background:var(--bg); color:var(--ink); font-family:'Segoe UI','Microsoft YaHei',sans-serif; padding:18px;}
+  .wrap{max-width:1180px; margin:0 auto;}
+
+  h1{font-size:22px; margin-bottom:4px;}
+  .sub{font-size:13px; color:var(--sub); margin-bottom:14px;}
+  .steps{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:16px; justify-content:center;}
+  .step-pill{font-size:11.5px; padding:5px 11px; border-radius:999px; cursor:pointer; border:1.5px solid var(--line); background:var(--card); color:var(--sub); display:flex; align-items:center; justify-content:center; transition:all .2s; user-select:none; white-space:nowrap; min-width:30px;}
+  .step-pill.active{border-color:var(--blue); background:var(--blue); color:#fff; box-shadow:0 4px 12px rgba(59,130,246,.35);}
+  .step-pill.done{border-color:var(--green); background:var(--green); color:#fff;}
+
+  .grid{display:grid; grid-template-columns:300px 1fr 310px; gap:12px; margin-bottom:12px;}
+  .panel{background:var(--card); border-radius:12px; padding:14px; box-shadow:var(--shadow);}
+  .panel h2{font-size:14px; margin-bottom:10px; padding-left:8px; border-left:4px solid var(--green);}
+  .panel.p2 h2{border-color:var(--orange);}
+  .panel.p3 h2{border-color:var(--blue);}
+
+  .face{display:flex; align-items:center; gap:8px; padding:10px 12px; border-radius:10px; margin-bottom:8px;
+        background:#eff6ff; cursor:pointer; transition:all .3s; border:1.5px solid transparent;}
+  .face .num{width:26px; height:26px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:bold; color:#fff; font-size:13px;}
+  .face .tt{font-size:13px; font-weight:bold;}
+  .face .ds{font-size:11px; color:var(--sub); margin-top:2px;}
+  .face.f1 .num{background:var(--orange);} .face.f2 .num{background:var(--blue);} .face.f3 .num{background:var(--purple);} .face.f4 .num{background:var(--green);}
+  .face.on{border-color:var(--orange); background:#fffbeb; box-shadow:var(--shadow);}
+  .face.f1.on{border-color:var(--orange);}
+  .face.f2.on{border-color:var(--blue);}
+  .face.f3.on{border-color:var(--purple); background:#f5f3ff;}
+  .face.f4.on{border-color:var(--green); background:#ecfdf5;}
+  .note{margin-top:10px; font-size:11.5px; color:var(--sub); background:#f3f4f6; border-radius:8px; padding:7px 9px;}
+
+  .stageBox{background:#111827; border-radius:10px; padding:10px 12px; font-family:Consolas,monospace; font-size:12px; line-height:1.75; color:#e5e7eb; min-height:220px; white-space:pre;}
+  .stageBox .hl{background:#4a3410; border-radius:3px; color:#fbbf24;}
+  .stageBox .dim{color:#64748b;}
+  .stageBox .grn{color:#a7f3d0;}
+  .stageBox .org{color:#fde68a;}
+  .stageBox .pur{color:#ddd6fe;}
+  .stageBox .blu{color:#bfdbfe;}
+  .stageBox .red{color:#fca5a5;}
+  .vrow{display:flex; align-items:center; gap:6px; padding:2px 0; font-size:11.5px; font-family:Consolas,monospace;}
+  .vslot{display:inline-block; min-width:64px; text-align:center; border-radius:6px; padding:2px 8px; font-size:11px; background:#1f2937; color:#d1d5db;}
+  .vslot.hot{background:#4a3410; color:#fbbf24;}
+  .vslot.empty{background:#374151; color:#6b7280; border:1px dashed #4b5563;}
+  .detail{margin-top:8px; font-size:12px; color:#4b5563; background:#f3f4f6; border-radius:8px; padding:7px 9px; min-height:34px;}
+
+  .src{background:#111827; border-radius:12px; padding:12px 14px; box-shadow:var(--shadow); margin-bottom:12px;}
+  .src h2{font-size:13px; color:#9ca3af; margin-bottom:8px;}
+  .src .code{font-family:Consolas,monospace; font-size:12px; line-height:1.7; white-space:pre; overflow-x:auto; color:#e5e7eb;}
+  .src .code .hl{background:#4a3410; border-radius:3px; color:#fbbf24;}
+  .src .code .dim{color:#64748b;}
+  .src .code .grn{color:#a7f3d0;}
+  .src .code .org{color:#fde68a;}
+  .src .code .pur{color:#ddd6fe;}
+  .src .code .blu{color:#bfdbfe;}
+  .scene{margin-top:8px; font-size:11px; color:#6b7280; background:#f3f4f6; border-radius:8px; padding:6px 8px;}
+
+  .ctl{display:flex; align-items:center; gap:10px; justify-content:center; padding:10px; background:var(--card); border-radius:12px; box-shadow:var(--shadow);}
+  .btn{width:44px; height:44px; border-radius:50%; border:none; background:var(--blue); color:#fff; font-size:16px; cursor:pointer; transition:all .15s; font-weight:bold;}
+  .btn:hover{transform:scale(1.08);}
+  .btn.green{background:var(--green);}
+  .btn.orange{background:var(--orange); width:52px; height:52px;}
+  .hint{font-size:12px; color:var(--sub);}
+  .stepDesc{font-size:14px; font-weight:normal; line-height:1.85; color:#334155; background:#eff6ff; border-radius:9px; padding:11px 16px; margin-bottom:12px; border-left:4px solid var(--blue);}
+  .stepDesc b{color:var(--blue); font-weight:600;}
+  .stepDesc code{color:#7c3aed; font-family:Consolas,monospace; background:rgba(139,92,246,.10); padding:0 5px; border-radius:4px; font-size:12.5px;}
+  .kbd{display:inline-block; border:1px solid var(--line); border-radius:4px; padding:0 6px; background:#fff; font-size:11px; color:#4b5563;}
+
+  @media(max-width:1000px){.grid{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1><span class="mono">vtable</span> · 方法调用全链路第二站：vtable/itable 分派表</h1>
+    <div class="sub">klassVtable.cpp · initialize_vtable（:161）· needs_new_vtable_entry（:633）· method_at_vtable（klass.cpp:1118）· itable（:1107-1372）· JDK 28</div>
+    <div class="badges">
+      <span class="badge">vtable</span>
+      <span class="badge orange">vtable 构建</span>
+      <span class="badge">运行期查找</span>
+      <span class="badge purple">itable</span>
+      <span class="badge green">布局与闭环</span>
+    </div>
+  </header>
+
+  <div class="steps" id="pills"></div>
+  <div class="stepDesc" id="stepDesc">点击 ▶ 开始播放，Space 播放/暂停，← → 步进，R 重置</div>
+
+  <div class="grid">
+    <!-- 左：四关卡导航 -->
+    <div class="panel p1">
+      <h2>四关卡导航</h2>
+      <div class="face f1" id="face1"><span class="num">1</span><div><div class="tt">vtable 构建</div><div class="ds">initialize_vtable :161</div></div></div>
+      <div class="face f2" id="face2"><span class="num">2</span><div><div class="tt">运行期查找</div><div class="ds">method_at_vtable :1118</div></div></div>
+      <div class="face f3" id="face3"><span class="num">3</span><div><div class="tt">itable 构建+查找</div><div class="ds">klassItable :1107</div></div></div>
+      <div class="face f4" id="face4"><span class="num">4</span><div><div class="tt">布局与闭环</div><div class="ds">内存布局 + 全链路</div></div></div>
+      <div class="note" id="fnote">当前：关卡 ①<br>vtable 构建</div>
+    </div>
+
+    <!-- 中：舞台 -->
+    <div class="panel p2">
+      <h2>机制舞台</h2>
+      <div class="stageBox" id="stage">// 当前关卡机制</div>
+      <div class="detail" id="detail">—</div>
+    </div>
+
+    <!-- 右：源码 -->
+    <div class="panel p3">
+      <h2>源码证据</h2>
+      <div class="src">
+        <div class="code" id="src">// 源码面板</div>
+      </div>
+      <div class="scene" id="scene">—</div>
+    </div>
+  </div>
+
+  <!-- 控制 -->
+  <div class="ctl">
+    <button class="btn" id="btnPrev" title="上一步">◀</button>
+    <button class="btn orange" id="btnPlay" title="播放/暂停 (Space)">▶</button>
+    <button class="btn" id="btnNext" title="下一步">▶</button>
+    <button class="btn green" id="btnReset" title="重置 (R)">↺</button>
+    <span class="hint"><span class="kbd">Space</span> 播放/暂停 · <span class="kbd">←</span> <span class="kbd">→</span> 步进 · <span class="kbd">R</span> 重置 · 点击步骤胶囊跳转</span>
+  </div>
+
+</div>
+
+<script>
+(() => {
+  const S = {
+    face1: document.getElementById('face1'),
+    face2: document.getElementById('face2'),
+    face3: document.getElementById('face3'),
+    face4: document.getElementById('face4'),
+    fnote: document.getElementById('fnote'),
+    stage: document.getElementById('stage'),
+    detail: document.getElementById('detail'),
+    src: document.getElementById('src'),
+    scene: document.getElementById('scene'),
+    desc: document.getElementById('stepDesc'),
+    pills: document.getElementById('pills'),
+  };
+  const COL = { blue:'#3b82f6', purple:'#8b5cf6', orange:'#f59e0b', green:'#10b981' };
+
+  function faces(n){
+    S.face1.className='face f1'+(n===1?' on':'');
+    S.face2.className='face f2'+(n===2?' on':'');
+    S.face3.className='face f3'+(n===3?' on':'');
+    S.face4.className='face f4'+(n===4?' on':'');
+  }
+  function stage(html){ S.stage.innerHTML = html; }
+  function src(html){ S.src.innerHTML = html; }
+  function scene(txt){ S.scene.innerHTML = txt; }
+
+  const steps = [
+    // 0 白话速览（先讲人话，再上源码）
+    { d:`<span style="display:inline-block;background:#dbeafe;color:#1d4ed8;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">白话速览</span> 这一站在演什么：<b>那本「员工名册」</b>。
+<b>比喻</b>：公司有本名册，<b>每个岗位一行</b>、按辈分排——「会计」这行写着老王。老板喊「会计」，翻名册这行就知道去叫谁；儿子顶了老爸的岗，名册同一行换人。
+<b>技术对照</b>：名册 = <code>vtable</code>；岗位行 = 槽位；儿子顶岗 = 覆写 override；工牌 = 对象头。
+<b>记住一句</b>：构建一次、查询无数次——翻名册永远 O(1)。
+下面每一步都会用术语讲同一件事，忘了就把比喻拉回来。`,
+      fn:()=>{
+        faces(1); S.fnote.innerHTML='当前：白话速览<br>先讲人话';
+        stage(`<span class="blu">白话速览 · 员工名册</span>\n<span class="dim">比喻：每岗位一行，翻名册认人</span>\n<span class="dim">技术：vtable 建表 + O(1) 查表</span>\n<span class="dim">四关：①vtable 构建 ②运行期查找</span>\n<span class="dim">      ③itable 构建+查找 ④布局闭环</span>\n<span class="grn">一句话：构建一次，查询无数次</span>`);
+        S.detail.textContent='这一站看名册怎么建（链接期一次）、怎么翻（运行期无数次）。';
+        src(`<span class="dim">// 术语对照（人话 → 黑话）</span>\n<span class="blu">员工名册</span>    → <span class="grn">vtable / itable</span>\n<span class="blu">岗位行 / 槽位</span> → <span class="grn">vtable slot / index</span>\n<span class="blu">儿子顶岗</span>   → <span class="grn">override 覆写</span>\n<span class="blu">工牌</span>       → <span class="grn">对象头（klass 指针）</span>`);
+        scene('白话速览：<b>那本员工名册</b>');
+      }},
+    // 0 初始
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：这一站看「员工名册」怎么建、怎么翻——先建表（链接期一次），再查表（运行期无数次）。
+第一站 linkResolver 答了"<b>字面上指向谁</b>"，这一站看"<b>去哪查、怎么查</b>"——分派表。
+<b>① vtable 构建</b>：链接期建表，三步成表（:161）
+<b>② 运行期查找</b>：O(1) 数组寻址，多态的落点（klass.cpp:1118）
+<b>③ itable 构建+查找</b>：接口分派表，offset 表线性扫描（:1107）
+<b>④ 布局与闭环</b>：两张表在内存里的位置 + 全链路串起来
+核心问题：<code>invokevirtual</code> 怎么知道"实际执行谁"？答案就在这张表里。`,
+      fn:()=>{
+        faces(1); S.fnote.innerHTML='当前：关卡 ①<br>vtable 构建';
+        stage(`<span class="org">关卡 ① vtable 构建（链接期 · 一次）</span>\n<span class="dim">链接时：link_class_impl → initialize_vtable :161</span>\n<span class="dim"> ① 复制 super 前缀      initialize_from_super :132</span>\n<span class="dim"> ② 逐方法判覆写/追加    update_inherited_vtable :382</span>\n<span class="dim"> ③ default + miranda 收尾</span>\n<span class="dim">不进表：final / private / static / &lt;init&gt; :633</span>`);
+        S.detail.textContent='构建一次、查询无数次——构建是链接期的事，查询是运行期的事。';
+        src(`<span class="dim">// klassVtable.cpp:161 入口（截取）</span>\nvoid klassVtable::initialize_vtable(...) {\n  int super_vtable_len = initialize_from_super(super);  <span class="grn">← 复制 super 前缀</span>\n  ...\n  for (int i = 0; i < len; i++) {\n    bool needs_new_entry =\n        update_inherited_vtable(current, mh, super_vtable_len, -1, supers);\n    if (needs_new_entry) {\n      put_method_at(mh(), initialized);\n      mh->set_vtable_index(initialized);\n      initialized++;\n    }\n  }\n  ...\n  initialized = fill_in_mirandas(current, initialized);  <span class="grn">← miranda 收尾</span>`);
+        scene('场景 0：<b>关卡① vtable 构建</b>');
+      }},
+    // 1 为什么两张表
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：为什么要有两张名册？类方法喊法按「类」查（vtable），接口喊法按「接口」查（itable）——索引单位不同，一张表不够用。
+为什么需要<b>两张</b>表？因为方法调用有两种语义，索引单位不同。
+<b>① invokevirtual</b>：按接收者的<b>类</b>查——子类覆写占同一槽位，一张按"类"编的表就够了
+<b>② invokeinterface</b>：接收者<b>实现了哪些接口</b>——接口可多继承，没法直接映射到类槽位
+<b>③ 所以</b>：vtable 以类为单位、O(1)；itable 先定位接口、再查方法
+<b>④ 一张表的反例</b>：一个接口方法可能被无数互不相关的类实现，位置全不同`,
+      fn:()=>{
+        faces(1);
+        stage(`<span class="blu">invokevirtual  → vtable（按"类"索引）</span>\n<span class="dim">  Dog.speak()   槽 #3</span>\n<span class="dim">  Husky.speak() 槽 #3  ← 同一槽，覆写版</span>\n<span class="pur">invokeinterface → itable（按"接口"索引）</span>\n<span class="dim">  Pet.sleep()   offset 表先找 Pet 接口</span>\n<span class="dim">               → 再在 Pet 方法区取方法</span>\n<span class="org">类可以多实现 → 一个类有多个接口的方法区</span>`);
+        S.detail.textContent='vtable 按类、itable 按接口——索引单位不同，所以必须两张表。';
+        src(`<span class="dim">// klassVtable.hpp:194-195 —— 一个槽就是一根指针</span>\nclass vtableEntry {\n private:\n  <span class="grn">Method* _method;</span>   <span class="dim">// 整个 vtable 就是 Method* 数组</span>\n};\n\n<span class="dim">// klassVtable.hpp:221-241 —— itable offset 槽</span>\nclass itableOffsetEntry {\n private:\n  <span class="grn">InstanceKlass* _interface;</span>  <span class="dim">// 哪个接口</span>\n  <span class="grn">int _offset;</span>               <span class="dim">// 方法区从哪开始</span>\n};`);
+        scene('场景 1：<b>为什么两张表</b>');
+      }},
+    // 2 内存布局
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：两张表就贴在员工档案（InstanceKlass）后面：头 + vtable + itable 三连，全是连续内存，按一次分配。
+两张表在内存里<b>紧挨着</b>：vtable 紧跟 Klass 头，itable 紧跟 vtable。
+<b>① 起点</b>：<code>start_of_vtable()</code> = Klass 地址 + vtable_start_offset（klass.inline.hpp:112）
+<b>② itable 起点</b>：<code>start_of_itable()</code> = vtable 尾 = <code>start_of_vtable() + vtable_length()</code>（instanceKlass.inline.hpp:38）
+<b>③ 长度存储</b>：vtable 长在 <code>Klass::_vtable_len</code>（klass.hpp:196），itable 长在 <code>InstanceKlass::_itable_len</code>
+<b>④ 为什么连在一起</b>：InstanceKlass 是变长对象——按"头 + vtable + itable"一次性分配`,
+      fn:()=>{
+        faces(1);
+        stage(`<span class="dim">┌────────────────┬───────────────────────────┬──────────────────────────┐</span>\n<span class="blu">│ InstanceKlass 头 │ vtable 区（Method* 数组）  │ itable 区（offset+方法） │</span>\n<span class="dim">└────────────────┴───────────────────────────┴──────────────────────────┘</span>\n<span class="org">↑ klass.inline.hpp:112   ↑ itable 紧跟 vtable 尾（inline.hpp:38）</span>\n<span class="dim">vtable 槽 = vtableEntry = 1 个 Method*（8 字节）</span>\n<span class="dim">itable 头 = itableOffsetEntry{接口, 偏移} × N + 1 终止符</span>\n<span class="dim">itable 尾 = itableMethodEntry{Method*} × 方法总数</span>`);
+        S.detail.textContent='布局一句话：InstanceKlass = 头 + vtable + itable 三连，全是连续内存。';
+        src(`<span class="dim">// klass.inline.hpp:112 —— vtable 起点</span>\ninline vtableEntry* Klass::start_of_vtable() const {\n  return (vtableEntry*)((address)this + in_bytes(vtable_start_offset()));\n}\n\n<span class="dim">// instanceKlass.inline.hpp:38 —— itable 起点 = vtable 尾</span>\ninline intptr_t* InstanceKlass::start_of_itable() const {\n  return (intptr_t*)start_of_vtable() + vtable_length();\n}`);
+        scene('场景 2：<b>内存布局</b>');
+      }},
+    // 3 复制 super 前缀
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：建表第一步：把老爸的名册整本抄过来做前缀——子类继承父类全部可继承方法，槽位天然延续。
+建表第一步：把<b>父类的 vtable 原样复制</b>过来做前缀。
+<b>① 为什么能复制</b>：子类继承了父类的所有可继承方法——槽位天然延续
+<b>② copy_vtable_to</b>：整段内存拷贝（:148）
+<b>③ 返回值</b>：复制了多少条，后续新方法从这往后追加（:195）
+<b>④ 数组类特例</b>：数组不新增方法，长度必须等于 super（:188-189）
+<b>⑤ 共享类特例</b>：CDS dump 时已初始化，直接拿长度（:135-140）`,
+      fn:()=>{
+        faces(1);
+        stage(`<span class="org">步骤①：复制 super 前缀</span>\n<span class="dim">super vtable:  [0]=Object.hashCode [1]=equals [2]=toString</span>\n<span class="blu">复制 ↓</span>\n<span class="grn">子类 vtable:  [0]=hashCode    [1]=equals [2]=toString | ...</span>\n<span class="dim">             └── 已初始化 3 个槽，新方法从 #3 开始 ──┘</span>\n<span class="dim">超类链：Object → Animal → Dog，每个子类都是"复制+增量"</span>`);
+        S.detail.textContent='继承 = 复制父表 + 追加新槽；覆写 = 回头替换父槽。';
+        src(`<span class="dim">// klassVtable.cpp:142-155（initialize_from_super 截取）</span>\n} else {\n  <span class="dim">// copy methods from superKlass</span>\n  klassVtable superVtable = super->vtable();\n  assert(superVtable.length() <= _length, "vtable too short");\n  <span class="grn">superVtable.copy_vtable_to(table());</span>  <span class="dim">← 整段复制</span>\n  ...\n  return superVtable.length();  <span class="grn">← 返回前缀长度</span>\n}`);
+        scene('场景 3：<b>复制 super 前缀</b>');
+      }},
+    // 4 覆写合并
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：儿子顶岗：名字+签名和父槽对得上就替换；对不上就追加到尾部；槽位号刻到方法上，运行期直接查这个号。
+建表第二步：逐方法检查，<b>名字+签名匹配到 super 槽位 → 覆写替换</b>。
+<b>① 匹配条件</b>：name 相同 且 signature 相同（:476）——只认方法"签名"，不看别家
+<b>② 替换</b>：<code>put_method_at(target, i)</code> 把子类方法写进第 i 槽（:504）
+<b>③ 刻索引</b>：<code>set_vtable_index(i)</code> 把槽位号刻到 Method 上（:512）——运行期直接查这个号
+<b>④ 谁可覆写</b>：public/protected 可；package-private 仅同包可（can_be_overridden :279）
+<b>⑤ 没匹配上</b>：allocate_new → 追加到尾部（:206-208）`,
+      fn:()=>{
+        faces(1);
+        stage(`<span class="org">步骤②：覆写合并</span>\n<span class="dim">super vtable:  [0]=hashCode [1]=equals [2]=toString [3]=speak  [4]=bark</span>\n<span class="grn">Dog.speak() 匹配槽 #3 → 替换！</span>\n<span class="blu">子类 vtable:  [0]=hashCode [1]=equals [2]=toString [3]=Dog.speak [4]=bark</span>\n<span class="dim">Dog.fetch() 没匹配 → 追加槽 #5</span>\n<span class="org">同名不同签名？不算覆写（signature 不同 → 新槽）</span>`);
+        S.detail.textContent='覆写 = 替换父槽；新方法 = 追加尾部。同一槽位承载整个继承链的演化。';
+        src(`<span class="dim">// klassVtable.cpp:497-512（update_inherited_vtable 截取）</span>\nif (!target_method->is_package_private()) {\n  allocate_new = false;\n}\n<span class="grn">put_method_at(target_method(), i);</span>  <span class="dim">← 覆写：替换第 i 槽</span>\nif (supers != nullptr) {\n  supers->at_put(i, super_klass);\n}\noverrides = true;\nif (!is_default) {\n  <span class="grn">target_method->set_vtable_index(i);</span>  <span class="dim">← 刻槽位号，运行期直接查</span>\n}`);
+        scene('场景 4：<b>覆写合并</b>');
+      }},
+    // 5 传递覆写
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：隔代顶岗：孙子直接顶爷爷的槽，跳过中间那层——不同包的 private 方法挡不住「传递覆写」。
+"非 javac 一起编译"的层级可能出<b>传递覆写</b>：隔代覆写，跳过中间层。
+<b>① 场景</b>：P1.A.pub m ← P2.B.pkg-private m ← P1.C.pub m——C.m 覆写的是 A.m（:302-308 注释）
+<b>② 为什么</b>：B.m 是不同包的 package-private，C 覆写不到它，但能隔代覆写 A.m
+<b>③ find_transitive_override</b>：沿 super 链往上找可覆写的祖先方法（:309）
+<b>④ 条件</b>：<code>vtable_index &lt; ssVtable.length()</code> 才继续（:318）——祖先表里要有这个槽
+<b>⑤ 副产品</b>：package-private 方法永远自己当根（:678），保证传递覆写有起点`,
+      fn:()=>{
+        faces(1);
+        stage(`<span class="org">传递覆写示例（:302-308 注释原文）</span>\n<span class="dim">P1.A.pub m    ← 根</span>\n<span class="dim">P2.B.pkg m    ← 不同包，覆写不到 A.m？</span>\n<span class="grn">P1.C.pub m    ← C.m 直接覆写 A.m（跳过 B.m）</span>\n<span class="dim">C.m 沿 super 链找到 A.m：can_be_overridden → 替换 A 的槽</span>\n<span class="org">B.m 自己当根（:678）→ 传递覆写才成立</span>`);
+        S.detail.textContent='隔代覆写：子类方法直接覆盖祖先槽位，中间层成为"孤立"条目。';
+        src(`<span class="dim">// klassVtable.cpp:316-326（find_transitive_override 截取）</span>\nwhile (superk != nullptr && superk->super() != nullptr) {\n  klassVtable ssVtable = (superk->super())->vtable();\n  <span class="grn">if (vtable_index < ssVtable.length()) {</span>  <span class="dim">← 祖先表里有这个槽？</span>\n    Method* super_method = ssVtable.method_at(vtable_index);\n    <span class="grn">if (can_be_overridden(super_method, target_loader, target_classname)) {</span>\n      break;  <span class="dim">← 找到可覆写的祖先，返回它</span>\n    }\n  } ...`);
+        scene('场景 5：<b>传递覆写</b>');
+      }},
+    // 6 不进表的四类
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：final/private/static/构造器永不进名册——它们天生只有一个人，不用查表（这就是静态绑定的根源）。
+<b>final / private / static / &lt;init&gt;</b> 四类方法<b>永不进 vtable</b>——这是静态绑定的根源。
+<b>① final</b>：不申请新条目；若覆写父类方法则<b>复用其槽</b>（:647-650）
+<b>② private</b>：不参与覆写、不被覆写（:651-652）
+<b>③ static</b>：静态绑定，编译期就确定（:653-654）
+<b>④ &lt;init&gt;</b>：构造器永不动态绑定（:655-656）
+<b>⑤ 深意</b>：这些方法的调用点在链接期就定死 → <code>nonvirtual_vtable_index</code> → 08 篇"final 可内联"的底层依据`,
+      fn:()=>{
+        faces(1);
+        stage(`<span class="org">needs_new_vtable_entry :647-659 的四道闸门</span>\n<span class="grn">if (target_method->is_final_method(class_flags) ||</span>\n<span class="grn">    target_method->is_private() ||</span>\n<span class="grn">    target_method->is_static() ||</span>\n<span class="grn">    name == object_initializer_name) {</span>\n<span class="org">    return false;   // 不需要新条目 → 不进表</span>\n<span class="grn">}</span>\n<span class="dim">final 覆写父方法？复用父槽，不新增 → 槽位稳定 → 静态可解析</span>`);
+        S.detail.textContent='final/private/static/构造器不进表 → 静态绑定 → 去虚化/内联的前提。';
+        src(`<span class="dim">// klassVtable.cpp:647-659（原文）</span>\nif (target_method->is_final_method(class_flags) ||\n    <span class="dim">// a final method never needs a new entry; final methods can be statically</span>\n    <span class="dim">// resolved and they have to be present in the vtable only if they override</span>\n    <span class="dim">// a super's method, in which case they re-use its entry</span>\n    (target_method->is_private()) ||\n    <span class="dim">// private methods don't need to be in vtable</span>\n    (target_method->is_static()) ||\n    <span class="dim">// static methods don't need to be in vtable</span>\n    (target_method->name()->fast_compare(\n        vmSymbols::object_initializer_name()) == 0)\n    <span class="dim">// &lt;init&gt; is never called dynamically-bound</span>\n    ) {\n  return false;\n}`);
+        scene('场景 6：<b>不进表的四类方法</b>');
+      }},
+    // 7 miranda
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：实现了接口却没写抽象方法，名册里也留个「空位」（miranda）——不然 invokevirtual 会查不到这个方法。
+类实现了接口却没实现它的抽象方法时，vtable 里要<b>留一个抽象槽</b>——这就是 miranda。
+<b>① 为什么需要</b>：<code>invokevirtual</code> 要能查到"这个方法存在"，即使没实现
+<b>② 定义</b>（:786-790）：接口的 public abstract 非 private 实例方法，且无本地/默认/super 覆写
+<b>③ 追加</b>：<code>fill_in_mirandas</code> 在 vtable 尾部逐个填入（:959）
+<b>④ 查找</b>：<code>index_of_miranda</code> <b>从底部往上搜</b>（miranda 全在尾部，:755）
+<b>⑤ 调用语义</b>：真调到一个 miranda 槽 → 抛 AbstractMethodError`,
+      fn:()=>{
+        faces(1);
+        stage(`<span class="org">miranda 方法（:786-790 注释要点）</span>\n<span class="dim">interface Flyable { void fly(); }  ← 抽象</span>\n<span class="dim">class Dog implements Flyable {   ← 没实现 fly()</span>\n<span class="dim">  void speak() { ... }           }</span>\n<span class="blu">Dog 的 vtable：... [fly] ← miranda 槽（抽象）</span>\n<span class="dim">后续有人覆写 fly 才替换；没人覆写 → 调用即 AME</span>\n<span class="org">"Miranda" 得名于 Miranda 诉 Arizona（米兰达警告）</span>`);
+        S.detail.textContent='miranda = 接口抽象方法在类 vtable 里的"占位槽"，保证 invokevirtual 查得到。';
+        src(`<span class="dim">// klassVtable.cpp:959-981（fill_in_mirandas 截取）</span>\nint klassVtable::fill_in_mirandas(Thread* current, int initialized) {\n  GrowableArray<Method*> mirandas(20);\n  get_mirandas(&mirandas, nullptr, ik()->super(), ik()->methods(),\n               ik()->default_methods(), ik()->local_interfaces(),\n               klass()->is_interface());\n  for (int i = 0; i < mirandas.length(); i++) {\n    <span class="grn">put_method_at(mirandas.at(i), initialized);</span>\n    ++initialized;\n  }\n  return initialized;\n}`);
+        scene('场景 7：<b>miranda 方法</b>');
+      }},
+    // 8 default 方法
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：接口里带实现的 default 方法也进名册，槽位记在小表里；类自己实现同名方法时可以把 default 顶掉。
+接口的 <b>default 方法</b>（有实现的接口方法）也进 vtable，槽位记在 <code>default_vtable_indices</code>。
+<b>① 流程</b>：default_methods 数组走同样的覆写判断（:213-250）
+<b>② 新槽</b>：追加时把槽位写进 <code>default_vtable_indices[i]</code>（:244）
+<b>③ 覆写</b>：default 也可以被类自己的方法覆写——走 update_inherited_vtable 同款逻辑
+<b>④ 与 itable 共用存储</b>：default 方法的真实 index 不动，default_vtable_indices 存"相对本继承者的 vtable 号"（:394-397 注释）
+<b>⑤ 衔接</b>：第一站 :1440 的 <code>vtable_index_of_interface_method</code> 就是先查这张表（instanceKlass.cpp:3901）`,
+      fn:()=>{
+        faces(1);
+        stage(`<span class="org">default 方法进 vtable</span>\n<span class="dim">interface Pet { default void sleep() {...} }</span>\n<span class="dim">class Dog implements Pet {}</span>\n<span class="blu">Dog vtable: ... [sleep] ← default 方法继承进表</span>\n<span class="dim">default_vtable_indices[0] = 5  ← 相对 Dog 的槽位</span>\n<span class="grn">class Dog { void sleep() {...} }  ← 类方法覆写 default → 替换槽</span>\n<span class="dim">vtable_index_of_interface_method 先查 default 表（:3901-3910）</span>`);
+        S.detail.textContent='default 方法 = 有实现的接口方法，继承进 vtable 且可被类覆写。';
+        src(`<span class="dim">// klassVtable.cpp:232-246（default 方法追加，截取）</span>\nif (needs_new_entry) {\n  Method* method = default_methods->at(i);\n  put_method_at(method, initialized);\n  ...\n  <span class="grn">def_vtable_indices->at_put(i, initialized);</span>  <span class="dim">← 记 default 的 vtable 槽</span>\n  initialized++;\n}`);
+        scene('场景 8：<b>default 方法</b>');
+      }},
+    // 9 运行期查找
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：翻名册 = 一次数组寻址：基址 + 槽号×8，零字符串比较、零类查找——这就是热路径的全部成本。
+构建完成后，运行期查找就是<b>一次数组寻址</b>——O(1)。
+<b>① 入口</b>：<code>Klass::method_at_vtable(index)</code>（klass.cpp:1118）
+<b>② 实现</b>：<code>start_of_vtable()[index].method()</code>——基址 + 下标 × 8 字节
+<b>③ index 从哪来</b>：第一站 linkResolver :1464 <code>recv_klass->method_at_vtable(vtable_index)</code>
+<b>④ 热路径</b>：缓存命中 → 取接收者 Klass → 数组寻址 → 拿到 Method* → 执行
+<b>⑤ 无解析</b>：整个过程零字符串比较、零类查找——这就是"表"的意义`,
+      fn:()=>{
+        faces(2); S.fnote.innerHTML='当前：关卡 ②<br>运行期查找';
+        stage(`<span class="org">关卡 ② 运行期查找（每次 invokevirtual）</span>\n<span class="blu">recv_klass->method_at_vtable(vtable_index)</span>\n<span class="dim">  ├─ index 来自常量池缓存（链接期刻入）</span>\n<span class="dim">  └─ start_of_vtable()[index]  ← 一次寻址</span>\n<span class="grn">        └─ Method* → 执行</span>\n<span class="dim">零字符串比较 · 零类查找 · 零解析</span>\n<span class="org">多态的全部成本 ≈ 1 次内存读</span>`);
+        S.detail.textContent='method_at_vtable = 基址 + index×8，O(1)，这就是热路径的全部成本。';
+        src(`<span class="dim">// klass.cpp:1118-1126（原文）</span>\nMethod* Klass::method_at_vtable(int index)  {\n#ifndef PRODUCT\n  assert(index >= 0, "valid vtable index");\n  if (DebugVtables) {\n    verify_vtable_index(index);\n  }\n#endif\n  <span class="grn">return start_of_vtable()[index].method();</span>  <span class="dim">← 一次数组寻址</span>\n}`);
+        scene('场景 9：<b>O(1) 运行期查找</b>');
+      }},
+    // 10 多态本质
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：多态本质：同一个槽位号，Dog 的表是 Dog.speak，Husky 的表是 Husky.speak——覆写在建表时已合并，运行时零判断。
+<b>多态的本质</b>：同一槽位号，不同接收者 → 不同 Method*。
+<b>① 槽位稳定</b>：<code>vtable_index</code> 对所有子类是<b>同一个号</b>——链接期刻入缓存
+<b>② 接收者变化</b>：<code>recv_klass</code> 是对象的实际类——Dog 是 Dog 的表，Husky 是 Husky 的表
+<b>③ 查表即得</b>：同一个号在两个表里指向各自的覆写版
+<b>④ 例子</b>：<code>dog.speak()</code> —— Dog 表 #3 = Dog.speak；Husky 表 #3 = Husky.speak
+<b>⑤ 关键</b>：覆写在建表时已合并（关卡①），运行时零判断——这就是"编译期语义、运行期代价为零"`,
+      fn:()=>{
+        faces(2);
+        stage(`<span class="org">多态 = 同一槽位，不同表</span>\n<span class="dim">Dog    vtable [3]=speak → Dog.speak   ← 覆写版 1</span>\n<span class="dim">Husky  vtable [3]=speak → Husky.speak ← 覆写版 2</span>\n<span class="blu">invokevirtual #12  →  index=3</span>\n<span class="grn">dog 是 Dog   → Dog 表 [3]</span>\n<span class="grn">dog 是 Husky → Husky 表 [3]</span>\n<span class="dim">同一句字节码，两个结果——多态！</span>\n<span class="org">覆写在建表时合并 → 运行期零判断</span>`);
+        S.detail.textContent='vtable_index 全继承链共享，recv_klass 决定查哪张表——多态语义的落点。';
+        src(`<span class="dim">// linkResolver.cpp:1464（第一站衔接，原文）</span>\n...\n<span class="grn">selected_method = recv_klass->method_at_vtable(vtable_index);</span>\n<span class="dim">// 接收者的实际类 → 查它自己的表 → 拿到它覆写的那一版</span>\n<span class="dim">// 覆写在链接期已合并（klassVtable.cpp:504 put_method_at）</span>`);
+        scene('场景 10：<b>多态本质</b>');
+      }},
+    // 11 itable 布局
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：接口名册（itable）的结构：前面是「接口→偏移」索引表，后面是各接口的方法区——先找接口，再进方法区。
+接口调用走 <b>itable</b>：头部是 offset 表（接口→方法区偏移），尾部是各接口的方法区。
+<b>① 结构</b>：<code>itableOffsetEntry{接口, 偏移}</code> × N + 1 终止符，后面跟着 <code>itableMethodEntry{Method*}</code> 连续排布
+<b>② 大小计算</b>：接口数 + 1 个 offset + 所有接口方法总数个 method 槽（compute_itable_size :1506）
+<b>③ 终止符</b>：最后一个 offset entry 是空的（接口=null），用于遍历停止（:1148）
+<b>④ 铺设</b>：setup_itable_offset_table 遍历 transitive_interfaces 逐个登记（:1519）
+<b>⑤ 为什么</b>：一个类实现多个接口 → 每个接口一段方法区，offset 表就是"接口 → 段起点"的索引`,
+      fn:()=>{
+        faces(3); S.fnote.innerHTML='当前：关卡 ③<br>itable 构建+查找';
+        stage(`<span class="org">itable 布局（:1506-1552）</span>\n<span class="dim">┌─────────┬─────────┬─────────┬───────┬──────────────┬──────────────┐</span>\n<span class="blu">│ Pet→off1 │ Fly→off2 │ Walk→off3│ (null)│ Pet 方法区    │ Fly 方法区    │</span>\n<span class="dim">└─────────┴─────────┴─────────┴───────┴──────────────┴──────────────┘</span>\n<span class="org">↑ offset 表（+1 终止符）    ↑ 方法表（方法总数个槽）</span>\n<span class="dim">offset entry = {InstanceKlass* 接口, int 偏移}</span>\n<span class="dim">查找：遍历 offset 表找接口 → 跳到方法区 → 按方法号直取</span>`);
+        S.detail.textContent='itable = offset 索引表 + 各接口方法区，offset 表是"接口→段起点"的映射。';
+        src(`<span class="dim">// klassVtable.cpp:1506-1515（compute_itable_size 原文）</span>\nint klassItable::compute_itable_size(Array<InstanceKlass*>* transitive_interfaces) {\n  <span class="dim">// Count no of interfaces and total number of interface methods</span>\n  CountInterfacesClosure cic;\n  visit_all_interfaces(transitive_interfaces, &cic);\n  <span class="dim">// There's always an extra itable entry so we can null-terminate it.</span>\n  int itable_size = calc_itable_size(cic.nof_interfaces() + 1, cic.nof_methods());\n  return itable_size;\n}`);
+        scene('场景 11：<b>itable 布局</b>');
+      }},
+    // 12 itable 编号+填槽
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：给接口方法编号，再在实现类里找人填槽：找到 public 非抽象就填；没实现留空（调了就抛 AME）；非 public 塞抛错替身。
+itable 构建两步：<b>接口方法编号</b> + <b>找实现填槽</b>。
+<b>① 编号</b>（:1244）：每个需要分派的接口方法编 0..n-1；static/private/&lt;init&gt;/&lt;clinit&gt; 不编号（:1232-1236）
+<b>② 找实现</b>（:1316）：<code>LinkResolver::lookup_instance_method_in_klasses</code> 在接收者类里找实现（:1334，skip private）
+<b>③ 填槽</b>：找到且 public 非抽象 → 填 <code>initialize(_klass, target)</code>（:1355）
+<b>④ 留空</b>：找不到/抽象 → 槽留空（调用时抛 AbstractMethodError，:1337-1338）
+<b>⑤ 替身</b>：找到但非 public → 塞抛 IllegalAccessError 的方法（:1339-1342）
+<b>⑥ 衔接</b>：:1334 用的就是第一站 :1561 的同一个查找函数`,
+      fn:()=>{
+        faces(3);
+        stage(`<span class="org">itable 填槽（:1316-1371）</span>\n<span class="dim">interface Pet { void sleep(); void play(); }</span>\n<span class="dim">class Dog implements Pet { void sleep() {...} }  ← play 没实现</span>\n<span class="blu">Pet 方法区：[0]=Dog.sleep  [1]=空(→AME)</span>\n<span class="org">实现方法 public 非抽象 → 填槽</span>\n<span class="org">没实现/抽象 → 留空，调用抛 AbstractMethodError</span>\n<span class="org">非 public → 塞 IllegalAccessError 替身（:1341）</span>`);
+        S.detail.textContent='找实现用 linkResolver 同款函数；找不到留空槽，运行时抛 AME——错误也提前"留好"了。';
+        src(`<span class="dim">// klassVtable.cpp:1334-1355（initialize_itable_for_interface 截取）</span>\n<span class="grn">target = LinkResolver::lookup_instance_method_in_klasses(</span>\n<span class="grn">    _klass, m->name(), m->signature(),</span>\n<span class="grn">    Klass::PrivateLookupMode::skip);</span>  <span class="dim">← skip private</span>\nif (target == nullptr || !target->is_public() || target->is_abstract()) {\n  <span class="dim">// Entry does not resolve. Leave it empty for AbstractMethodError</span>\n  <span class="grn">if (target != nullptr && !target->is_public()) {</span>\n    <span class="grn">itableOffsetEntry::method_entry(...)[m->itable_index()].</span>\n    <span class="grn">    initialize(_klass, Universe::throw_illegal_access_error());</span>\n  <span class="grn">}</span>\n} else {\n  <span class="grn">itableOffsetEntry::method_entry(...)[ime_num].initialize(_klass, target);</span>\n}`);
+        scene('场景 12：<b>itable 编号+填槽</b>');
+      }},
+    // 13 itable 查找
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：运行期翻接口名册：线性扫索引表找接口——找到直取方法；没实现抛 ICCE；接口在但槽空抛 AME。
+运行期 <code>invokeinterface</code> 查 itable：<b>线性扫描 offset 表</b>找接口，再按方法号直取。
+<b>① 扫描</b>：<code>method_at_itable_or_null</code> 遍历 offset 表，比对 <code>interface_klass() == holder</code>（instanceKlass.cpp:3878-3880）
+<b>② 命中</b>：<code>first_method_entry + index</code> 直取（:3882-3883）
+<b>③ 未实现</b>：offset 表里没有该接口 → <code>method_at_itable</code> 抛 <b>IncompatibleClassChangeError</b>（:3872）
+<b>④ 空槽</b>：接口在但方法槽为空 → 抛 <b>AbstractMethodError</b>（:3858）
+<b>⑤ 为什么慢</b>：接口可多继承，每个类接口集合不同，只能先定位接口——C2 用内联缓存/去虚化优化（下一站）`,
+      fn:()=>{
+        faces(3);
+        stage(`<span class="org">itable 查找（instanceKlass.cpp:3876）</span>\n<span class="blu">for (i = 0; i < size_offset_table; i++) {</span>\n<span class="blu">  if (offset_entry[i].interface_klass() == Pet) {</span>\n<span class="grn">    return first_method_entry + index;   ← 命中直取</span>\n<span class="blu">  }</span>\n<span class="blu">}</span>\n<span class="org">没找到 Pet？→ ICCE（:3872）</span>\n<span class="org">找到但槽空？→ AME（:3858）</span>\n<span class="dim">线性扫描 vs vtable 的 O(1)：接口多继承的代价</span>`);
+        S.detail.textContent='itable 查找 = 扫描接口 + 直取方法；未实现→ICCE，空槽→AME。';
+        src(`<span class="dim">// instanceKlass.cpp:3876-3889（method_at_itable_or_null 原文）</span>\nMethod* InstanceKlass::method_at_itable_or_null(\n    InstanceKlass* holder, int index, bool& implements_interface) {\n  klassItable itable(this);\n  for (int i = 0; i < itable.size_offset_table(); i++) {\n    itableOffsetEntry* offset_entry = itable.offset_entry(i);\n    <span class="grn">if (offset_entry->interface_klass() == holder) {</span>\n      implements_interface = true;\n      itableMethodEntry* ime = offset_entry->first_method_entry(this);\n      <span class="grn">return ime[index].method();</span>\n    }\n  }\n  implements_interface = false;\n  return nullptr;\n}`);
+        scene('场景 13：<b>itable 线性扫描</b>');
+      }},
+    // 14 对比
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：两张表对比：vtable 按类、O(1)；itable 按接口、线性扫——语义不同，结构不同，代价不同。
+两张表<b>对比</b>——语义不同，结构不同，代价不同。
+<b>① 索引单位</b>：vtable 按<b>类</b>；itable 按<b>接口</b>
+<b>② 构建</b>：vtable 复制 super + 覆写合并 + miranda/default；itable 编号 + 找实现填槽
+<b>③ 查找</b>：vtable O(1) 数组寻址；itable 线性扫描 offset 表 + 直取
+<b>④ 错误</b>：vtable 空槽（miranda）→ AME；itable 未实现 → ICCE / 空槽 → AME
+<b>⑤ 优化</b>：vtable 是 C2 去虚化/内联的基础；itable 靠内联缓存（后续站细讲）
+<b>⑥ 共同点</b>：都是链接期建好、运行期零解析——构建一次，查询无数`,
+      fn:()=>{
+        faces(4); S.fnote.innerHTML='当前：关卡 ④<br>布局与闭环';
+        stage(`<span class="org">vtable vs itable</span>\n<span class="blu">vtable（按类）            itable（按接口）</span>\n<span class="dim">Method* 数组               offset 表 + 方法表</span>\n<span class="dim">O(1) 数组寻址             线性扫描 + 直取</span>\n<span class="dim">复制 super + 覆写合并      编号 + 找实现填槽</span>\n<span class="dim">空槽=miranda→AME         未实现→ICCE 空槽→AME</span>\n<span class="dim">final/private/static 不进表 static/private 不编号</span>\n<span class="org">共同点：链接期建好 · 运行期零解析 · 构建一次查询无数</span>`);
+        S.detail.textContent='一张按类、一张按接口；一张 O(1)、一张线性。但都在链接期建好。';
+        src(`<span class="dim">// 同文件两个类的分界（klassVtable.cpp）</span>\n<span class="blu">// vtable：以 InstanceKlass 为单位</span>\nvoid klassVtable::initialize_vtable(...)      <span class="dim">:161</span>\nMethod* Klass::method_at_vtable(int index)   <span class="dim">// klass.cpp:1118</span>\n\n<span class="org">// itable：以接口为单位</span>\nvoid klassItable::initialize_itable(...)      <span class="dim">:1134</span>\nMethod* InstanceKlass::method_at_itable_or_null(...)  <span class="dim">// instanceKlass.cpp:3876</span>`);
+        scene('场景 14：<b>两张表对比</b>');
+      }},
+    // 15 总结
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：全链路闭环：解析定语义（01）→ 建表定位置（本站）→ 查表定方法；final/private/static 不走表，留给 08 篇内联。
+<b>全链路闭环</b>：符号解析（01）→ 分派表（02）→ 执行（03+）。
+<b>① 01 站</b>：linkResolver 符号解析——"字面上指向谁"，结果写回 ConstantPoolCache（含 vtable_index）
+<b>② 本站</b>：vtable/itable 构建与查找——"实际执行谁、去哪查"
+<b>③ 热路径</b>：缓存命中 → method_at_vtable O(1) → 直接调用
+<b>④ 静态绑定</b>：final/private/static → nonvirtual → 08 篇可内联
+<b>⑤ 下一站</b>：解释器 invoke 模板（templateTable_x86）实际怎么执行这条链路，然后 C2 怎么去虚化/内联
+一句话：<b>解析定语义，建表定位置，查表定方法</b>。`,
+      fn:()=>{
+        faces(4);
+        stage(`<span class="org">全链路（冷路径一次 → 热路径每次）</span>\n<span class="blu">invokevirtual #12</span>\n<span class="dim">  ↓ 首次：linkResolver 解析（01 站）→ 写缓存 + vtable_index</span>\n<span class="dim">  ↓ 建表：klassVtable 链接期构建（本站）</span>\n<span class="grn">  ↓ 热路径：method_at_vtable(index) → Method* → 执行</span>\n<span class="dim">  ↓ 静态绑定：final/private/static → nonvirtual（08 篇可内联）</span>\n<span class="org">  ↓ 接口调用：itable 线性扫描（本站）</span>\n<span class="dim">解析定语义 · 建表定位置 · 查表定方法</span>`);
+        S.detail.textContent='下一站：templateTable_x86 的 invoke 模板（解释器怎么执行）+ C2 去虚化。';
+        src(`<span class="dim">// 三站源码地图</span>\n<span class="org">01  interpreter/linkResolver.cpp  符号解析</span>\n<span class="blu">02  oops/klassVtable.cpp          分派表   ← 本站</span>\n<span class="grn">03  cpu/x86/templateTable_x86.cpp invoke 模板（下一站）</span>\n<span class="pur">04  opto/doCall.cpp + bytecodeInfo.cpp C2 去虚化/内联</span>`);
+        scene('场景 15：<b>全链路闭环</b>');
+      }},
+  ];
+
+  const N = steps.length;
+  let cur = 0;
+  let timer = null;
+  let playing = false;
+
+  const pillEls = [];
+  steps.forEach((st, i) => {
+    const p = document.createElement('div');
+    p.className = 'step-pill';
+    p.textContent = (i === 0 ? '▶ ' : '') + i;
+    p.title = '跳到第 ' + i + ' 步';
+    p.onclick = () => { go(i); };
+    S.pills.appendChild(p);
+    pillEls.push(p);
+  });
+
+  function go(i) {
+    cur = Math.max(0, Math.min(N - 1, i));
+    steps[cur].fn();
+    S.desc.innerHTML = steps[cur].d;
+    pillEls.forEach((p, j) => {
+      p.className = 'step-pill' + (j === cur ? ' active' : (j < cur ? ' done' : ''));
+    });
+    S.scene.textContent = '第 ' + cur + ' / ' + (N - 1) + ' 步';
+  }
+  function next() { go(cur + 1); }
+  function prev() { go(cur - 1); }
+  function reset() { go(0); }
+  function toggle() {
+    if (playing) { clearInterval(timer); playing = false; S.btnPlay.textContent = '▶'; }
+    else {
+      playing = true; S.btnPlay.textContent = '⏸';
+      timer = setInterval(() => { if (cur >= N - 1) { toggle(); } else { next(); } }, 2600);
+    }
+  }
+
+  S.btnPrev = document.getElementById('btnPrev');
+  S.btnPlay = document.getElementById('btnPlay');
+  S.btnNext = document.getElementById('btnNext');
+  S.btnReset = document.getElementById('btnReset');
+  S.btnPrev.onclick = prev;
+  S.btnPlay.onclick = toggle;
+  S.btnNext.onclick = next;
+  S.btnReset.onclick = reset;
+
+  document.addEventListener('keydown', (e) => {
+    if (e.code === 'Space') { e.preventDefault(); toggle(); }
+    else if (e.key === 'ArrowRight') { next(); }
+    else if (e.key === 'ArrowLeft') { prev(); }
+    else if (e.key.toLowerCase() === 'r') { reset(); }
+  });
+
+  go(0);
+})();
+</script>
+</body>
+</html>

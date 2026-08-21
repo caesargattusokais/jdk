@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>09 · 控制流 + 字面量 + 编译期型交互动画</title>
+<style>
+  :root{
+    --blue:#3b82f6; --purple:#8b5cf6; --orange:#f59e0b; --green:#10b981;
+    --bg:#f6f7fb; --card:#FFFFFF; --ink:#1f2937; --sub:#6b7280; --line:#e5e7eb;
+    --shadow:0 2px 6px rgba(17,24,39,.05);
+  
+    --blue-bg:#eff6ff; --blue-bd:#bfdbfe;
+    --purple-bg:#f5f3ff; --purple-bd:#ddd6fe;
+    --orange-bg:#fffbeb; --orange-bd:#fde68a;
+    --green-bg:#ecfdf5; --green-bd:#a7f3d0;
+    --red:#ef4444; --red-bg:#fef2f2; --red-bd:#fecaca;
+    --ink-2:#6b7280; --ink-3:#9ca3af;
+    --code-bg:#111827; --code-ink:#e5e7eb;
+  }
+  /* header / badges（与 02/03/04 对齐） */
+  header{text-align:center;margin-bottom:18px}
+  header h1{font-size:25px;letter-spacing:.5px}
+  header h1 .mono{font-family:Consolas,monospace;color:var(--blue)}
+  header .sub{color:var(--ink-2);font-size:13.5px;margin-top:6px}
+  .badges{margin-top:12px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+  header .badge{font-size:12px;padding:3px 12px;border-radius:999px;border:1px solid var(--blue-bd);
+    background:var(--blue-bg);color:var(--blue);font-family:Consolas,monospace}
+  header .badge.purple{border-color:var(--purple-bd);background:var(--purple-bg);color:var(--purple)}
+  header .badge.green{border-color:var(--green-bd);background:var(--green-bg);color:var(--green)}
+  header .badge.orange{border-color:var(--orange-bd);background:var(--orange-bg);color:var(--orange)}
+  header .badge.red{border-color:var(--red-bd);background:var(--red-bg);color:var(--red)}
+
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{background:var(--bg); color:var(--ink); font-family:'Segoe UI','Microsoft YaHei',sans-serif; padding:18px;}
+  .wrap{max-width:1180px; margin:0 auto;}
+
+  h1{font-size:22px; margin-bottom:4px;}
+  .sub{font-size:13px; color:var(--sub); margin-bottom:14px;}
+  .steps{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:16px; justify-content:center;}
+  .step-pill{font-size:11.5px; padding:5px 11px; border-radius:999px; cursor:pointer; border:1.5px solid var(--line); background:var(--card); color:var(--sub); display:flex; align-items:center; justify-content:center; transition:all .2s; user-select:none; white-space:nowrap; min-width:30px;}
+  .step-pill.active{border-color:var(--blue); background:var(--blue); color:#fff; box-shadow:0 4px 12px rgba(59,130,246,.35);}
+  .step-pill.done{border-color:var(--green); background:var(--green); color:#fff;}
+
+  .grid{display:grid; grid-template-columns:300px 1fr 310px; gap:12px; margin-bottom:12px;}
+  .panel{background:var(--card); border-radius:12px; padding:14px; box-shadow:var(--shadow);}
+  .panel h2{font-size:14px; margin-bottom:10px; padding-left:8px; border-left:4px solid var(--green);}
+  .panel.p2 h2{border-color:var(--orange);}
+  .panel.p3 h2{border-color:var(--blue);}
+
+  /* left: three factions */
+  .faction{border-radius:10px; margin-bottom:8px; padding:8px 10px; border:1.5px solid transparent; transition:all .3s; cursor:default;}
+  .faction .fh{display:flex; align-items:center; gap:8px;}
+  .faction .num{width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:bold; color:#fff; font-size:12px;}
+  .faction .tt{font-size:13px; font-weight:bold;}
+  .faction .ds{font-size:11px; color:var(--sub); margin-top:2px;}
+  .faction .items{display:flex; flex-wrap:wrap; gap:4px; margin-top:6px;}
+  .faction .it{font-size:10.5px; background:#eff6ff; border-radius:5px; padding:2px 7px; color:#9ca3af; font-family:Consolas,monospace;}
+  .faction.f1{background:#eff6ff;} .faction.f1 .num{background:var(--blue);}
+  .faction.f2{background:#d1fae5;} .faction.f2 .num{background:var(--green);}
+  .faction.f3{background:#f5f3ff;} .faction.f3 .num{background:var(--purple);}
+  .faction.on{border-color:var(--orange); box-shadow:var(--shadow); background:#fffbeb;}
+  .faction.f1.on{border-color:var(--blue); background:#f5f3ff;}
+  .faction.f2.on{border-color:var(--green); background:#ecfdf5;}
+  .faction.f3.on{border-color:var(--purple); background:#f5f3ff;}
+  .note{margin-top:10px; font-size:11.5px; color:var(--sub); background:#f3f4f6; border-radius:8px; padding:7px 9px;}
+
+  /* middle: stage */
+  .stageBox{background:#111827; border-radius:10px; padding:10px 12px; font-family:Consolas,monospace; font-size:12px; line-height:1.75; color:#e5e7eb; min-height:280px; white-space:pre; overflow-x:auto;}
+  .stageBox .hl{background:#4a3410; border-radius:3px; color:#fbbf24;}
+  .stageBox .dim{color:#64748b;}
+  .stageBox .grn{color:#a7f3d0;}
+  .stageBox .org{color:#fde68a;}
+  .stageBox .pur{color:#ddd6fe;}
+  .stageBox .blu{color:#bfdbfe;}
+  .vrow{display:flex; align-items:center; gap:6px; padding:2px 0; font-size:11.5px; font-family:Consolas,monospace;}
+  .vslot{display:inline-block; min-width:64px; text-align:center; border-radius:6px; padding:2px 8px; font-size:11px; background:#1f2937; color:#d1d5db;}
+  .vslot.hot{background:#4a3410; color:#fbbf24;}
+  .vslot.empty{background:#374151; color:#6b7280; border:1px dashed #4b5563;}
+  .detail{margin-top:8px; font-size:12px; color:#4b5563; background:#f3f4f6; border-radius:8px; padding:7px 9px; min-height:34px;}
+
+  /* right: source */
+  .src{background:#111827; border-radius:12px; padding:12px 14px; box-shadow:var(--shadow); margin-bottom:12px;}
+  .src h2{font-size:13px; color:#9ca3af; margin-bottom:8px;}
+  .src .code{font-family:Consolas,monospace; font-size:12px; line-height:1.7; white-space:pre; overflow-x:auto; color:#e5e7eb;}
+  .src .code .hl{background:#4a3410; border-radius:3px; color:#fbbf24;}
+  .src .code .dim{color:#64748b;}
+  .scene{margin-top:8px; font-size:11px; color:#6b7280; background:#f3f4f6; border-radius:8px; padding:6px 8px;}
+
+  /* controls */
+  .ctl{display:flex; align-items:center; gap:10px; justify-content:center; padding:10px; background:var(--card); border-radius:12px; box-shadow:var(--shadow);}
+  .btn{width:44px; height:44px; border-radius:50%; border:none; background:var(--blue); color:#fff; font-size:16px; cursor:pointer; transition:all .15s; font-weight:bold;}
+  .btn:hover{transform:scale(1.08);}
+  .btn.green{background:var(--green);}
+  .btn.orange{background:var(--orange); width:52px; height:52px;}
+  .hint{font-size:12px; color:var(--sub);}
+  .stepDesc{font-size:14px; font-weight:normal; line-height:1.85; color:#334155; background:#eff6ff; border-radius:9px; padding:10px 16px; margin-bottom:12px; border-left:4px solid var(--orange);}
+  .stepDesc b{color:var(--blue);}
+  .stepDesc code{color:#7c3aed; background:#f3f4f6; padding:1px 5px; border-radius:4px; font-size:12.5px; font-family:Consolas,monospace;}
+  .kbd{display:inline-block; border:1px solid var(--line); border-radius:4px; padding:0 6px; background:#fff; font-size:11px; color:#4b5563;}
+
+  @media(max-width:1000px){.grid{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1><span class="mono">控制流</span> + 字面量 + 编译期型：三派分法</h1>
+    <div class="sub">if 0x99-0xa6 · tableswitch 0xaa / lookupswitch 0xab · return 0xac-0xb1 · goto 0xa7 · rewriter.cpp:410 · JDK 28</div>
+    <div class="badges">
+      <span class="badge ">if 0x99-0xa6</span>
+      <span class="badge purple">rewriter.cpp:410</span>
+      <span class="badge green">return 0xac-0xb1</span>
+      <span class="badge orange">tableswitch 0xaa</span>
+    </div>
+  </header>
+
+  <div class="steps" id="pills"></div>
+  <div class="stepDesc" id="stepDesc">点击 ▶ 开始播放，Space 播放/暂停，← → 步进，R 重置</div>
+
+  <div class="grid">
+    <!-- 左：三派导航 -->
+    <div class="panel p1">
+      <h2>三派导航</h2>
+      <div class="faction f1" id="fac1">
+        <div class="fh"><span class="num">1</span><div><div class="tt">机制型</div><div class="ds">有专属字节码 · 读模板</div></div></div>
+        <div class="items"><span class="it">if/else</span><span class="it">for/while/do</span><span class="it">break/continue</span><span class="it">switch</span><span class="it">return</span></div>
+      </div>
+      <div class="faction f2" id="fac2">
+        <div class="fh"><span class="num">2</span><div><div class="tt">字面量型</div><div class="ds">iconst / aconst_null</div></div></div>
+        <div class="items"><span class="it">true</span><span class="it">false</span><span class="it">null</span><span class="it">void</span></div>
+      </div>
+      <div class="faction f3" id="fac3">
+        <div class="fh"><span class="num">3</span><div><div class="tt">纯编译期型</div><div class="ds">class 文件零痕迹</div></div></div>
+        <div class="items"><span class="it">yield</span><span class="it">var</span><span class="it">_</span><span class="it">assert</span><span class="it">strictfp</span></div>
+      </div>
+      <div class="note" id="fnote">当前：三派全景<br>判断法：class 文件里搜不搜得到痕迹</div>
+    </div>
+
+    <!-- 中：舞台 -->
+    <div class="panel p2">
+      <h2>机制舞台</h2>
+      <div class="stageBox" id="stage">// 当前机制</div>
+      <div class="detail" id="detail">—</div>
+    </div>
+
+    <!-- 右：源码 -->
+    <div class="panel p3">
+      <h2>源码证据</h2>
+      <div class="src">
+        <div class="code" id="src">// 源码面板</div>
+      </div>
+      <div class="scene" id="scene">—</div>
+    </div>
+  </div>
+
+  <!-- 控制 -->
+  <div class="ctl">
+    <button class="btn" id="btnPrev" title="上一步">◀</button>
+    <button class="btn orange" id="btnPlay" title="播放/暂停 (Space)">▶</button>
+    <button class="btn" id="btnNext" title="下一步">▶</button>
+    <button class="btn green" id="btnReset" title="重置 (R)">↺</button>
+    <span class="hint"><span class="kbd">Space</span> 播放/暂停 · <span class="kbd">←</span> <span class="kbd">→</span> 步进 · <span class="kbd">R</span> 重置 · 点击步骤胶囊跳转</span>
+  </div>
+
+</div>
+
+<script>
+(() => {
+  const S = {
+    fac1: document.getElementById('fac1'),
+    fac2: document.getElementById('fac2'),
+    fac3: document.getElementById('fac3'),
+    fnote: document.getElementById('fnote'),
+    stage: document.getElementById('stage'),
+    detail: document.getElementById('detail'),
+    src: document.getElementById('src'),
+    scene: document.getElementById('scene'),
+    desc: document.getElementById('stepDesc'),
+    pills: document.getElementById('pills'),
+  };
+  const COL = { blue:'#3b82f6', purple:'#8b5cf6', orange:'#f59e0b', green:'#10b981' };
+
+  function facs(n){
+    S.fac1.className='faction f1'+(n===1?' on':'');
+    S.fac2.className='faction f2'+(n===2?' on':'');
+    S.fac3.className='faction f3'+(n===3?' on':'');
+  }
+  function stage(html){ S.stage.innerHTML = html; }
+  function src(html){ S.src.innerHTML = html; }
+  function scene(txt){ S.scene.innerHTML = txt; }
+
+  const steps = [
+    // 0 初始
+    { d:`本批 14 个"关键字"按一条铁律分成三派：<b>class 文件里搜不搜得到痕迹</b>。
+<b>① 机制型</b>：if/switch/循环/return 有专属字节码，读 HotSpot 模板
+<b>② 字面量型</b>：true/false/null 是字面量不是关键字，各有一条专属指令
+<b>③ 纯编译期型</b>：var/assert/strictfp 等，javac 处理完 class 文件里零痕迹
+判断法记住这一条，后面每一步都套它。`,
+      fn:()=>{
+        facs(-1); S.fnote.innerHTML='三派全景<br>机制型：读 HotSpot 模板<br>字面量型：iconst/aconst_null<br>编译期型：读 javac';
+        stage(`<span class="blu">派 1 机制型（有字节码）</span>
+<span class="dim">if/else 0x99-0xa6 · switch 0xaa/0xab</span>
+<span class="dim">for/while/do + break/continue = goto 0xa7</span>
+<span class="dim">return 0xac-0xb1 · yield（编译进 switch）</span>
+<span class="grn">派 2 字面量型（有指令）</span>
+<span class="dim">true→iconst_1 · false→iconst_0 · null→aconst_null</span>
+<span class="pur">派 3 纯编译期型（零痕迹）</span>
+<span class="dim">var / _ / assert / strictfp</span>
+<span class="org">// 本批最大发现：lookupswitch 会被改写</span>`);
+        S.detail.textContent='三派分界线：javac 是否为之生成字节码。';
+        src(`<span class="dim">// 全景表（节选）</span>
+if/else     → if 家族 + goto     <span class="blu">机制型</span>
+switch      → tableswitch/lookupswitch <span class="blu">机制型</span>
+true/false  → iconst_1 / iconst_0 <span class="grn">字面量</span>
+null        → aconst_null        <span class="grn">字面量</span>
+var         → （无痕迹）          <span class="pur">编译期</span>
+assert      → if+athrow 合成     <span class="pur">编译期</span>`);
+        scene('场景 0：<b>三派全景</b>');
+      }},
+    // 1 if/else 编译
+    { d:`<b>else 根本没有专属字节码</b>——if 不成立就"顺序落入"else 分支，else 只是布局选择。
+<b>① javac 怎么编</b>：<code>if (x&gt;0) A; else B;</code> → 条件为真跳 A，为假直接往下走
+<b>② 具体指令</b>：<code>if_icmpgt</code>（比较两个 int，gt = greater than）→ 为真跳 A
+<b>③ 为假怎么办</b>：什么都不做，顺序执行到 B——这就是"顺序落入"
+<b>④ 为什么还要一条 goto</b>：A 执行完要跳过 B，防止两个分支都跑一遍
+记住：没有 else 指令，只有"跳 A / 不跳"两个选择。`,
+      fn:()=>{
+        facs(1); S.fnote.innerHTML='派 1 机制型<br>当前：if/else';
+        stage(`<span class="blu">javac 编译 if/else（无 else 字节码）</span>
+<span class="grn">if (x &gt; 0) A; else B;</span>
+  iload x          <span class="dim">// 栈顶 int</span>
+  iconst_0
+  <span class="org">if_icmpgt → A    // x>0 跳 A（0xa3）</span>
+  B                <span class="dim">// else：顺序落入</span>
+  goto → exit      <span class="dim">// 跳过 A（0xa7）</span>
+  A: ...
+  exit: ...`);
+        S.detail.textContent='14 条 if 指令（0x99-0xa6）+ ifnull/ifnonnull（0xc6/0xc7），全部 2 字节带符号偏移。';
+        src(`<span class="dim">// bytecodes.hpp:197-210（节选）</span>
+_ifeq        = 153, // 0x99  == 0
+_ifne        = 154, // 0x9a  != 0
+_iflt        = 155, // 0x9b  < 0
+_if_icmpeq   = 159, // 0x9f  两 int ==
+_if_icmpgt   = 163, // 0xa3  两 int >
+_if_acmpeq   = 165, // 0xa5  两引用 ==
+_if_acmpne   = 166, // 0xa6  两引用 !=`);
+        scene('场景 1：<b>if/else 无专属 else 字节码</b>');
+      }},
+    // 2 共享模板
+    { d:`<b>14 条 if 指令不写 14 套解释代码</b>——HotSpot 用 4 个模板函数 + 条件参数全部覆盖。
+<b>① 模板解释器</b>：每条字节码预生成一段机器码，多条指令共享同一段，靠参数区分
+<b>② 4 个模板</b>：<code>if_0cmp</code>（和 0 比）/ <code>if_icmp</code>（两 int 比）/ <code>if_acmp</code>（两引用比）/ <code>if_nullcmp</code>（和 null 比）
+<b>③ 映射表</b>：<code>templateTable.cpp</code> 的 <code>def()</code> 一行 = 一条指令 → "模板 + 参数"
+<b>④ 收益</b>：指令实现只写 4 遍，机器码大量共享，解释器体积和 I-cache 都更友好`,
+      fn:()=>{
+        facs(1); S.fnote.innerHTML='派 1 机制型<br>当前：共享模板';
+        stage(`<span class="blu">共享模板：条件参数化</span>
+<span class="vrow"><span class="vslot">if_0cmp</span>  testl rax → jcc <span class="dim">(6 条 0 比较)</span></span>
+<span class="vrow"><span class="vslot hot">if_icmp</span>  pop_i rdx → cmpl → jcc <span class="dim">(6 条 int 比较)</span></span>
+<span class="vrow"><span class="vslot">if_acmp</span>  pop_ptr → cmpoop → jcc <span class="dim">(2 条引用)</span></span>
+<span class="vrow"><span class="vslot">if_nullcmp</span> testptr rax → jcc <span class="dim">(2 条 null)</span></span>
+<span class="org">// 命中 → branch()；未命中 → profile_not_taken</span>
+<span class="dim">// templateTable_x86.cpp:1918-1999</span>`);
+        S.detail.textContent='模板解释器"一个模板多条指令"：生成器按 cc 参数实例化 6 个条件。';
+        src(`<span class="dim">// templateTable.cpp:394-399（节选）</span>
+def(Bytecodes::_if_icmpeq, ubcp|____|clvm|____, itos, vtos, if_icmp, equal);
+def(Bytecodes::_if_icmpne, ubcp|____|clvm|____, itos, vtos, if_icmp, not_equal);
+def(Bytecodes::_if_icmplt, ubcp|____|clvm|____, itos, vtos, if_icmp, less);
+def(Bytecodes::_if_icmpgt, ubcp|____|clvm|____, itos, vtos, if_icmp, greater);
+<span class="dim">// 同一个 if_icmp 函数，6 个 Condition 参数</span>`);
+        scene('场景 2：<b>4 模板 × 14 指令</b>');
+      }},
+    // 3 循环 = if + goto
+    { d:`<b>for/while/do 都没有专属字节码</b>——javac 把它们编成"条件 if + 回边 goto"。
+<b>① 字节码里没有"循环"概念</b>：只有跳转，循环的语义是 javac 在源码层算好的
+<b>② for 的四段</b>：初始化 → 条件判断（<code>if_icmpge</code>，不满足就退出）→ 循环体 → <code>iinc</code> 更新 → <code>goto</code> 跳回
+<b>③ break/continue</b>：全是 <code>goto</code>——跳出哪层、跳去哪，javac 算好偏移
+<b>④ 回边</b>：向后跳的 goto，是 JIT 识别循环的关键信号（下一步就看它）
+语言层的"循环"在字节码层只剩"跳过去 + 跳回来"。`,
+      fn:()=>{
+        facs(1); S.fnote.innerHTML='派 1 机制型<br>当前：循环与 break/continue';
+        stage(`<span class="blu">for 循环 = 条件 if + 回边 goto</span>
+<span class="grn">for (i=0; i&lt;10; i++) body;</span>
+  iconst_0 / istore i
+  loop: iload i
+        bipush 10
+        <span class="org">if_icmpge exit    // i>=10 退出</span>
+        body...
+        iinc i, 1        <span class="dim">// update</span>
+        <span class="org">goto loop         // 回边（0xa7）</span>
+  exit: ...
+<span class="pur">break → goto exit；continue → goto loop/update</span>
+<span class="dim">// 全部无专属字节码！</span>`);
+        S.detail.textContent='break/continue 在字节码层就是 goto——语言层语义（跳出哪层）在 javac 里算好偏移。';
+        src(`<span class="dim">// bytecodes.hpp:211</span>
+_goto    = 167, // 0xa7  2 字节有符号偏移
+_goto_w  = 200, // 0xc8  4 字节偏移（大方法）
+<span class="dim">// templateTable.cpp:132-135</span>
+void TemplateTable::_goto() {
+  transition(vtos, vtos);
+  branch(false, false);   <span class="grn">// 共享跳转处理</span>
+}`);
+        scene('场景 3：<b>循环与 break/continue = goto</b>');
+      }},
+    // 4 backedge counter + OSR
+    { d:`<b>只有"向后跳"才计数，计数溢出 → OSR</b>——热循环跑着跑着被 JIT 原地接管。
+<b>① branch() 先看偏移符号</b>：<code>testl rdx</code> 判断正负，前向分支（if 跳转）不计数
+<b>② 回边才计数</b>：<code>backedge_counter++</code>，这是循环级热度，区别于方法级入口计数
+<b>③ 溢出 → OSR 请求</b>：触发循环体编译，编译完成后解释器帧原位替换成编译帧
+<b>④ 衔接 04 篇</b>：这就是"循环不用等下次调用就能用上编译代码"的机制
+<b>⑤ OSR 是什么</b>：On-Stack Replacement，栈上替换，解释执行的帧原地"换挡"成编译帧`,
+      fn:()=>{
+        facs(1); S.fnote.innerHTML='派 1 机制型<br>当前：OSR 栈上替换';
+        stage(`<span class="blu">branch() 回边计数（templateTable_x86:1799）</span>
+  <span class="org">testl rdx, rdx       // 偏移符号判断</span>
+  jcc positive, dispatch <span class="dim">// 前向分支不计数</span>
+  <span class="grn">// 向后分支（回边）才计数</span>
+  movptr rax, [method_counters]
+  ... backedge_counter++
+  <span class="org">overflow → OSR 编译请求</span>
+  <span class="dim">// 当前解释器帧 → 替换为编译帧</span>
+  <span class="dim">// 循环"原地换挡"继续跑</span>`);
+        S.detail.textContent='OSR（On-Stack Replacement）：循环级 JIT 触发，区别于方法级入口计数。';
+        src(`<span class="dim">// templateTable_x86.cpp:1806-1807</span>
+__ testl(rdx, rdx);
+__ jcc(Assembler::positive, dispatch);
+<span class="dim">// count only if backward branch</span>
+<span class="grn">// backedge_counter 溢出 → InterpreterRuntime::</span>
+<span class="grn">//   at_safepoint → OSR 编译（衔接 04 篇）</span>`);
+        scene('场景 4：<b>回边计数 → OSR</b>');
+      }},
+    // 5 switch 决策
+    { d:`<b>javac 用一条"空间 + 3×时间成本"公式决定 switch 生成哪种形态</b>。
+<b>① 密集 case → tableswitch</b>：跳表，按下标直接取偏移，查表 O(1)
+<b>② 稀疏 case → lookupswitch</b>：键值对表，逐个比对，比较次数随 case 数增长
+<b>③ 公式</b>（Gen.java:1380）：<code>table_space + 3×table_time &lt;= lookup_space + 3×lookup_time</code> 就选跳表
+<b>④ 为什么时间加权 3</b>：跳表一次内存访问定位，键值表平均要查 n/2 次
+空间换时间，但空间太浪费时（case 很稀疏）就退回键值表。`,
+      fn:()=>{
+        facs(1); S.fnote.innerHTML='派 1 机制型<br>当前：switch 双形态';
+        stage(`<span class="blu">javac 成本决策（Gen.java:1380）</span>
+<span class="grn">table_space  = 4 + (hi - lo + 1)</span>  <span class="dim">// 跳表槽数</span>
+<span class="grn">table_time   = 3</span>                    <span class="dim">// 固定比较</span>
+<span class="grn">lookup_space = 3 + 2 * nlabels</span>      <span class="dim">// 键值对</span>
+<span class="grn">lookup_time  = nlabels</span>
+<span class="org">table + 3*table_time &lt;= lookup + 3*lookup_time</span>
+<span class="org">    ? tableswitch : lookupswitch</span>
+<span class="dim">case 0,1,2,3     → tableswitch（密集）</span>
+<span class="dim">case 0,100,1000 → lookupswitch（稀疏）</span>`);
+        S.detail.textContent='时间成本加权 3 倍——跳表比较次数固定 3 步，键值表比较随 n 增长。';
+        src(`<span class="dim">// Gen.java:1382-1391（原文）</span>
+long table_space_cost = 4 + ((long) hi - lo + 1);
+long table_time_cost  = 3;
+long lookup_space_cost = 3 + 2 * (long) nlabels;
+long lookup_time_cost  = nlabels;
+int opcode =
+  nlabels > 0 &&
+  table_space_cost + 3 * table_time_cost <=
+  lookup_space_cost + 3 * lookup_time_cost
+  ? tableswitch : lookupswitch;`);
+        scene('场景 5：<b>javac 选择公式</b>');
+      }},
+    // 6 tableswitch 模板
+    { d:`<b>tableswitch 的模板只有五步，查表 = 一次减法 + 一次内存访问</b>，这就是 switch 快的来源。
+<b>① 4 字节对齐</b>：指令要求，补齐字节是 padding 不是操作码
+<b>② 读 lo/hi 边界</b>：<code>key &lt; lo || key &gt; hi</code> → 直接跳 default
+<b>③ 查表</b>：<code>key - lo</code> 当下标，从跳表取偏移——零比较循环
+<b>④ 分发</b>：当前指令指针 + 偏移 → 跳到对应 case
+所以密集 case 的 switch 是 O(1)：不管几个 case，都是一次减法一次取表项。`,
+      fn:()=>{
+        facs(1); S.fnote.innerHTML='派 1 机制型<br>当前：tableswitch O(1)';
+        stage(`<span class="blu">tableswitch 模板五步（:2033）</span>
+<span class="dim">① lea rbx, at_bcp(4); andptr -4   // 对齐</span>
+<span class="dim">② movl rcx, [rbx+4]; bswap        // lo</span>
+<span class="dim">   movl rdx, [rbx+8]; bswap        // hi</span>
+<span class="org">③ key &lt; lo || key &gt; hi → default</span>
+<span class="grn">④ subl rax, rcx; movl rdx, [rbx+rax*4+12]</span>
+<span class="grn">   // offset = table[key - lo]   O(1) !</span>
+<span class="dim">⑤ addptr rbcp, rdx; dispatch_only</span>
+<span class="pur">// 无任何比较循环——这就是"switch 快"的来源</span>`);
+        S.detail.textContent='tableswitch 的 4 字节对齐是强制的，补齐字节是 padding 不是操作码（Gen.java:1395 code.align(4)）。';
+        src(`<span class="dim">// templateTable_x86.cpp:2051-2052</span>
+__ subl(rax, rcx);
+__ movl(rdx, Address(rbx, rax,
+        Address::times_4, 3 * BytesPerInt));
+<span class="grn">// 一次 sub + 一次内存访问 = O(1) 分发</span>
+<span class="dim">// 密集 case 才成立；稀疏 case 走 lookupswitch</span>`);
+        scene('场景 6：<b>tableswitch 跳表 O(1)</b>');
+      }},
+    // 7 lookupswitch 改写
+    { d:`<b>本批最反直觉的发现：lookupswitch 模板直接拒绝执行</b>——类加载时它已经被改写了。
+<b>① 模板里 stop()</b>：走到 <code>"should have been rewritten"</code> 说明改写没发生，属于 bug
+<b>② 改写成什么</b>：<code>pairs &lt; 5</code> → <code>fast_linearswitch</code>（线性扫）；<code>≥ 5</code> → <code>fast_binaryswitch</code>（二分）
+<b>③ 阈值</b>：<code>BinarySwitchThreshold = 5</code>（globals.hpp:1579）
+<b>④ 为什么有这一步</b>：rewrite 是解释器通用提速手段，把慢指令原地换成带 profile 的快版本
+<b>⑤ 二分还有彩蛋</b>：注释引用了 Dijkstra 的《Methodik des Programmierens》不变式（:2113）`,
+      fn:()=>{
+        facs(1); S.fnote.innerHTML='派 1 机制型<br>当前：lookupswitch 改写';
+        stage(`<span class="org">lookupswitch 模板直接拒绝（:2068）</span>
+<span class="org">__ stop("lookupswitch bytecode</span>
+<span class="org">        should have been rewritten");</span>
+<span class="dim">// 类加载时 rewriter 原地改写（:410）</span>
+<span class="grn">pairs &lt; 5 → fast_linearswitch（线性扫）</span>
+<span class="grn">pairs &gt;= 5 → fast_binaryswitch（二分）</span>
+<span class="pur">BinarySwitchThreshold = 5</span>
+<span class="pur">（globals.hpp:1579）</span>
+<span class="dim">// 二分注释引用 Dijkstra《Methodik des</span>
+<span class="dim">// Programmierens》不变式（:2113）</span>`);
+        S.detail.textContent='改写（rewrite）是解释器提速的通用手段：把慢指令换成带 profile 的快版本。';
+        src(`<span class="dim">// rewriter.cpp:410-417（原文）</span>
+case Bytecodes::_lookupswitch: {
+  Bytecode_lookupswitch bc(method, bcp);
+  (*bcp) = (
+    bc.number_of_pairs() < BinarySwitchThreshold
+    ? Bytecodes::_fast_linearswitch
+    : Bytecodes::_fast_binaryswitch
+  );
+  break;
+}`);
+        scene('场景 7：<b>改写机制 + 阈值 5</b>');
+      }},
+    // 8 return 家族
+    { d:`<b>6 条 return 指令共享同一个 _return 模板</b>，唯一区别是"栈顶类型"参数。
+<b>① 六兄弟</b>：<code>ireturn</code>(int) / <code>lreturn</code>(long) / <code>freturn</code>(float) / <code>dreturn</code>(double) / <code>areturn</code>(引用) / <code>return</code>(void)
+<b>② def() 表</b>：第 4 列 = 输入 <code>TosState</code>，第 6 列 = 输出 TosState，模板体完全共享
+<b>③ TosState 是什么</b>：Top-of-Stack state，模板解释器记录的"栈顶元素类型"虚拟状态
+<b>④ return（void）</b>：0xb1，只退帧不取返回值
+一条指令一个字节（0xac-0xb1），但解释代码只有一份。`,
+      fn:()=>{
+        facs(1); S.fnote.innerHTML='派 1 机制型<br>当前：return 家族';
+        stage(`<span class="blu">六条 return → 一个模板（:2221）</span>
+<span class="vrow"><span class="vslot hot">0xac</span> ireturn   itos  <span class="dim">int 返回</span></span>
+<span class="vrow"><span class="vslot">0xad</span> lreturn   ltos  <span class="dim">long</span></span>
+<span class="vrow"><span class="vslot">0xae</span> freturn   ftos  <span class="dim">float</span></span>
+<span class="vrow"><span class="vslot">0xaf</span> dreturn   dtos  <span class="dim">double</span></span>
+<span class="vrow"><span class="vslot">0xb0</span> areturn   atos  <span class="dim">引用</span></span>
+<span class="vrow"><span class="vslot">0xb1</span> return    vtos  <span class="dim">void</span></span>
+<span class="dim">// templateTable.cpp:407-412</span>
+<span class="dim">// 区别只有 state 参数</span>`);
+        S.detail.textContent='_return(state)：state 决定输入输出 TosState，模板体完全共享。';
+        src(`<span class="dim">// templateTable.cpp:407-412（原文）</span>
+def(Bytecodes::_ireturn, ____|disp|clvm|____, itos, itos, _return, itos);
+def(Bytecodes::_lreturn, ____|disp|clvm|____, ltos, ltos, _return, ltos);
+def(Bytecodes::_freturn, ____|disp|clvm|____, ftos, ftos, _return, ftos);
+def(Bytecodes::_dreturn, ____|disp|clvm|____, dtos, dtos, _return, dtos);
+def(Bytecodes::_areturn, ____|disp|clvm|____, atos, atos, _return, atos);
+def(Bytecodes::_return,  ____|disp|clvm|____, vtos, vtos, _return, vtos);`);
+        scene('场景 8：<b>6 指令共享 _return</b>');
+      }},
+    // 9 _return 三步
+    { d:`<b>_return 模板三步：安全点检查 → 结果收窄 → 撤帧跳回</b>。
+<b>① safepoint poll</b>：方法出口是协作式 GC 的检查点，测 <code>polling_word</code>，命中就进安全点
+<b>② narrow 收窄</b>：int 结果按 byte/short/char/boolean 截窄，保证和编译态调用者的约定一致
+<b>③ remove_activation</b>：撤解释器帧，恢复调用者的指令指针，跳回去
+<b>④ 衔接 07 篇</b>：无 handler 的异常上抛也走撤帧路径
+方法出口是安全点，意味着 GC 可以在任何 return 处暂停线程。`,
+      fn:()=>{
+        facs(1); S.fnote.innerHTML='派 1 机制型<br>当前：_return 三步';
+        stage(`<span class="blu">_return 模板三步（:2221-2265）</span>
+<span class="org">① safepoint poll（:2244）</span>
+   testb [r15_thread + polling_word]
+   jcc zero, no_safepoint
+   call InterpreterRuntime::at_safepoint
+<span class="grn">② if (state == itos) __ narrow(rax);</span>
+   <span class="dim">// byte/short/char/boolean 收窄</span>
+   <span class="dim">// 编译态调用者要求结果已窄化</span>
+<span class="blu">③ remove_activation(state, rbcp, true...)</span>
+   <span class="dim">// 撤解释器帧 → 恢复调用者 rbcp</span>
+   <span class="dim">// 衔接 07：无 handler 异常上抛也走它</span>`);
+        S.detail.textContent='方法出口是安全点（GC 协作点）；narrow 保证两种执行引擎结果一致。';
+        src(`<span class="dim">// templateTable_x86.cpp:2258-2262（原文）</span>
+if (state == itos) {
+  __ narrow(rax);   <span class="grn">// 结果收窄</span>
+}
+__ remove_activation(state, rbcp,
+                     true, true, true);
+__ jmp(rbcp);`);
+        scene('场景 9：<b>poll → narrow → remove_activation</b>');
+      }},
+    // 10 字面量型
+    { d:`<b>true/false/null 是字面量不是关键字</b>（JLS §3.9），各自编译成一条专属指令。
+<b>① 映射</b>：<code>true → iconst_1</code>（0x04）/ <code>false → iconst_0</code>（0x03）/ <code>null → aconst_null</code>（0x01）
+<b>② 更大的整数</b>：走 <code>ldc</code> 进常量池取，不再有专属指令
+<b>③ void</b>：是关键字，但只有描述符 <code>V</code>，没有对应指令
+<b>④ 指令区间</b>：<code>is_const()</code> 把 aconst_null..ldc2_w 划为常量指令族（bytecodes.hpp:420）
+字面量 = 直接写进代码的值本身，编译器为它们挑最省空间的指令。`,
+      fn:()=>{
+        facs(2); S.fnote.innerHTML='派 2 字面量型<br>iconst / aconst_null';
+        stage(`<span class="grn">字面量 → 专属指令</span>
+<span class="vrow"><span class="vslot">0x01</span> aconst_null  <span class="dim">null 字面量 → 零引用</span></span>
+<span class="vrow"><span class="vslot">0x02</span> iconst_m1    <span class="dim">-1</span></span>
+<span class="vrow"><span class="vslot hot">0x03</span> iconst_0     <span class="grn">false</span></span>
+<span class="vrow"><span class="vslot hot">0x04</span> iconst_1     <span class="grn">true</span></span>
+<span class="vrow"><span class="vslot">0x05-08</span> iconst_2..5</span>
+<span class="dim">// 更大整数 → ldc 常量池</span>
+<span class="pur">void：描述符 V（T_VOID），无指令</span>
+<span class="pur">Tokens.java:146 VOID("void")</span>`);
+        S.detail.textContent='is_const() 判定区间 _aconst_null ≤ code ≤ _ldc2_w（bytecodes.hpp:420）；is_zero_const() 把 null 与 0 并列（:421）。';
+        src(`<span class="dim">// bytecodes.hpp:44-52（节选）</span>
+_nop         =   0, // 0x00
+_aconst_null =   1, // 0x01
+_iconst_m1   =   2, // 0x02
+_iconst_0    =   3, // 0x03
+_iconst_1    =   4, // 0x04  ← true
+<span class="dim">// Tokens.java:156-159</span>
+TRUE("true", Tag.NAMED);
+FALSE("false", Tag.NAMED);
+NULL("null", Tag.NAMED);`);
+        scene('场景 10：<b>true/false/null 字面量</b>');
+      }},
+    // 11 纯编译期型
+    { d:`<b>var/_/yield/assert/strictfp 在 class 文件里要么零痕迹，要么痕迹被剥除</b>。
+<b>① var</b>：受限类型名，javac 推断完类型直接消失（Resolve.java:2605）
+<b>② yield</b>：受限标识符，只在 switch 表达式上下文合法，编译进 switch 流程
+<b>③ assert</b>：合成 <code>$assertionsDisabled</code> 字段 + <code>if</code> + <code>athrow</code>（Lower.java:3137）
+<b>④ strictfp</b>：<code>ACC_STRICT</code> 位在 classFileParser.cpp:2291 被剥掉（JDK 17 起语义简化）
+<b>⑤ 受限是什么意思</b>：平时可以当普通标识符用，只在特定上下文有特殊含义
+共同特征：javac 检查/降级，class 文件无痕迹或痕迹被剥除。`,
+      fn:()=>{
+        facs(3); S.fnote.innerHTML='派 3 纯编译期型<br>class 文件零痕迹';
+        stage(`<span class="pur">纯编译期型五员</span>
+<span class="pur">var      → 受限类型名（Resolve.java:2605）</span>
+<span class="pur">         推断结果零痕迹</span>
+<span class="pur">_        → JDK 9 保留（Tokens.java:159）</span>
+<span class="pur">yield    → 受限标识符（Resolve.java:2607）</span>
+<span class="pur">         仅 switch 表达式上下文</span>
+<span class="org">assert   → if+$assertionsDisabled+athrow</span>
+<span class="org">         （Lower.java:3137）</span>
+<span class="org">strictfp → ACC_STRICT 被剥除</span>
+<span class="org">         （classFileParser.cpp:2291）</span>`);
+        S.detail.textContent='共同特征：javac 检查/降级，class 文件无痕迹或痕迹被剥除。';
+        src(`<span class="dim">// classFileParser.cpp:2291（strictfp 剥除）</span>
+flags &= JVM_ACC_STATIC |
+  (_major_version <= JAVA_16_VERSION
+   ? JVM_ACC_STRICT : 0);
+<span class="dim">// Lower.java:3137 visitAssert</span>
+result = make.If(cond,
+    make.Throw(makeNewClass(
+      syms.assertionErrorType, exnArgs)),
+    null);   <span class="grn">// assert → if + athrow</span>`);
+        scene('场景 11：<b>yield/var/assert/strictfp/_</b>');
+      }},
+    // 12 系列闭环
+    { d:`<b>本批关键字把全系列串起来了</b>——每个都落在前面某篇的机制上。
+<b>① assert → athrow → 07 篇</b>：异常表查找
+<b>② 回边计数 → OSR → 04 篇</b>：JIT 触发
+<b>③ strictfp 剥除 → 08 篇</b>：与 strict static 同源（JDK 17 语义简化）
+<b>④ if_acmp → 06 篇</b>：Valhalla 渗透 inline type
+<b>⑤ $assertionsDisabled → 05 篇</b>：clinit 机制
+控制流三派 = 语言如何落到 VM 的微缩版。`,
+      fn:()=>{
+        facs(-1); S.fnote.innerHTML='系列闭环<br>09 收束全系列';
+        stage(`<span class="blu">与系列闭环</span>
+<span class="dim">assert → athrow → 07 篇异常表查找</span>
+<span class="dim">回边计数 → OSR → 04 篇 JIT 触发</span>
+<span class="dim">strictfp 剥除 → 08 篇 strict static 同源</span>
+<span class="dim">if_acmp Valhalla 渗透 → 06 篇 inline type</span>
+<span class="dim">$assertionsDisabled → clinit（05 篇机制）</span>
+<span class="org">控制流三派 = 语言如何落到 VM 的微缩版</span>
+<span class="org">// 下一篇（10）：声明域 + 访问控制 + module</span>`);
+        S.detail.textContent='09 篇收官：剩余关键字全部覆盖完毕，全系列 10 篇在望。';
+        src(`<span class="dim">// 下一篇（10）预告</span>
+class/interface/enum/record/extends/
+implements/abstract/sealed/permits/
+public/protected/private/package/import/
+transient + module 系 + module-info.class
+<span class="grn">—— 声明域与访问控制补完</span>`);
+        scene('场景 12：<b>系列闭环</b>');
+      }},
+  ];
+
+  let idx = -1, timer = null, playing = false;
+
+  function render(i){
+    idx = i;
+    steps[i].fn();
+    S.desc.innerHTML = (i+1) + '/' + steps.length + ' · ' + steps[i].d;
+    document.querySelectorAll('.step-pill').forEach((c,j)=>{
+      c.className = 'step-pill' + (j===i?' active':(j<i?' done':''));
+    });
+    document.getElementById('btnPlay').textContent = '▶';
+    playing = false;
+  }
+  function next(){ if(idx < steps.length-1) render(idx+1); }
+  function prev(){ if(idx > 0) render(idx-1); }
+  function play(){
+    if(playing){ clearInterval(timer); playing=false; document.getElementById('btnPlay').textContent='▶'; return; }
+    if(idx >= steps.length-1){ render(0); }
+    playing = true; document.getElementById('btnPlay').textContent='⏸';
+    timer = setInterval(()=>{
+      if(idx >= steps.length-1){ clearInterval(timer); playing=false; document.getElementById('btnPlay').textContent='▶'; return; }
+      render(idx+1);
+    }, 3600);
+  }
+  function reset(){ clearInterval(timer); playing=false; render(0); }
+
+  steps.forEach((s,i)=>{
+    const c = document.createElement('div');
+    c.className='step-pill'; c.textContent=i+1; c.title=s.d;
+    c.onclick = ()=>render(i);
+    S.pills.appendChild(c);
+  });
+
+  document.getElementById('btnPrev').onclick = prev;
+  document.getElementById('btnNext').onclick = next;
+  document.getElementById('btnPlay').onclick = play;
+  document.getElementById('btnReset').onclick = reset;
+  document.addEventListener('keydown', e=>{
+    if(e.code==='Space'){ e.preventDefault(); play(); }
+    else if(e.key==='ArrowRight') next();
+    else if(e.key==='ArrowLeft') prev();
+    else if(e.key==='r'||e.key==='R') reset();
+  });
+
+  render(0);
+})();
+</script>
+</body>
+</html>

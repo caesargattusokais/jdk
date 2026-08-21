@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>01 · 类加载站①：加载与双亲委派</title>
+<style>
+
+  :root{
+    --blue:#3b82f6; --purple:#8b5cf6; --orange:#f59e0b; --green:#10b981;
+    --bg:#f6f7fb; --card:#FFFFFF; --ink:#1f2937; --sub:#6b7280; --line:#e5e7eb;
+    --shadow:0 2px 6px rgba(17,24,39,.05);
+    --blue-bg:#eff6ff; --blue-bd:#bfdbfe;
+    --purple-bg:#f5f3ff; --purple-bd:#ddd6fe;
+    --orange-bg:#fffbeb; --orange-bd:#fde68a;
+    --green-bg:#ecfdf5; --green-bd:#a7f3d0;
+    --red:#ef4444; --red-bg:#fef2f2; --red-bd:#fecaca;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{background:var(--bg); color:var(--ink); font-family:'Segoe UI','Microsoft YaHei',sans-serif; padding:18px;}
+  .wrap{max-width:1180px; margin:0 auto;}
+  header{text-align:center; margin-bottom:18px}
+  header h1{font-size:23px; letter-spacing:.5px}
+  header h1 .mono{font-family:Consolas,monospace; color:var(--blue)}
+  header .sub{color:var(--sub); font-size:13px; margin-top:6px}
+  .badges{margin-top:12px; display:flex; gap:8px; justify-content:center; flex-wrap:wrap}
+  header .badge{font-size:12px; padding:3px 12px; border-radius:999px; border:1px solid var(--blue-bd);
+    background:var(--blue-bg); color:var(--blue); font-family:Consolas,monospace}
+  header .badge.purple{border-color:var(--purple-bd); background:var(--purple-bg); color:var(--purple)}
+  header .badge.green{border-color:var(--green-bd); background:var(--green-bg); color:var(--green)}
+  header .badge.orange{border-color:var(--orange-bd); background:var(--orange-bg); color:var(--orange)}
+  .steps{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px; justify-content:center;}
+  .step-pill{font-size:11.5px; padding:5px 11px; border-radius:999px; cursor:pointer; border:1.5px solid var(--line); background:var(--card); color:var(--sub); display:flex; align-items:center; justify-content:center; transition:all .2s; user-select:none; white-space:nowrap; min-width:30px;}
+  .step-pill.active{border-color:var(--blue); background:var(--blue); color:#fff; box-shadow:0 4px 12px rgba(59,130,246,.35);}
+  .step-pill.done{border-color:var(--green); background:var(--green); color:#fff;}
+  .grid{display:grid; grid-template-columns:290px 1fr 320px; gap:12px; margin-bottom:12px;}
+  .panel{background:var(--card); border-radius:12px; padding:14px; box-shadow:var(--shadow);}
+  .panel h2{font-size:14px; margin-bottom:10px; padding-left:8px; border-left:4px solid var(--green);}
+  .panel.p2 h2{border-color:var(--orange);}
+  .panel.p3 h2{border-color:var(--blue);}
+  .face{display:flex; align-items:center; gap:8px; padding:10px 12px; border-radius:10px; margin-bottom:8px;
+        background:var(--blue-bg); cursor:pointer; transition:all .3s; border:1.5px solid transparent;}
+  .face .num{width:26px; height:26px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:bold; color:#fff; font-size:13px;}
+  .face .tt{font-size:13px; font-weight:bold;}
+  .face .ds{font-size:11px; color:var(--sub); margin-top:2px;}
+  .face.f1 .num{background:var(--orange);} .face.f2 .num{background:var(--blue);} .face.f3 .num{background:var(--purple);} .face.f4 .num{background:var(--green);}
+  .face.on{border-color:var(--orange); background:var(--orange-bg); box-shadow:var(--shadow);}
+  .face.f2.on{border-color:var(--blue); background:var(--blue-bg);}
+  .face.f3.on{border-color:var(--purple); background:var(--purple-bg);}
+  .face.f4.on{border-color:var(--green); background:var(--green-bg);}
+  .note{margin-top:10px; font-size:11.5px; color:var(--sub); background:#f3f4f6; border-radius:8px; padding:7px 9px;}
+  .stageBox{background:#111827; border-radius:10px; padding:10px 12px; font-family:Consolas,monospace; font-size:12px; line-height:1.75; color:#e5e7eb; min-height:230px; white-space:pre;}
+  .stageBox .hl{background:#4a3410; border-radius:3px; color:#fbbf24;}
+  .stageBox .dim{color:#64748b;}
+  .stageBox .grn{color:#a7f3d0;}
+  .stageBox .org{color:#fde68a;}
+  .stageBox .pur{color:#ddd6fe;}
+  .stageBox .blu{color:#bfdbfe;}
+  .stageBox .red{color:#fca5a5;}
+  .detail{margin-top:8px; font-size:12px; color:#4b5563; background:#f3f4f6; border-radius:8px; padding:7px 9px; min-height:34px;}
+  .src{background:#111827; border-radius:12px; padding:12px 14px; box-shadow:var(--shadow); margin-bottom:12px;}
+  .src h2{font-size:13px; color:#9ca3af; margin-bottom:8px;}
+  .src .code{font-family:Consolas,monospace; font-size:12px; line-height:1.7; white-space:pre; overflow-x:auto; color:#e5e7eb;}
+  .src .code .hl{background:#4a3410; border-radius:3px; color:#fbbf24;}
+  .src .code .dim{color:#64748b;}
+  .src .code .grn{color:#a7f3d0;}
+  .src .code .org{color:#fde68a;}
+  .src .code .pur{color:#ddd6fe;}
+  .src .code .blu{color:#bfdbfe;}
+  .scene{margin-top:8px; font-size:11px; color:#6b7280; background:#f3f4f6; border-radius:8px; padding:6px 8px;}
+  .ctl{display:flex; align-items:center; gap:10px; justify-content:center; padding:10px; background:var(--card); border-radius:12px; box-shadow:var(--shadow);}
+  .btn{width:44px; height:44px; border-radius:50%; border:none; background:var(--blue); color:#fff; font-size:16px; cursor:pointer; transition:all .15s; font-weight:bold;}
+  .btn:hover{transform:scale(1.08);}
+  .btn.green{background:var(--green);}
+  .btn.orange{background:var(--orange); width:52px; height:52px;}
+  .hint{font-size:12px; color:var(--sub);}
+  .stepDesc{font-size:14px; font-weight:normal; line-height:1.85; color:#334155; background:var(--blue-bg); border-radius:9px; padding:11px 16px; margin-bottom:12px; border-left:4px solid var(--blue);}
+  .stepDesc b{color:var(--blue); font-weight:600;}
+  .stepDesc code{color:#7c3aed; font-family:Consolas,monospace; background:rgba(139,92,246,.10); padding:0 5px; border-radius:4px; font-size:12.5px;}
+  .kbd{display:inline-block; border:1px solid var(--line); border-radius:4px; padding:0 6px; background:#fff; font-size:11px; color:#4b5563;}
+  @media(max-width:1000px){.grid{grid-template-columns:1fr;}}
+
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1><span class="mono">Class_Loading ①</span> · 加载与双亲委派：把人造出来</h1>
+    <div class="sub">java/lang/ClassLoader.java · prims/jvm.cpp · classfile/systemDictionary.cpp · JDK 28</div>
+    <div class="badges">
+      <span class="badge">Java 层双亲委派</span>
+      <span class="badge purple">native 边界</span>
+      <span class="badge orange">SystemDictionary 协调</span>
+      <span class="badge green">工匠与闭环</span>
+    </div>
+  </header>
+
+  <div class="steps" id="pills"></div>
+  <div class="stepDesc" id="stepDesc">点击 ▶ 开始播放，Space 播放/暂停，← → 步进，R 重置</div>
+
+  <div class="grid">
+    <div class="panel p1">
+      <h2>四关</h2>
+      <div class="face f1 on" id="face1">
+        <div class="num">1</div>
+        <div><div class="tt">Java 层双亲委派</div><div class="ds">loadClass :546 自下而上</div></div>
+      </div>
+      <div class="face f2" id="face2">
+        <div class="num">2</div>
+        <div><div class="tt">native 边界</div><div class="ds">JVM_DefineClass :1240</div></div>
+      </div>
+      <div class="face f3" id="face3">
+        <div class="num">3</div>
+        <div><div class="tt">SystemDictionary 协调</div><div class="ds">resolve_instance_class_or_null :606</div></div>
+      </div>
+      <div class="face f4" id="face4">
+        <div class="num">4</div>
+        <div><div class="tt">工匠与闭环</div><div class="ds">KlassFactory :172 → InstanceKlass</div></div>
+      </div>
+      <div class="note" id="fnote">当前：白话速览</div>
+    </div>
+
+    <div class="panel p2">
+      <h2>场景</h2>
+      <div class="stageBox" id="stage"></div>
+      <div class="detail" id="detail"></div>
+    </div>
+
+    <div class="panel p3">
+      <h2>源码</h2>
+      <div class="src">
+        <h2>ClassLoader.java · jvm.cpp · systemDictionary.cpp · klassFactory.cpp</h2>
+        <div class="code" id="src"></div>
+      </div>
+      <div class="scene" id="scene"></div>
+    </div>
+  </div>
+
+  <div class="ctl">
+    <button class="btn" id="btnPrev" title="上一步 (←)">\u25C0</button>
+    <button class="btn orange" id="btnPlay" title="播放/暂停 (Space)">\u25B6</button>
+    <button class="btn" id="btnNext" title="下一步 (→)">\u25B6</button>
+    <button class="btn green" id="btnReset" title="重置 (R)">\u21BA</button>
+    <span class="hint"><span class="kbd">Space</span> 播放/暂停 · <span class="kbd">←</span> <span class="kbd">→</span> 步进 · <span class="kbd">R</span> 重置 · 点击步骤胶囊跳转</span>
+  </div>
+</div>
+
+<script>
+(() => {
+  const S = {
+    face1: document.getElementById('face1'),
+    face2: document.getElementById('face2'),
+    face3: document.getElementById('face3'),
+    face4: document.getElementById('face4'),
+    fnote: document.getElementById('fnote'),
+    stage: document.getElementById('stage'),
+    detail: document.getElementById('detail'),
+    src: document.getElementById('src'),
+    scene: document.getElementById('scene'),
+    desc: document.getElementById('stepDesc'),
+    pills: document.getElementById('pills'),
+  };
+  function faces(n){
+    ['face1','face2','face3','face4'].forEach((id,i)=>{
+      const el = S[id];
+      el.className = 'face f' + (i+1) + (i+1 === n ? ' on' : '');
+    });
+  }
+  function stage(html){ S.stage.innerHTML = html; }
+  function src(html){ S.src.innerHTML = html; }
+  function scene(txt){ S.scene.innerHTML = txt; }
+
+  const steps = [
+    // 0 白话速览：双亲委派 + 加载
+    {"d": "<span style=\"display:inline-block;background:#dbeafe;color:#1d4ed8;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500\">白话速览</span> 这一站在演什么：<b>「把人造出来」——双亲委派 + 加载</b>。\n<b>比喻</b>：常量池站②说「没加载就去加载」。那「加载」怎么发生？像查户口：先问自己手上有没有（findLoadedClass）→ 没有就层层上报给上级（parent.loadClass）→ 上级也没有才自己翻档案（findClass）→ 找到 .class 档案后交给 HotSpot 工匠（KlassFactory）雕成 InstanceKlass。\n<b>技术对照</b>：Java 层策略 = <code>loadClass</code>（ClassLoader.java:546）；native 入口 = <code>JVM_DefineClass</code>（jvm.cpp:1240）；协调者 = <code>SystemDictionary::resolve_from_stream</code>（systemDictionary.cpp:934）；工匠 = <code>KlassFactory::create_from_stream</code>（klassFactory.cpp:172）。\n<b>记住一句</b>：从下往上问、从上往下找——同一个类在 JVM 里只有一个定义者。", "stage": "<span class=\"blu\">白话速览 · 双亲委派 + 加载</span>\n<span class=\"dim\">调用方（new / forName / resolve_or_fail）</span>\n<span class=\"blu\">① 自己查：findLoadedClass :551</span>\n<span class=\"blu\">② 向上问：parent.loadClass :556 / bootstrap :558</span>\n<span class=\"blu\">③ 自己找：findClass :569 → defineClass1 :1088</span>\n<span class=\"org\">④ native：JVM_DefineClass :1240 → resolve_from_stream :934</span>\n<span class=\"grn\">⑤ 工匠：KlassFactory :172 → InstanceKlass</span>\n<span class=\"dim\">「从下往上问、从上往下找」</span>", "src": "<span class=\"dim\">// 术语对照（人话 → 黑话）</span>\n<span class=\"blu\">查户口</span>    → <span class=\"grn\">findLoadedClass（ClassLoader.java:551）</span>\n<span class=\"blu\">上报上级</span>  → <span class=\"grn\">parent.loadClass（:556）</span>\n<span class=\"blu\">自己翻档案</span>→ <span class=\"grn\">findClass（:569）→ defineClass1（:1088）</span>\n<span class=\"blu\">native 入口</span>→ <span class=\"grn\">JVM_DefineClass（jvm.cpp:1240）</span>\n<span class=\"blu\">工匠</span>      → <span class=\"grn\">KlassFactory::create_from_stream（klassFactory.cpp:172）</span>", "scene": "白话速览：<b>双亲委派 + 加载</b>", "detail": "本站回答：ClassLoader.loadClass 双亲委派如何把请求送到 .class 字节，HotSpot 如何把它变成 InstanceKlass。", "note": "当前：白话速览<br>先讲人话", "face": 1}
+,
+    // 1 场景1：loadClass 入口 → 双亲委派主实现
+    {"d": "<span style=\"display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500\">人话</span> <b>这一步在干嘛</b>：所有「主动加载」都从 <code>loadClass(String)</code> 进来，它把活转给带 resolve 参数的 <code>loadClass(String, boolean)</code>——双亲委派模型的核心实现。<b>本站主角登场</b>。\n<code>loadClass(String)</code>（ClassLoader.java:501）只做一件事：<code>return loadClass(name, false)</code>（:502）。真正的逻辑在 <code>loadClass(String, boolean)</code>（:546）：先加锁（:549）、查已加载（:551）、向上委派（:555-558）、兜底自己找（:569）。\n<b>为什么有两个参数</b>：<code>resolve</code> 表示要不要顺带完成「链接」（verify/prepare/resolve）——默认 false（懒），因为链接是类加载系列站②的事，这里只负责「找到类」。", "stage": "<span class=\"org\">loadClass 入口（ClassLoader.java）</span>\n<span class=\"blu\">loadClass(String) :501</span>\n<span class=\"dim\">        │  return loadClass(name, false) :502</span>\n<span class=\"dim\">        ▼</span>\n<span class=\"org\">loadClass(String, boolean) :546</span>\n<span class=\"dim\">  ├─ :549 synchronized 加锁</span>\n<span class=\"dim\">  ├─ :551 findLoadedClass（已加载？）</span>\n<span class=\"dim\">  ├─ :556 parent.loadClass（向上委派）</span>\n<span class=\"dim\">  ├─ :558 findBootstrapClassOrNull</span>\n<span class=\"grn\">  └─ :569 findClass（兜底自己找）</span>\n<span class=\"dim\">  resolve 参数 → 链接（站②的事）</span>", "src": "<span class=\"dim\">// ClassLoader.java:501-502</span>\n<span class=\"org\">public Class<?> loadClass(String name)</span>\n<span class=\"org\">    throws ClassNotFoundException {</span>\n<span class=\"org\">    return loadClass(name, false);</span>\n<span class=\"org\">}</span>\n<span class=\"grn\">// 真正的双亲委派在 :546 loadClass(String, boolean)</span>", "scene": "场景1：<b>loadClass 入口 → 双亲委派主实现</b>", "detail": "loadClass(String) :501 转发给 loadClass(String,boolean) :546，双亲委派主逻辑在此。", "note": "当前：关卡 ①<br>Java 层双亲委派", "face": 1}
+,
+    // 2 场景2：先查重：findLoadedClass
+    {"d": "<span style=\"display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500\">人话</span> <b>这一步在干嘛</b>：加载的第一步是「查重」——这个类是不是已经加载过了？已加载直接返回，绝不重复造。<b>先问自己，再向上</b>。\n<code>synchronized (getClassLoadingLock(name))</code>（:549）：按类名取锁——不同类名不同锁，避免全局串行。然后 <code>findLoadedClass(name)</code>（:551）查 JVM 侧的已加载字典，命中直接返回。<code>findLoadedClass</code> 是 native（<code>findLoadedClass0</code>，:1264-1270）——真正查的是 HotSpot 的 SystemDictionary「已加载字典」。\n<b>为什么必须查重</b>：双亲委派的「唯一性」保证就建立在这一步——同一个全限定名在同一个加载器下只会被加载一次。", "stage": "<span class=\"org\">查重：findLoadedClass（:551）</span>\n<span class=\"dim\">:549 synchronized(getClassLoadingLock(name))</span>\n<span class=\"dim\">        │</span>\n<span class=\"dim\">        ▼</span>\n<span class=\"org\">findLoadedClass(name)  :551</span>\n<span class=\"dim\">        │ native findLoadedClass0 :1270</span>\n<span class=\"dim\">        ▼</span>\n<span class=\"grn\">已加载？──是──► 直接返回 Class（不重复造）</span>\n<span class=\"dim\">        │否</span>\n<span class=\"dim\">        ▼ 继续向上委派（下一步）</span>\n<span class=\"dim\">查的是 SystemDictionary 已加载字典</span>", "src": "<span class=\"dim\">// ClassLoader.java:549-552</span>\n<span class=\"org\">synchronized (getClassLoadingLock(name)) {</span>\n<span class=\"org\">    Class<?> c = findLoadedClass(name);</span>\n<span class=\"org\">    if (c == null) {</span>\n<span class=\"dim\">        // 未加载 → 向上委派</span>\n<span class=\"grn\">// findLoadedClass :1264 → native findLoadedClass0 :1270</span>", "scene": "场景2：<b>先查重：findLoadedClass</b>", "detail": "加锁（:549）+ findLoadedClass（:551，native :1270）查已加载字典，命中直接返回。", "note": "当前：关卡 ①<br>Java 层双亲委派", "face": 1}
+,
+    // 3 场景3：向上委派 parent / bootstrap
+    {"d": "<span style=\"display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500\">人话</span> <b>这一步在干嘛</b>：自己没加载过，就把请求<b>向上抛</b>——有父加载器抛给父，父链顶端抛给启动类加载器。<b>父先找，子后找</b>。\n未命中时（:554-559）：<code>parent != null</code> 则 <code>parent.loadClass(name, false)</code>（:556）——递归地让父加载器走一遍同样的流程（父也会先查自己的已加载、再向上）；父链顶端的加载器没有 parent，调 <code>findBootstrapClassOrNull(name)</code>（:558）把请求交给启动类加载器（bootstrap，负责 JDK 核心类，Object/String 等）。\n<b>方向是关键</b>：委派是「自下而上」的——AppClassLoader → PlatformClassLoader → Bootstrap。类最终由<b>最上层能找到它的加载器</b>定义。", "stage": "<span class=\"org\">向上委派（:554-559）</span>\n<span class=\"dim\">findLoadedClass 未命中</span>\n<span class=\"dim\">        │</span>\n<span class=\"dim\">        ▼</span>\n<span class=\"blu\">parent != null？</span>\n<span class=\"dim\">        ├─ 是──► parent.loadClass(name, false) :556</span>\n<span class=\"dim\">        │          （递归：父也先查重、再向上）</span>\n<span class=\"blu\">        └─ 否──► findBootstrapClassOrNull :558</span>\n<span class=\"dim\">                    （父链顶端 → 启动类加载器）</span>\n<span class=\"grn\">App → Platform → Bootstrap 自下而上</span>\n<span class=\"dim\">类由最上层能找到它的加载器定义</span>", "src": "<span class=\"dim\">// ClassLoader.java:554-559</span>\n<span class=\"org\">if (parent != null) {</span>\n<span class=\"org\">    c = parent.loadClass(name, false);</span>\n<span class=\"org\">} else {</span>\n<span class=\"org\">    c = findBootstrapClassOrNull(name);</span>\n<span class=\"org\">}</span>\n<span class=\"grn\">// 唯一性：同一个类名由最上层加载器定义</span>", "scene": "场景3：<b>向上委派 parent / bootstrap</b>", "detail": "未命中 → parent.loadClass :556（递归）或 findBootstrapClassOrNull :558（bootstrap）。", "note": "当前：关卡 ①<br>Java 层双亲委派", "face": 1}
+,
+    // 4 场景4：findClass 兜底 → defineClass
+    {"d": "<span style=\"display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500\">人话</span> <b>这一步在干嘛</b>：父链全部找不到——轮到<b>自己找</b>。重写 <code>findClass</code> 的加载器去读自己的地盘（jar/目录），找到字节后调 <code>defineClass</code> 跨过 native 边界。<b>委派链的终点</b>。\n<code>findClass(name)</code>（:569，定义 :684）默认抛 <code>ClassNotFoundException</code>——真正实现由子类重写（URLClassLoader 读 jar 等）。找到 <code>byte[]</code> 后 <code>defineClass</code>（:974 调 <code>defineClass1</code>）把字节交给 native：<code>static native Class<?> defineClass1(...)</code>（:1088）。\n<b>边界在哪</b>：Java 层的双亲委派到此结束；<code>defineClass1</code> 是 native 声明——实现是 HotSpot 的 <code>JVM_DefineClass</code>（jvm.cpp:1240），下一关开始是 HotSpot 的天下。", "stage": "<span class=\"org\">兜底：findClass（:569）</span>\n<span class=\"dim\">父链全部找不到</span>\n<span class=\"dim\">        │</span>\n<span class=\"dim\">        ▼</span>\n<span class=\"org\">findClass(name) :569（定义 :684）</span>\n<span class=\"dim\">  ├─ 默认抛 ClassNotFoundException</span>\n<span class=\"dim\">  └─ 子类重写：URLClassLoader 读 jar/目录</span>\n<span class=\"dim\">        │ 找到 byte[]</span>\n<span class=\"dim\">        ▼</span>\n<span class=\"org\">defineClass :974 → defineClass1 :1088</span>\n<span class=\"grn\">        │ native 边界 → JVM_DefineClass（jvm.cpp:1240）</span>", "src": "<span class=\"dim\">// ClassLoader.java:569 / :684 / :1088</span>\n<span class=\"org\">c = findClass(name);   // :569</span>\n<span class=\"dim\">// findClass 默认抛异常，子类重写去读 jar/目录</span>\n<span class=\"org\">static native Class<?> defineClass1(</span>\n<span class=\"org\">    ClassLoader loader, String name, byte[] b, ...); // :1088</span>\n<span class=\"grn\">// 跨过 native 边界，进入 HotSpot（下一关）</span>", "scene": "场景4：<b>findClass 兜底 → defineClass1 native</b>", "detail": "findClass :569 兜底（子类重写），defineClass1 :1088 跨 native 边界到 JVM_DefineClass。", "note": "当前：关卡 ①<br>Java 层双亲委派", "face": 1}
+,
+    // 5 场景5：JVM_DefineClass → jvm_defi
+    {"d": "<span style=\"display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500\">人话</span> <b>这一步在干嘛</b>：native 入口 <code>JVM_DefineClass</code> 收到字节数组，转给公共实现 <code>jvm_define_class_common</code>——先包一个只读游标（ClassFileStream），再交给 SystemDictionary。<b>Java 层到此为止，HotSpot 接管</b>。\n<code>JVM_DefineClass</code>（jvm.cpp:1240）是 JNI 的 native 实现入口，直接调 <code>jvm_define_class_common</code>（:1241，定义 :1073）。公共实现里：构造 <code>ClassFileStream</code>（:1098，.class 字节的只读视图，不拷贝）、调 <code>SystemDictionary::resolve_from_stream</code>（:1102）——HotSpot 侧加载的总入口。\n<b>为什么有 common</b>：<code>JVM_DefineClass</code> 和 <code>JVM_DefineClassWithSource</code>（:1267）两条 JNI 入口共用一套逻辑，只有 source 参数不同。", "stage": "<span class=\"org\">native 入口（jvm.cpp）</span>\n<span class=\"org\">JVM_DefineClass :1240（JNI 入口）</span>\n<span class=\"dim\">        │ :1241</span>\n<span class=\"dim\">        ▼</span>\n<span class=\"org\">jvm_define_class_common :1073</span>\n<span class=\"dim\">  ├─ :1098 ClassFileStream 构造（只读游标）</span>\n<span class=\"org\">  └─ :1102 SystemDictionary::resolve_from_stream</span>\n<span class=\"dim\">        │</span>\n<span class=\"grn\">        ▼ 定义在 systemDictionary.cpp:934（下一关）</span>", "src": "<span class=\"dim\">// jvm.cpp:1240-1241</span>\n<span class=\"org\">JVM_ENTRY(jclass, JVM_DefineClass(JNIEnv* env,</span>\n<span class=\"org\">    const char* name, jobject loader, ...))</span>\n<span class=\"org\">  return jvm_define_class_common(name, loader,</span>\n<span class=\"org\">      buf, len, pd, nullptr, THREAD);</span>\n<span class=\"grn\">// jvm_define_class_common :1073 → ClassFileStream :1098</span>", "scene": "场景5：<b>JVM_DefineClass → jvm_define_class_common</b>", "detail": "JVM_DefineClass :1240 → jvm_define_class_common :1073（ClassFileStream :1098 + resolve_from_stream :1102）。", "note": "当前：关卡 ②<br>native 边界", "face": 2}
+,
+    // 6 场景6：resolve_from_stream 协调者入口
+    {"d": "<span style=\"display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500\">人话</span> <b>这一步在干嘛</b>：<code>resolve_from_stream</code> 是 HotSpot 侧加载的<b>总入口</b>——拿着字节流游标，去 SystemDictionary 走完整的「查重 → 占位 → 加载」流程。<b>协调者登场</b>。\n调用点（jvm.cpp:1102）传的是 <code>&amp;st</code>（ClassFileStream 指针）+ 类名 + 加载器；定义在 systemDictionary.cpp:934——它内部转调 <code>resolve_instance_class_or_null</code>（:606）做真正的工作（下一关细讲）。\n<b>为什么叫 resolve_from_stream</b>：resolved 表示「把字节流解析成 Klass」；from_stream 强调输入是字节流（区别于已加载字典里的查找）。这名字呼应常量池站②的 resolve——都是「把名字变成真身」，只是这里从字节开始。", "stage": "<span class=\"org\">resolve_from_stream（systemDictionary.cpp:934）</span>\n<span class=\"dim\">调用：jvm.cpp:1102（&st, class_name, loader）</span>\n<span class=\"dim\">        │</span>\n<span class=\"dim\">        ▼</span>\n<span class=\"org\">SystemDictionary::resolve_from_stream :934</span>\n<span class=\"dim\">        │ 协调者入口</span>\n<span class=\"dim\">        ▼</span>\n<span class=\"org\">resolve_instance_class_or_null :606</span>\n<span class=\"dim\">  ├─ 查已加载字典（:622）</span>\n<span class=\"dim\">  ├─ 并发占位（:654/:705）</span>\n<span class=\"grn\">  └─ load_instance_class（:728）真正加载</span>\n<span class=\"dim\">「从字节流解析成 Klass」</span>", "src": "<span class=\"dim\">// jvm.cpp:1102 调用</span>\n<span class=\"org\">Klass* k = SystemDictionary::resolve_from_stream(</span>\n<span class=\"org\">    &st, class_name, class_loader, ...);</span>\n<span class=\"dim\">// 定义在 systemDictionary.cpp:934</span>\n<span class=\"grn\">// 内部转调 resolve_instance_class_or_null :606</span>", "scene": "场景6：<b>resolve_from_stream 协调者入口</b>", "detail": "resolve_from_stream（systemDictionary.cpp:934）→ resolve_instance_class_or_null（:606）。", "note": "当前：关卡 ②<br>native 边界", "face": 2}
+,
+    // 7 场景7：协调者：登记 + 查重 + 加锁
+    {"d": "<span style=\"display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500\">人话</span> <b>这一步在干嘛</b>：协调者开工——先登记加载器、再查「已加载字典」、加锁，防止并发下同一个类被加载两遍。<b>SystemDictionary 是类加载的交通警察</b>。\n<code>resolve_instance_class_or_null</code>（systemDictionary.cpp:606）流程：<code>register_loader</code>（:618）把 Java 加载器登记成 ClassLoaderData（HotSpot 侧身份）；<code>find_class</code>（:622）查已加载字典——命中直接返回（快路径）；<code>ObjectLocker</code>（:635，锁来自 <code>get_loader_lock_or_null</code> :634）对「类名+加载器」加锁，保证并发安全。\n<b>三张表的分工</b>：已加载字典（加载完的类）、PlaceholderTable（正在加载的类，下一节）、ClassLoaderData（加载器身份）——合起来回答「这个类现在处于什么状态」。", "stage": "<span class=\"org\">resolve_instance_class_or_null（:606）</span>\n<span class=\"dim\">        │</span>\n<span class=\"dim\">        ▼</span>\n<span class=\"org\">register_loader :618 → ClassLoaderData</span>\n<span class=\"dim\">        │</span>\n<span class=\"dim\">        ▼</span>\n<span class=\"org\">find_class :622 查已加载字典</span>\n<span class=\"grn\">        命中？──► 直接返回 Klass（快路径）</span>\n<span class=\"dim\">        │未命中</span>\n<span class=\"dim\">        ▼</span>\n<span class=\"org\">ObjectLocker :635（:634 取锁）</span>\n<span class=\"dim\">        │ 并发安全：同一类只加载一次</span>\n<span class=\"dim\">        ▼</span>\n<span class=\"dim\"> 占位 :654 → 加载 :728 → 释放 :736</span>", "src": "<span class=\"dim\">// systemDictionary.cpp:606-636</span>\n<span class=\"org\">InstanceKlass* SystemDictionary::</span>\n<span class=\"org\">    resolve_instance_class_or_null(Symbol* name,</span>\n<span class=\"org\">        Handle class_loader, TRAPS) {</span>\n<span class=\"org\">  ClassLoaderData* loader_data =</span>\n<span class=\"org\">      register_loader(class_loader);   // :618</span>\n<span class=\"dim\">  // :622 find_class 查已加载字典</span>\n<span class=\"grn\">  // :635 ObjectLocker 加锁（get_loader_lock_or_null :634）</span>", "scene": "场景7：<b>协调者：登记 + 查重 + 加锁</b>", "detail": ":606 总入口：register_loader :618、find_class :622、ObjectLocker :635。", "note": "当前：关卡 ③<br>SystemDictionary 协调", "face": 3}
+,
+    // 8 场景8：占位表：并发防重 + 循环检测
+    {"d": "<span style=\"display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500\">人话</span> <b>这一步在干嘛</b>：确认「正在加载中」的并发占位——同线程再次遇到同一个类说明循环依赖，直接抛错；别的线程正在加载就等它。<b>占位表是并发与循环检测的核心</b>。\n<code>PlaceholderTable::get_entry</code>（placeholders.cpp:225）拿/建占位条目；<code>find_and_add(LOAD_INSTANCE)</code>（systemDictionary.cpp:705，placeholders.cpp:255）登记「本线程正在加载」；<code>DETECT_CIRCULARITY</code>（placeholders.cpp:267-268）是防循环令牌。加载结束 <code>find_and_remove</code>（:736）清位。\n<b>三种情况</b>：① 别人在加载 → 等待（并行加载复用）；② 自己在加载 → 循环依赖（A→B→A），抛 <code>ClassCircularityError</code>（:718）；③ 没人加载 → 正常登记、继续。", "stage": "<span class=\"org\">并发占位（placeholders.cpp）</span>\n<span class=\"dim\">:654 PlaceholderTable::get_entry（拿/建条目）</span>\n<span class=\"dim\">        │</span>\n<span class=\"dim\">        ▼</span>\n<span class=\"org\">:705 find_and_add(LOAD_INSTANCE)</span>\n<span class=\"dim\">        │ :255 登记「本线程正在加载」</span>\n<span class=\"dim\">        │ :267-268 DETECT_CIRCULARITY 令牌</span>\n<span class=\"dim\">        ▼</span>\n<span class=\"grn\">别人在加载 → 等待复用</span>\n<span class=\"org\">自己在加载 → 循环！:718 ClassCircularityError</span>\n<span class=\"dim\">加载完 :736 find_and_remove 清位</span>", "src": "<span class=\"dim\">// placeholders.cpp:225 / :255 / :267-268</span>\n<span class=\"org\">PlaceholderEntry* PlaceholderTable::get_entry(</span>\n<span class=\"org\">    Symbol* name, ClassLoaderData* loader_data) {</span>\n<span class=\"dim\">  // :255 find_and_add(...)</span>\n<span class=\"dim\">  // :267-268 DETECT_CIRCULARITY 防循环令牌</span>\n<span class=\"grn\">// 并发防重 + 循环检测（A→B→A 抛 ClassCircularityError :718）</span>", "scene": "场景8：<b>占位表：并发防重 + 循环检测</b>", "detail": "get_entry :654（placeholders.cpp:225）+ find_and_add(LOAD_INSTANCE) :705（:255）登记占位；循环抛 :718。", "note": "当前：关卡 ③<br>SystemDictionary 协调", "face": 3}
+,
+    // 9 场景9：load_instance_class 派活：boo
+    {"d": "<span style=\"display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500\">人话</span> <b>这一步在干嘛</b>：占位就绪，真正「去搞字节」——<code>load_instance_class</code> 分两条路：bootstrap 类由 HotSpot 自己读 jrt，应用类回调 Java 层（双亲委派再来一遍）。<b>协调者把活派出去</b>。\n<code>load_instance_class</code>（:1505）是薄包装，转调 <code>load_instance_class_impl</code>（:1363）：<code>class_loader</code> 为空（bootstrap）走 <code>ClassLoader::load_class</code>（:1445）——HotSpot 直接从 jrt 读；非空（应用类）走回调（:1454-1478）——调 Java 的 <code>ClassLoader.loadClass</code>，**Java 层会再次执行双亲委派**，最终 defineClass 又回到 native（第二关）。CDS 检查 :1430-1440（共享归档加速）。\n<b>闭环</b>：Java → native → Java → native 的往返，最终读字节流的还是 native 侧。", "stage": "<span class=\"org\">load_instance_class（:1505 → _impl :1363）</span>\n<span class=\"dim\">        │</span>\n<span class=\"dim\">        ▼</span>\n<span class=\"dim\">:1430-1440 CDS 检查（共享归档？）</span>\n<span class=\"dim\">        │</span>\n<span class=\"dim\">        ▼</span>\n<span class=\"blu\">bootstrap（loader 为空）:1445</span>\n<span class=\"org\">  ClassLoader::load_class（HotSpot 读 jrt）</span>\n<span class=\"blu\">应用类（loader 非空）:1454-1478</span>\n<span class=\"org\">  回调 Java ClassLoader.loadClass</span>\n<span class=\"dim\">    （双亲委派再走一遍 → defineClass 回 native）</span>", "src": "<span class=\"dim\">// systemDictionary.cpp:1505-1509</span>\n<span class=\"org\">InstanceKlass* SystemDictionary::</span>\n<span class=\"org\">    load_instance_class(Symbol* name, ...) {</span>\n<span class=\"org\">  return load_instance_class_impl(name,</span>\n<span class=\"org\">      class_loader, CHECK_NULL);   // :1509</span>\n<span class=\"dim\">// _impl :1363：CDS :1430 · load_class :1445 · 回调 :1454</span>\n<span class=\"grn\">// bootstrap 直读 jrt；应用类回调 Java 双亲委派</span>", "scene": "场景9：<b>load_instance_class 派活：bootstrap 直读 / 应用类回调</b>", "detail": "load_instance_class :1505 → _impl :1363（CDS :1430、load_class :1445、回调 :1454-1478）。", "note": "当前：关卡 ③<br>SystemDictionary 协调", "face": 3}
+,
+    // 10 场景10：ClassLoader::load_class 打
+    {"d": "<span style=\"display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500\">人话</span> <b>这一步在干嘛</b>：bootstrap 分支的「搬运工」——<code>ClassLoader::load_class</code> 按类名拼出文件路径，从 jrt/jimage 打开字节流，交给工匠。<b>字节流到手</b>。\n<code>ClassLoader::load_class</code>（classLoader.cpp:1100）：先处理 <code>--patch-module</code>（:1137/:1149，可替换模块里的类文件）；主路径 <code>_jrt_entry->open_stream</code>（:1160）从 jrt 模块镜像打开 <code>ClassFileStream</code>；文件系统/zip 场景走各自 open_stream（:320 目录 / :421 zip / :453 jimage）。最后 <code>KlassFactory::create_from_stream</code>（:1196）交给工匠。\n<b>open_stream 家族</b>：不同的类路径来源（jrt 镜像、目录、jar）有不同的 open_stream 实现，返回统一的 ClassFileStream 只读游标。", "stage": "<span class=\"org\">搬运工：ClassLoader::load_class（classLoader.cpp:1100）</span>\n<span class=\"dim\">        │</span>\n<span class=\"dim\">        ├─ :1137/:1149 patch-module 替换</span>\n<span class=\"dim\">        ▼</span>\n<span class=\"org\">open_stream 按来源分派</span>\n<span class=\"dim\">  ├─ :1160 jrt/jimage（bootstrap 主路径）</span>\n<span class=\"dim\">  ├─ :320  目录</span>\n<span class=\"dim\">  └─ :421  zip/jar</span>\n<span class=\"dim\">        │</span>\n<span class=\"dim\">        ▼</span>\n<span class=\"org\">ClassFileStream（只读游标）</span>\n<span class=\"grn\">:1196 → KlassFactory::create_from_stream（下一关）</span>", "src": "<span class=\"dim\">// classLoader.cpp:1100-1196</span>\n<span class=\"org\">InstanceKlass* ClassLoader::load_class(</span>\n<span class=\"org\">    Symbol* name, PackageEntry* pkg_entry, ...) {</span>\n<span class=\"dim\">  // :1160 stream = _jrt_entry->open_stream(THREAD, file_name);</span>\n<span class=\"dim\">  // :1196 KlassFactory::create_from_stream(stream, ...)</span>\n<span class=\"grn\">// jrt / 目录 / zip → 统一 ClassFileStream 游标</span>", "scene": "场景10：<b>ClassLoader::load_class 打开字节流</b>", "detail": "ClassLoader::load_class（classLoader.cpp:1100）：patch-module :1137、open_stream :1160（jrt）、:1196 交工匠。", "note": "当前：关卡 ③<br>SystemDictionary 协调", "face": 3}
+,
+    // 11 场景11：KlassFactory → ClassFileP
+    {"d": "<span style=\"display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500\">人话</span> <b>这一步在干嘛</b>：工匠接手字节流——<code>KlassFactory::create_from_stream</code> 构造 <code>ClassFileParser</code>，逐段读 .class（魔数/版本/常量池/字段/方法）。<b>字节流 → 类骨架</b>。\n<code>KlassFactory::create_from_stream</code>（klassFactory.cpp:172）：构造 <code>ClassFileParser</code>（:200，只做参数校验与准备）、调 <code>create_instance_klass</code>（:208）。ClassFileParser 定义在 classFileParser.cpp:5826（构造）/ :6024（parse_stream 逐段读）/ :6281（post_process 收尾）。\n<b>与常量池系列的衔接</b>：<code>parse_stream</code>（classFileParser.cpp:6024）里的常量池解析就是常量池站①的内容——同一个解析器，同一段代码，两个系列的交叉点。", "stage": "<span class=\"org\">工匠：KlassFactory（klassFactory.cpp:172）</span>\n<span class=\"dim\">ClassFileStream 字节流</span>\n<span class=\"dim\">        │</span>\n<span class=\"dim\">        ▼</span>\n<span class=\"org\">KlassFactory::create_from_stream :172</span>\n<span class=\"dim\">  ├─ :200 ClassFileParser 构造（classFileParser.cpp:5826）</span>\n<span class=\"org\">  └─ :208 create_instance_klass</span>\n<span class=\"dim\">        │</span>\n<span class=\"dim\">        ▼</span>\n<span class=\"org\">parse_stream :6024 逐段读</span>\n<span class=\"dim\">  魔数/版本/常量池/字段/方法</span>\n<span class=\"grn\">  常量池解析 = 常量池站① 的内容！</span>", "src": "<span class=\"dim\">// klassFactory.cpp:172-208</span>\n<span class=\"org\">InstanceKlass* KlassFactory::create_from_stream(</span>\n<span class=\"org\">    ClassFileStream* stream, ...) {</span>\n<span class=\"org\">  ClassFileParser parser(stream, ...);  // :200</span>\n<span class=\"org\">  InstanceKlass* result =</span>\n<span class=\"org\">      parser.create_instance_klass(...); // :208</span>\n<span class=\"grn\">// 定义在 classFileParser.cpp:5304 · parse_stream :6024</span>", "scene": "场景11：<b>KlassFactory → ClassFileParser 逐段读</b>", "detail": "KlassFactory::create_from_stream（klassFactory.cpp:172）→ ClassFileParser :200 → create_instance_klass :208。", "note": "当前：关卡 ④<br>工匠与闭环", "face": 4}
+,
+    // 12 场景12：create_instance_klass 产出 
+    {"d": "<span style=\"display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500\">人话</span> <b>这一步在干嘛</b>：工匠出活——<code>create_instance_klass</code> 把解析结果组装成 <code>InstanceKlass</code> 对象，并做收尾挂载。<b>类骨架诞生</b>。\n<code>create_instance_klass</code> 定义在 classFileParser.cpp:5304（klassFactory.cpp:208 是调用点）。内部：读完各段后调 <code>post_process</code>（classFileParser.cpp:6281）收尾——<code>set_pool_holder</code> / <code>set_constants</code> 把常量池挂到类上（呼应常量池站①第六节）、排 vtable 等。产出 <code>InstanceKlass</code>（含 Klass 头 + 字段/方法/常量池指针）。\n<b>还不是「成品」</b>：此时类对象存在、布局就绪，但还没做链接（verify/prepare/resolve）和初始化（clinit）——那是站②站③的事。", "stage": "<span class=\"org\">出活：create_instance_klass</span>\n<span class=\"org\">定义 classFileParser.cpp:5304</span>\n<span class=\"dim\">        │</span>\n<span class=\"dim\">        ▼</span>\n<span class=\"org\">post_process :6281 收尾</span>\n<span class=\"dim\">  ├─ set_pool_holder / set_constants（挂常量池）</span>\n<span class=\"dim\">  ├─ vtable 初始化</span>\n<span class=\"dim\">        │</span>\n<span class=\"dim\">        ▼</span>\n<span class=\"grn\">InstanceKlass 骨架产出</span>\n<span class=\"dim\">  Klass 头 + 字段 + 方法 + 常量池指针</span>\n<span class=\"dim\">  还未链接 / 未初始化（站②站③）</span>", "src": "<span class=\"dim\">// classFileParser.cpp:5304（定义）/ klassFactory.cpp:208（调用）</span>\n<span class=\"org\">InstanceKlass* ClassFileParser::create_instance_klass(</span>\n<span class=\"org\">    bool changed_by_loadhook, ...) {</span>\n<span class=\"dim\">  // parse_stream :6024 读各段</span>\n<span class=\"dim\">  // post_process :6281 收尾挂载</span>\n<span class=\"grn\">// set_pool_holder/set_constants（常量池站① :3961-3962）</span>", "scene": "场景12：<b>create_instance_klass 产出 InstanceKlass 骨架</b>", "detail": "create_instance_klass（classFileParser.cpp:5304）：parse_stream :6024 + post_process :6281（挂常量池、排 vtable）。", "note": "当前：关卡 ④<br>工匠与闭环", "face": 4}
+,
+    // 13 场景13：循环依赖 → ClassCircularityEr
+    {"d": "<span style=\"display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500\">人话</span> <b>这一步在干嘛</b>：防「死循环」——加载 A 时发现父类是 B，加载 B 时又需要 A——<code>PlaceholderTable</code> 用令牌识别同线程重复加载，抛 <code>ClassCircularityError</code>。<b>占位表的另一面</b>。\n加载过程中若再次解析到同一个类（比如 A 的父类链成环），<code>circularity_detection_in_progress</code>（placeholders.cpp:655）检查占位条目里是否已有本线程的令牌——有则说明循环（:718 抛 <code>ClassCircularityError</code>）。\n<b>为什么需要</b>：没有检测，A→B→A 会无限递归加载直到栈溢出。检测 + 抛错的时机在「加载另一个类的解析过程中」——具体触发点：<code>resolve_instance_class_or_null</code> 里的 <code>DETECT_CIRCULARITY</code> 令牌（placeholders.cpp:267-268）被再次遇到。", "stage": "<span class=\"org\">循环检测（placeholders.cpp）</span>\n<span class=\"dim\">加载 A → 需要父类 B → 加载 B → 又需要 A</span>\n<span class=\"dim\">        │</span>\n<span class=\"dim\">        ▼</span>\n<span class=\"org\">:655 circularity_detection_in_progress</span>\n<span class=\"dim\">  占位条目里有本线程令牌？</span>\n<span class=\"dim\">        │是</span>\n<span class=\"dim\">        ▼</span>\n<span class=\"red\">:718 抛 ClassCircularityError</span>\n<span class=\"dim\">（A→B→A 无限递归 → 显式报错）</span>\n<span class=\"dim\">令牌：:267-268 DETECT_CIRCULARITY</span>", "src": "<span class=\"dim\">// placeholders.cpp:655 / :718 / :267-268</span>\n<span class=\"org\">// circularity_detection_in_progress :655</span>\n<span class=\"dim\">// 同线程再次遇到同类的占位令牌 → 循环</span>\n<span class=\"org\">// :718 throw ClassCircularityError</span>\n<span class=\"grn\">// 没有检测：A→B→A 无限递归直到栈溢出</span>", "scene": "场景13：<b>循环依赖 → ClassCircularityError</b>", "detail": "循环检测：circularity_detection_in_progress :655 + DETECT_CIRCULARITY :267-268 → :718 抛 ClassCircularityError。", "note": "当前：关卡 ④<br>工匠与闭环", "face": 4}
+,
+    // 14 场景14：站末闭环：全链路串讲
+    {"d": "<span style=\"display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500\">人话</span> <b>这一步在干嘛</b>：把整条链串一遍——Java 双亲委派 → native → SystemDictionary 协调 → 工匠出活，一条龙。<b>「把人造出来」完成</b>。\n全链路：① <code>loadClass</code>（ClassLoader.java:546）双亲委派（findLoadedClass :551 → parent :556 → bootstrap :558 → findClass :569）；② <code>defineClass1</code>（:1088）跨 native → <code>JVM_DefineClass</code>（jvm.cpp:1240）→ <code>jvm_define_class_common</code>（:1073，ClassFileStream :1098）；③ <code>resolve_from_stream</code>（systemDictionary.cpp:934）→ <code>resolve_instance_class_or_null</code>（:606，register_loader :618 / find_class :622 / 占位 :654/:705）；④ <code>load_instance_class</code>（:1505→_impl :1363）→ <code>ClassLoader::load_class</code>（classLoader.cpp:1100，open_stream :1160）→ <code>KlassFactory::create_from_stream</code>（klassFactory.cpp:172）→ <code>create_instance_klass</code>（classFileParser.cpp:5304）产出 InstanceKlass。\n<b>一句话总结</b>：<b>Java 层负责「往哪找」（双亲委派），HotSpot 负责「怎么造」（协调+解析）</b>——两者在 defineClass/JVM_DefineClass 边界握手。", "stage": "<span class=\"org\">全链路：loadClass → InstanceKlass</span>\n<span class=\"blu\">① Java 双亲委派 ClassLoader.java:546</span>\n<span class=\"dim\">   findLoadedClass :551 → parent :556 / bootstrap :558 → findClass :569</span>\n<span class=\"org\">② native 边界 jvm.cpp:1240 → :1073（ClassFileStream :1098）</span>\n<span class=\"org\">③ 协调 systemDictionary.cpp:934 → :606（:618/:622/占位 :654/:705）</span>\n<span class=\"dim\">   load_instance_class :1505 → _impl :1363</span>\n<span class=\"dim\">④ 工匠 classLoader.cpp:1100 → klassFactory.cpp:172 → classFileParser.cpp:5304</span>\n<span class=\"grn\">产出 InstanceKlass 骨架</span>\n<span class=\"dim\">Java 层「往哪找」 · HotSpot「怎么造」</span>", "src": "<span class=\"dim\">// 全流程行号速查</span>\n<span class=\"org\">ClassLoader.java:546  loadClass 双亲委派</span>\n<span class=\"org\">ClassLoader.java:1088 defineClass1（native）</span>\n<span class=\"org\">jvm.cpp:1240          JVM_DefineClass</span>\n<span class=\"org\">systemDictionary.cpp:934 resolve_from_stream</span>\n<span class=\"org\">systemDictionary.cpp:606 resolve_instance_class_or_null</span>\n<span class=\"org\">classLoader.cpp:1100  ClassLoader::load_class</span>\n<span class=\"org\">klassFactory.cpp:172  KlassFactory::create_from_stream</span>\n<span class=\"grn\">// 类加载站①闭环 → 站②链接三阶段</span>", "scene": "场景14：<b>站末闭环：全链路串讲</b>", "detail": "全链路：loadClass（:546）→ defineClass1（:1088）→ JVM_DefineClass（:1240）→ resolve_from_stream（:934）→ load_instance_class（:1505）→ load_class（classLoader.cpp:1100）→ KlassFactory（:172）→ InstanceKlass。", "note": "当前：关卡 ④<br>工匠与闭环", "face": 4}
+
+  ];
+
+  // 通用 fn：由数据驱动（JSON 序列化方案，杜绝转义问题）
+  steps.forEach((st, i) => {
+    st.fn = () => {
+      faces(st.face);
+      S.fnote.innerHTML = st.note;
+      stage(st.stage);
+      S.detail.textContent = st.detail;
+      src(st.src);
+      scene(st.scene);
+    };
+  });
+
+  // ---------- 控件 ----------
+  let cur = 0, playing = false, timer = null;
+  const N = steps.length;
+  const pillEls = [];
+  steps.forEach((st, i) => {
+    const p = document.createElement('div');
+    p.className = 'step-pill';
+    p.textContent = String(i);
+    p.title = '第 ' + i + ' 步';
+    p.onclick = () => { go(i); };
+    S.pills.appendChild(p);
+    pillEls.push(p);
+  });
+
+  function go(i) {
+    cur = Math.max(0, Math.min(N - 1, i));
+    steps[cur].fn();
+    S.desc.innerHTML = steps[cur].d;
+    pillEls.forEach((p, j) => {
+      p.className = 'step-pill' + (j === cur ? ' active' : (j < cur ? ' done' : ''));
+    });
+    S.scene.innerHTML += ' <span style="opacity:.72;font-size:12.5px;margin-left:6px">第 ' + cur + ' / ' + (N - 1) + ' 步</span>';
+  }
+  function next() { go(cur + 1); }
+  function prev() { go(cur - 1); }
+  function reset() { go(0); }
+  function toggle() {
+    if (playing) { clearInterval(timer); playing = false; S.btnPlay.textContent = '\u25B6'; }
+    else {
+      playing = true; S.btnPlay.textContent = '\u23F8';
+      timer = setInterval(() => { if (cur >= N - 1) { toggle(); } else { next(); } }, 2600);
+    }
+  }
+
+  S.btnPrev = document.getElementById('btnPrev');
+  S.btnPlay = document.getElementById('btnPlay');
+  S.btnNext = document.getElementById('btnNext');
+  S.btnReset = document.getElementById('btnReset');
+  S.btnPrev.onclick = prev;
+  S.btnPlay.onclick = toggle;
+  S.btnNext.onclick = next;
+  S.btnReset.onclick = reset;
+
+  S.face1.onclick = () => go(0);
+  S.face2.onclick = () => go(5);
+  S.face3.onclick = () => go(7);
+  S.face4.onclick = () => go(11);
+
+  document.addEventListener('keydown', (e) => {
+    if (e.code === 'Space') { e.preventDefault(); toggle(); }
+    else if (e.key === 'ArrowRight') { next(); }
+    else if (e.key === 'ArrowLeft') { prev(); }
+    else if (e.key.toLowerCase() === 'r') { reset(); }
+  });
+
+  go(0);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,108 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 660" font-family="Segoe UI, Microsoft YaHei, sans-serif">
+  <defs>
+    <pattern id="dots" width="24" height="24" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#e7e5e4"/>
+    </pattern>
+    <marker id="arrowB" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#3b82f6"/>
+    </marker>
+    <marker id="arrowO" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#d97706"/>
+    </marker>
+  </defs>
+
+  <!-- 背景 -->
+  <rect x="0" y="0" width="760" height="660" fill="#fafaf9"/>
+  <rect x="0" y="0" width="760" height="660" fill="url(#dots)"/>
+
+  <!-- 标题块 -->
+  <rect x="30" y="16" width="700" height="58" rx="12" fill="#1e3a8a"/>
+  <text x="380" y="42" text-anchor="middle" font-size="19" font-weight="bold" fill="#ffffff">volatile —— 一条内存屏障的旅程</text>
+  <text x="380" y="62" text-anchor="middle" font-size="11.5" fill="#bfdbfe">橙=volatile 操作 蓝=屏障 绿=普通操作 紫=线程 · JDK 28 x86-64</text>
+
+  <!-- ============ 上半区标题：四类重排 ============ -->
+  <text x="48" y="104" font-size="14" font-weight="bold" fill="#1e293b">① 四类读写重排 · JMM 禁止矩阵</text>
+  <rect x="46" y="112" width="46" height="4" rx="2" fill="#f59e0b"/>
+
+  <!-- 卡片 A：LoadLoad -->
+  <rect x="48" y="126" width="330" height="84" rx="10" fill="#ffffff" stroke="#e7e5e4" stroke-width="1.5"/>
+  <rect x="48" y="126" width="8" height="84" rx="4" fill="#8b5cf6"/>
+  <text x="68" y="146" font-size="13" font-weight="bold" fill="#6d28d9">LoadLoad 读读</text>
+  <text x="68" y="163" font-size="10.5" fill="#78716c">禁止：两个读互相调换</text>
+  <text x="68" y="178" font-size="10.5" fill="#78716c">volatile 读后，后续读不能上浮</text>
+  <rect x="240" y="186" width="120" height="20" rx="10" fill="#10b981" fill-opacity="0.12" stroke="#10b981" stroke-width="1.2"/>
+  <text x="300" y="200" text-anchor="middle" font-size="10.5" fill="#065f46">x86：空编码 ✓</text>
+
+  <!-- 卡片 B：StoreStore -->
+  <rect x="392" y="126" width="330" height="84" rx="10" fill="#ffffff" stroke="#e7e5e4" stroke-width="1.5"/>
+  <rect x="392" y="126" width="8" height="84" rx="4" fill="#8b5cf6"/>
+  <text x="412" y="146" font-size="13" font-weight="bold" fill="#6d28d9">StoreStore 写写</text>
+  <text x="412" y="163" font-size="10.5" fill="#78716c">禁止：两个写互相调换</text>
+  <text x="412" y="178" font-size="10.5" fill="#78716c">volatile 写前，先前写不能下沉</text>
+  <rect x="584" y="186" width="120" height="20" rx="10" fill="#10b981" fill-opacity="0.12" stroke="#10b981" stroke-width="1.2"/>
+  <text x="644" y="200" text-anchor="middle" font-size="10.5" fill="#065f46">x86：空编码 ✓</text>
+
+  <!-- 卡片 C：LoadStore -->
+  <rect x="48" y="222" width="330" height="84" rx="10" fill="#ffffff" stroke="#e7e5e4" stroke-width="1.5"/>
+  <rect x="48" y="222" width="8" height="84" rx="4" fill="#8b5cf6"/>
+  <text x="68" y="242" font-size="13" font-weight="bold" fill="#6d28d9">LoadStore 读写</text>
+  <text x="68" y="259" font-size="10.5" fill="#78716c">禁止：读与后续写调换</text>
+  <text x="68" y="274" font-size="10.5" fill="#78716c">volatile 读后、写前双向护栏</text>
+  <rect x="240" y="282" width="120" height="20" rx="10" fill="#10b981" fill-opacity="0.12" stroke="#10b981" stroke-width="1.2"/>
+  <text x="300" y="296" text-anchor="middle" font-size="10.5" fill="#065f46">x86：空编码 ✓</text>
+
+  <!-- 卡片 D：StoreLoad -->
+  <rect x="392" y="222" width="330" height="84" rx="10" fill="#ffffff" stroke="#f59e0b" stroke-width="2"/>
+  <rect x="392" y="222" width="8" height="84" rx="4" fill="#f59e0b"/>
+  <text x="412" y="242" font-size="13" font-weight="bold" fill="#b45309">StoreLoad 写读 ★唯一真指令</text>
+  <text x="412" y="259" font-size="10.5" fill="#78716c">禁止：写与后续读调换</text>
+  <text x="412" y="274" font-size="10.5" fill="#78716c">volatile 写后，后续读不能提前</text>
+  <rect x="584" y="282" width="120" height="20" rx="10" fill="#f59e0b" fill-opacity="0.15" stroke="#f59e0b" stroke-width="1.2"/>
+  <text x="644" y="296" text-anchor="middle" font-size="10.5" fill="#92400e">lock addl ✦</text>
+
+  <!-- ============ 下半区标题：happens-before ============ -->
+  <text x="48" y="336" font-size="14" font-weight="bold" fill="#1e293b">② happens-before：volatile 写 → volatile 读</text>
+  <rect x="46" y="344" width="46" height="4" rx="2" fill="#f59e0b"/>
+
+  <!-- 线程 A 泳道 -->
+  <rect x="48" y="358" width="320" height="150" rx="10" fill="#ffffff" stroke="#e7e5e4" stroke-width="1.5"/>
+  <rect x="48" y="358" width="8" height="150" rx="4" fill="#8b5cf6"/>
+  <text x="68" y="378" font-size="12.5" font-weight="bold" fill="#6d28d9">线程 A（写）</text>
+
+  <!-- A: 普通写 x=1 -->
+  <rect x="76" y="392" width="150" height="30" rx="8" fill="#10b981" fill-opacity="0.12" stroke="#10b981" stroke-width="1.3"/>
+  <text x="151" y="412" text-anchor="middle" font-size="11.5" fill="#065f46">x = 1  （普通写）</text>
+
+  <!-- A: volatile 写 flag=true -->
+  <rect x="76" y="436" width="190" height="30" rx="8" fill="#f59e0b" fill-opacity="0.15" stroke="#f59e0b" stroke-width="1.6"/>
+  <text x="171" y="456" text-anchor="middle" font-size="11.5" fill="#92400e">flag = true（volatile 写）</text>
+
+  <!-- A: 屏障 -->
+  <rect x="286" y="436" width="64" height="30" rx="15" fill="#1e3a8a"/>
+  <text x="318" y="456" text-anchor="middle" font-size="10" fill="#ffffff">lock addl</text>
+  <line x1="318" y1="352" x2="318" y2="494" stroke="#94a3b8" stroke-width="1" stroke-dasharray="4 4"/>
+
+  <!-- 线程 B 泳道 -->
+  <rect x="400" y="358" width="320" height="150" rx="10" fill="#ffffff" stroke="#e7e5e4" stroke-width="1.5"/>
+  <rect x="400" y="358" width="8" height="150" rx="4" fill="#8b5cf6"/>
+  <text x="420" y="378" font-size="12.5" font-weight="bold" fill="#6d28d9">线程 B（读）</text>
+
+  <!-- B: volatile 读 -->
+  <rect x="428" y="392" width="190" height="30" rx="8" fill="#f59e0b" fill-opacity="0.15" stroke="#f59e0b" stroke-width="1.6"/>
+  <text x="523" y="412" text-anchor="middle" font-size="11.5" fill="#92400e">flag == true？（volatile 读）</text>
+
+  <!-- B: 普通读 y=x -->
+  <rect x="428" y="436" width="150" height="30" rx="8" fill="#10b981" fill-opacity="0.12" stroke="#10b981" stroke-width="1.3"/>
+  <text x="503" y="456" text-anchor="middle" font-size="11.5" fill="#065f46">y = x  （必见 1）</text>
+
+  <!-- happens-before 连线 -->
+  <path d="M 266 451 C 320 451 380 401 428 407" fill="none" stroke="#d97706" stroke-width="2.5" stroke-dasharray="7 4" marker-end="url(#arrowO)"/>
+  <rect x="318" y="516" width="196" height="26" rx="13" fill="#f59e0b" fill-opacity="0.15" stroke="#f59e0b" stroke-width="1.3"/>
+  <text x="416" y="533" text-anchor="middle" font-size="11" fill="#92400e">happens-before 边（橙虚线）</text>
+
+  <!-- 结论条 -->
+  <rect x="48" y="560" width="672" height="72" rx="10" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
+  <text x="68" y="584" font-size="12.5" font-weight="bold" fill="#92400e">结论：x86 上 volatile 读 = 普通 mov（零额外指令）</text>
+  <text x="68" y="604" font-size="11" fill="#78716c">volatile 写 = 普通 mov + 一条 lock addl [rsp],0 —— StoreLoad 是唯一需要硬件屏障的重排</text>
+  <text x="68" y="621" font-size="11" fill="#78716c">其余三类由 x86 TSO 模型天然保证，屏障节点仅作编译器护栏（空编码）</text>
+</svg>

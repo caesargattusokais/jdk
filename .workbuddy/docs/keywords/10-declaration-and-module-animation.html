@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>10 · 声明域 + 访问控制 + module 交互动画（系列收官）</title>
+<style>
+  :root{
+    --blue:#3b82f6; --purple:#8b5cf6; --orange:#f59e0b; --green:#10b981;
+    --bg:#f6f7fb; --card:#FFFFFF; --ink:#1f2937; --sub:#6b7280; --line:#e5e7eb;
+    --shadow:0 2px 6px rgba(17,24,39,.05);
+  
+    --blue-bg:#eff6ff; --blue-bd:#bfdbfe;
+    --purple-bg:#f5f3ff; --purple-bd:#ddd6fe;
+    --orange-bg:#fffbeb; --orange-bd:#fde68a;
+    --green-bg:#ecfdf5; --green-bd:#a7f3d0;
+    --red:#ef4444; --red-bg:#fef2f2; --red-bd:#fecaca;
+    --ink-2:#6b7280; --ink-3:#9ca3af;
+    --code-bg:#111827; --code-ink:#e5e7eb;
+  }
+  /* header / badges（与 02/03/04 对齐） */
+  header{text-align:center;margin-bottom:18px}
+  header h1{font-size:25px;letter-spacing:.5px}
+  header h1 .mono{font-family:Consolas,monospace;color:var(--blue)}
+  header .sub{color:var(--ink-2);font-size:13.5px;margin-top:6px}
+  .badges{margin-top:12px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+  header .badge{font-size:12px;padding:3px 12px;border-radius:999px;border:1px solid var(--blue-bd);
+    background:var(--blue-bg);color:var(--blue);font-family:Consolas,monospace}
+  header .badge.purple{border-color:var(--purple-bd);background:var(--purple-bg);color:var(--purple)}
+  header .badge.green{border-color:var(--green-bd);background:var(--green-bg);color:var(--green)}
+  header .badge.orange{border-color:var(--orange-bd);background:var(--orange-bg);color:var(--orange)}
+  header .badge.red{border-color:var(--red-bd);background:var(--red-bg);color:var(--red)}
+
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{background:var(--bg); color:var(--ink); font-family:'Segoe UI','Microsoft YaHei',sans-serif; padding:18px;}
+  .wrap{max-width:1180px; margin:0 auto;}
+
+  h1{font-size:22px; margin-bottom:4px;}
+  .sub{font-size:13px; color:var(--sub); margin-bottom:14px;}
+  .steps{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:16px; justify-content:center;}
+  .step-pill{font-size:11.5px; padding:5px 11px; border-radius:999px; cursor:pointer; border:1.5px solid var(--line); background:var(--card); color:var(--sub); display:flex; align-items:center; justify-content:center; transition:all .2s; user-select:none; white-space:nowrap; min-width:30px;}
+  .step-pill.active{border-color:var(--blue); background:var(--blue); color:#fff; box-shadow:0 4px 12px rgba(59,130,246,.35);}
+  .step-pill.done{border-color:var(--green); background:var(--green); color:#fff;}
+
+  .grid{display:grid; grid-template-columns:300px 1fr 310px; gap:12px; margin-bottom:12px;}
+  .panel{background:var(--card); border-radius:12px; padding:14px; box-shadow:var(--shadow);}
+  .panel h2{font-size:14px; margin-bottom:10px; padding-left:8px; border-left:4px solid var(--green);}
+  .panel.p2 h2{border-color:var(--orange);}
+  .panel.p3 h2{border-color:var(--blue);}
+
+  /* left: three landing zones */
+  .zone{border-radius:10px; margin-bottom:8px; padding:8px 10px; border:1.5px solid transparent; transition:all .3s; cursor:default;}
+  .zone .zh{display:flex; align-items:center; gap:8px;}
+  .zone .num{width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:bold; color:#fff; font-size:12px;}
+  .zone .tt{font-size:13px; font-weight:bold;}
+  .zone .ds{font-size:11px; color:var(--sub); margin-top:2px;}
+  .zone .items{display:flex; flex-wrap:wrap; gap:4px; margin-top:6px;}
+  .zone .it{font-size:10.5px; background:#eff6ff; border-radius:5px; padding:2px 7px; color:#9ca3af; font-family:Consolas,monospace;}
+  .zone.z1{background:#eff6ff;} .zone.z1 .num{background:var(--blue);}
+  .zone.z2{background:#d1fae5;} .zone.z2 .num{background:var(--green);}
+  .zone.z3{background:#fffbeb;} .zone.z3 .num{background:var(--orange);}
+  .zone.on{border-color:var(--orange); box-shadow:var(--shadow); background:#fffbeb;}
+  .zone.z1.on{border-color:var(--blue); background:#f5f3ff;}
+  .zone.z2.on{border-color:var(--green); background:#ecfdf5;}
+  .zone.z3.on{border-color:var(--orange); background:#f3f4f6;}
+  .note{margin-top:10px; font-size:11.5px; color:var(--sub); background:#f3f4f6; border-radius:8px; padding:7px 9px;}
+
+  /* middle: stage */
+  .stageBox{background:#111827; border-radius:10px; padding:10px 12px; font-family:Consolas,monospace; font-size:12px; line-height:1.75; color:#e5e7eb; min-height:280px; white-space:pre; overflow-x:auto;}
+  .stageBox .hl{background:#4a3410; border-radius:3px; color:#fbbf24;}
+  .stageBox .dim{color:#64748b;}
+  .stageBox .grn{color:#a7f3d0;}
+  .stageBox .org{color:#fde68a;}
+  .stageBox .pur{color:#ddd6fe;}
+  .stageBox .blu{color:#bfdbfe;}
+  .vrow{display:flex; align-items:center; gap:6px; padding:2px 0; font-size:11.5px; font-family:Consolas,monospace;}
+  .vslot{display:inline-block; min-width:64px; text-align:center; border-radius:6px; padding:2px 8px; font-size:11px; background:#1f2937; color:#d1d5db;}
+  .vslot.hot{background:#4a3410; color:#fbbf24;}
+  .vslot.empty{background:#374151; color:#6b7280; border:1px dashed #4b5563;}
+  .detail{margin-top:8px; font-size:12px; color:#4b5563; background:#f3f4f6; border-radius:8px; padding:7px 9px; min-height:34px;}
+
+  /* right: source */
+  .src{background:#111827; border-radius:12px; padding:12px 14px; box-shadow:var(--shadow); margin-bottom:12px;}
+  .src h2{font-size:13px; color:#9ca3af; margin-bottom:8px;}
+  .src .code{font-family:Consolas,monospace; font-size:12px; line-height:1.7; white-space:pre; overflow-x:auto; color:#e5e7eb;}
+  .src .code .hl{background:#4a3410; border-radius:3px; color:#fbbf24;}
+  .src .code .dim{color:#64748b;}
+  .scene{margin-top:8px; font-size:11px; color:#6b7280; background:#f3f4f6; border-radius:8px; padding:6px 8px;}
+
+  /* controls */
+  .ctl{display:flex; align-items:center; gap:10px; justify-content:center; padding:10px; background:var(--card); border-radius:12px; box-shadow:var(--shadow);}
+  .btn{width:44px; height:44px; border-radius:50%; border:none; background:var(--blue); color:#fff; font-size:16px; cursor:pointer; transition:all .15s; font-weight:bold;}
+  .btn:hover{transform:scale(1.08);}
+  .btn.green{background:var(--green);}
+  .btn.orange{background:var(--orange); width:52px; height:52px;}
+  .hint{font-size:12px; color:var(--sub);}
+  .stepDesc{font-size:14px; font-weight:normal; line-height:1.85; color:#334155; background:#eff6ff; border-radius:9px; padding:10px 16px; margin-bottom:12px; border-left:4px solid var(--orange);}
+  .stepDesc b{color:var(--blue);}
+  .stepDesc code{color:#7c3aed; background:#f3f4f6; padding:1px 5px; border-radius:4px; font-size:12.5px; font-family:Consolas,monospace;}
+  .kbd{display:inline-block; border:1px solid var(--line); border-radius:4px; padding:0 6px; background:#fff; font-size:11px; color:#4b5563;}
+
+  @media(max-width:1000px){.grid{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1><span class="mono">声明域</span> + 访问控制 + module：class 文件头部的一本账</h1>
+    <div class="sub">access_flags（jvm_constants.h:31）· super_class/interfaces（classFileParser.cpp:4005）· module-info 解析在 Java 层（jvm.cpp:1316）· JDK 28 · 系列收官</div>
+    <div class="badges">
+      <span class="badge ">access_flags</span>
+      <span class="badge purple">classFileParser.cpp</span>
+      <span class="badge green">module Java 层</span>
+      <span class="badge orange">JDK 28 收官</span>
+    </div>
+  </header>
+
+  <div class="steps" id="pills"></div>
+  <div class="stepDesc" id="stepDesc">点击 ▶ 开始播放，Space 播放/暂停，← → 步进，R 重置</div>
+
+  <div class="grid">
+    <!-- 左：落点导航 -->
+    <div class="panel p1">
+      <h2>三个落点</h2>
+      <div class="zone z1" id="z1">
+        <div class="zh"><span class="num">1</span><div><div class="tt">声明域</div><div class="ds">access_flags + 属性表</div></div></div>
+        <div class="items"><span class="it">class</span><span class="it">interface</span><span class="it">enum</span><span class="it">record</span><span class="it">abstract</span><span class="it">sealed</span><span class="it">permits</span><span class="it">extends</span><span class="it">implements</span></div>
+      </div>
+      <div class="zone z2" id="z2">
+        <div class="zh"><span class="num">2</span><div><div class="tt">访问控制</div><div class="ds">只有位没有兵</div></div></div>
+        <div class="items"><span class="it">public</span><span class="it">protected</span><span class="it">private</span><span class="it">package</span><span class="it">import</span><span class="it">transient</span></div>
+      </div>
+      <div class="zone z3" id="z3">
+        <div class="zh"><span class="num">3</span><div><div class="tt">module 系</div><div class="ds">Java 层解析</div></div></div>
+        <div class="items"><span class="it">module</span><span class="it">requires</span><span class="it">exports</span><span class="it">opens</span><span class="it">uses</span><span class="it">provides</span><span class="it">with</span></div>
+      </div>
+      <div class="note" id="fnote">当前：三个落点<br>声明域 → 账本<br>访问控制 → 位<br>module → Java 层</div>
+    </div>
+
+    <!-- 中：舞台 -->
+    <div class="panel p2">
+      <h2>机制舞台</h2>
+      <div class="stageBox" id="stage">// 当前机制</div>
+      <div class="detail" id="detail">—</div>
+    </div>
+
+    <!-- 右：源码 -->
+    <div class="panel p3">
+      <h2>源码证据</h2>
+      <div class="src">
+        <div class="code" id="src">// 源码面板</div>
+      </div>
+      <div class="scene" id="scene">—</div>
+    </div>
+  </div>
+
+  <!-- 控制 -->
+  <div class="ctl">
+    <button class="btn" id="btnPrev" title="上一步">◀</button>
+    <button class="btn orange" id="btnPlay" title="播放/暂停 (Space)">▶</button>
+    <button class="btn" id="btnNext" title="下一步">▶</button>
+    <button class="btn green" id="btnReset" title="重置 (R)">↺</button>
+    <span class="hint"><span class="kbd">Space</span> 播放/暂停 · <span class="kbd">←</span> <span class="kbd">→</span> 步进 · <span class="kbd">R</span> 重置 · 点击步骤胶囊跳转</span>
+  </div>
+
+</div>
+
+<script>
+(() => {
+  const S = {
+    z1: document.getElementById('z1'),
+    z2: document.getElementById('z2'),
+    z3: document.getElementById('z3'),
+    fnote: document.getElementById('fnote'),
+    stage: document.getElementById('stage'),
+    detail: document.getElementById('detail'),
+    src: document.getElementById('src'),
+    scene: document.getElementById('scene'),
+    desc: document.getElementById('stepDesc'),
+    pills: document.getElementById('pills'),
+  };
+  const COL = { blue:'#3b82f6', purple:'#8b5cf6', orange:'#f59e0b', green:'#10b981' };
+
+  function zones(n){
+    S.z1.className='zone z1'+(n===1?' on':'');
+    S.z2.className='zone z2'+(n===2?' on':'');
+    S.z3.className='zone z3'+(n===3?' on':'');
+  }
+  function stage(html){ S.stage.innerHTML = html; }
+  function src(html){ S.src.innerHTML = html; }
+  function scene(txt){ S.scene.innerHTML = txt; }
+
+  const steps = [
+    // 0 初始
+    { d:`本批 20+ 关键字的落点高度集中——<b>全是 class 文件"头部"的一本账</b>，三个落点。
+<b>① 声明域</b>：class/interface/enum/record/sealed/extends... 进 <code>access_flags</code> + 属性表
+<b>② 访问控制</b>：public/protected/private 只是 3 个位，VM 不强制
+<b>③ module 系</b>：module-info 是 <code>ACC_MODULE</code> 特殊类，解析在 Java 层不在 HotSpot
+先记住一句话：一个 u2 + 几张属性表 = 本批全部关键字的家。`,
+      fn:()=>{
+        zones(-1); S.fnote.innerHTML='三个落点<br>声明域 → 账本（flags+属性）<br>访问控制 → 位<br>module → Java 层';
+        stage(`<span class="blu">落点 1 声明域（class 头部账本）</span>
+<span class="dim">access_flags u2 + 属性表 + 常量池索引</span>
+<span class="grn">落点 2 访问控制（位）</span>
+<span class="dim">public/protected/private = 3 个位</span>
+<span class="dim">package/import = 零字节码</span>
+<span class="org">落点 3 module 系（Java 层）</span>
+<span class="dim">module-info.class = ACC_MODULE 特殊类</span>
+<span class="org">// 本批最大发现：Module 属性不在 HotSpot 解析</span>`);
+        S.detail.textContent='一个 u2（access_flags）+ 几张属性表 = 本批全部关键字的家。';
+        src(`<span class="dim">// class 文件头部</span>
+u2 access_flags;   <span class="blu">← 声明/访问关键字全在这</span>
+u2 this_class;     <span class="dim">← 全限定名（含 package）</span>
+u2 super_class;    <span class="grn">← extends</span>
+u2 interfaces[];   <span class="grn">← implements</span>
+attribute_info attributes[]; <span class="org">← Record/PermittedSubclasses/Module</span>`);
+        scene('场景 0：<b>三个落点全景</b>');
+      }},
+    // 1 access_flags
+    { d:`<b>access_flags 只有 2 字节</b>，JDK 用三组掩码区分"哪些位对类/字段/方法合法"。
+<b>① 类掩码</b>：PUBLIC/FINAL/INTERFACE/ABSTRACT/ANNOTATION/ENUM... ——<b>没有 PRIVATE/PROTECTED</b>
+<b>② 为什么没有</b>：顶层类不能私有，javac 源码层就拦了，VM 没必要留位
+<b>③ 掩码是什么</b>：一个位集合，用来判断"某个标志位在这种上下文里是否合法"
+<b>④ 字段/方法各有各的掩码</b>：字段没有 ABSTRACT，方法没有 ENUM——位是复用的（下一步）
+顶层类不能 private，这是 javac 拦的，不是 VM 拦的。`,
+      fn:()=>{
+        zones(1); S.fnote.innerHTML='落点 1 声明域<br>access_flags 一本账';
+        stage(`<span class="blu">三组识别掩码（jvm_constants.h:31）</span>
+<span class="grn">CLASS  : PUBLIC|FINAL|IDENTITY|INTERFACE|</span>
+<span class="grn">         ABSTRACT|ANNOTATION|ENUM|SYNTHETIC</span>
+<span class="dim">         ← 无 PRIVATE/PROTECTED！</span>
+<span class="blu">FIELD  : PUBLIC|PRIVATE|PROTECTED|STATIC|</span>
+<span class="blu">         FINAL|VOLATILE|TRANSIENT|ENUM|...</span>
+<span class="org">METHOD : PUBLIC|PRIVATE|PROTECTED|STATIC|</span>
+<span class="org">         FINAL|SYNCHRONIZED|BRIDGE|VARARGS|</span>
+<span class="org">         NATIVE|ABSTRACT|STRICT|...</span>`);
+        S.detail.textContent='类掩码没有 private/protected——顶层类不能私有（javac 拦截）；字段掩码没有 abstract——字段不抽象。';
+        src(`<span class="dim">// jvm_constants.h:31-38（原文）</span>
+#define JVM_RECOGNIZED_CLASS_MODIFIERS \\
+  (JVM_ACC_PUBLIC | JVM_ACC_FINAL | \\
+   JVM_ACC_IDENTITY | JVM_ACC_INTERFACE | \\
+   JVM_ACC_ABSTRACT | JVM_ACC_ANNOTATION | \\
+   JVM_ACC_ENUM | JVM_ACC_SYNTHETIC)`);
+        scene('场景 1：<b>三组识别掩码</b>');
+      }},
+    // 2 位复用
+    { d:`<b>同一个位在不同上下文含义完全不同</b>——所以必须"先知道上下文，再解释位"。
+<b>① 0x0020</b>：类是 <code>IDENTITY</code>、方法是 <code>SYNCHRONIZED</code>
+<b>② 0x0040</b>：字段是 <code>VOLATILE</code>、方法是 <code>BRIDGE</code>
+<b>③ 0x0080</b>：字段是 <code>TRANSIENT</code>、方法是 <code>VARARGS</code>
+<b>④ JDK 28 改名</b>：<code>ACC_SUPER</code> → <code>ACC_IDENTITY</code>，Valhalla 把它重定义为 identity 标记
+这就是为什么校验必须按 CLASS/FIELD/METHOD 三套掩码分开做。`,
+      fn:()=>{
+        zones(1); S.fnote.innerHTML='落点 1 声明域<br>位复用陷阱';
+        stage(`<span class="org">位复用：同一个位不同含义</span>
+<span class="vrow"><span class="vslot hot">0x0020</span> 类=IDENTITY   方法=SYNCHRONIZED</span>
+<span class="vrow"><span class="vslot hot">0x0040</span> 字段=VOLATILE 方法=BRIDGE</span>
+<span class="vrow"><span class="vslot hot">0x0080</span> 字段=TRANSIENT 方法=VARARGS</span>
+<span class="dim">// 这就是为什么必须按上下文掩码</span>
+<span class="dim">// 分开校验（CLASS/FIELD/METHOD）</span>
+<span class="pur">// JDK 28：ACC_SUPER 改名 ACC_IDENTITY</span>
+<span class="pur">// （Valhalla：identity class 标记）</span>`);
+        S.detail.textContent='Valhalla 把 0x0020 从"super 标志"重定义为"identity 标记"——普通类自动带 identity 语义。';
+        src(`<span class="dim">// 类标志里没有 SYNCHRONIZED 位</span>
+// 方法标志里没有 IDENTITY 位
+// 但它们的值是同一个 0x0020！
+<span class="grn">→ 解析时必须先知道"这是类还是方法"</span>
+<span class="dim">// jvm_constants.h:33</span>
+JVM_ACC_IDENTITY  <span class="dim">// 教科书里叫 ACC_SUPER</span>`);
+        scene('场景 2：<b>位复用 + ACC_IDENTITY</b>');
+      }},
+    // 3 形态组合
+    { d:`<b>四种声明形态 = 标志位的"合法组合"</b>：javac 负责组合，VM 负责查非法组合。
+<b>① interface</b>：INTERFACE + ABSTRACT；<code>@interface</code> 再加 ANNOTATION 位
+<b>② enum</b>：FINAL + ENUM；<b>record</b>：FINAL + RECORD + Record 属性
+<b>③ VM 查非法</b>（classFileParser.cpp:4516）：<code>abstract ∧ final</code> 互斥、interface 必须 abstract...
+<b>④ 报什么错</b>：<code>ClassFormatError</code>，class 文件格式非法
+javac 只生成合法组合，VM 的校验是第二道防线。`,
+      fn:()=>{
+        zones(1); S.fnote.innerHTML='落点 1 声明域<br>形态 = 标志组合';
+        stage(`<span class="blu">形态 = 标志组合（:4507-4511）</span>
+<span class="grn">class     → IDENTITY（可加 FINAL/ABSTRACT）</span>
+<span class="grn">interface → INTERFACE + ABSTRACT</span>
+<span class="grn">@interface → + ANNOTATION 位</span>
+<span class="grn">enum      → FINAL + ENUM</span>
+<span class="grn">record    → FINAL + RECORD + Record 属性</span>
+<span class="org">非法组合（:4516）：</span>
+<span class="org">  abstract ∧ final</span>
+<span class="org">  interface ∧ !abstract</span>
+<span class="org">  interface ∧ enum/identity</span>`);
+        S.detail.textContent='javac 负责合法组合，VM 负责校验组合是否在合法集合内。';
+        src(`<span class="dim">// classFileParser.cpp:4516-4520（截取）</span>
+if ((is_abstract && is_final) ||
+    (is_interface && !is_abstract) ||
+    (is_interface && major_gte_1_5 &&
+     (is_identity || is_enum)) ||
+    (!is_interface && major_gte_1_5 &&
+     is_annotation)) {
+  <span class="org">→ ClassFormatError</span>
+}`);
+        scene('场景 3：<b>形态 = 标志组合</b>');
+      }},
+    // 4 record
+    { d:`<b>record 在 class 文件里 = ACC_RECORD 位 + Record 属性（组件列表）</b>，VM 只存元数据。
+<b>① Record 属性</b>：一组"组件"，每个组件 = 名字 + 描述符 + 属性
+<b>② VM 存下来干嘛</b>：给反射用（<code>RecordComponent</code>）；语言语义全在 javac
+<b>③ javac 合成什么</b>：final 字段 + 构造器 + accessor 方法
+<b>④ 呼应 08 篇</b>：record 组件是隐式 final 字段
+record 的"数据载体"是 javac 合成的，VM 只管登记组件清单。`,
+      fn:()=>{
+        zones(1); S.fnote.innerHTML='落点 1 声明域<br>record';
+        stage(`<span class="blu">record → ACC_RECORD + Record 属性</span>
+<span class="grn">Record {</span>
+<span class="grn">  u2 attributes_count;</span>
+<span class="grn">  record_component_info components[];</span>
+<span class="grn">}</span>
+<span class="dim">// 组件：名称 + 描述符 + 属性</span>
+<span class="org">VM 只存元数据 → 反射（RecordComponent）</span>
+<span class="pur">javac 合成：字段 + 构造器 + accessor</span>
+<span class="dim">// parse_classfile_record_attribute</span>
+<span class="dim">// classFileParser.cpp:3322</span>`);
+        S.detail.textContent='record 与 08 篇 final 呼应：record 组件隐式 final。';
+        src(`<span class="dim">// classFileParser.cpp:3322</span>
+u4 ClassFileParser::
+   parse_classfile_record_attribute(...)
+<span class="dim">// vmSymbols.hpp:207</span>
+template(tag_record, "Record")
+<span class="grn">// record 组件 = final 字段（08 篇）</span>`);
+        scene('场景 4：<b>Record 属性</b>');
+      }},
+    // 5 sealed
+    { d:`<b>sealed 是双重防线</b>：javac 编译期拦一次，VM 加载期再拦一次。
+<b>① 产物</b>：<code>ACC_SEALED</code>（0x20000）+ <code>PermittedSubclasses</code> 属性（继承名单）
+<b>② 加载期校验</b>：子类 C 加载时问 <code>has_as_permitted_subclass(C)</code>（instanceKlass.cpp:282）
+<b>③ 不在名单</b>：→ <code>ClassFormatError</code>
+<b>④ 和 08 篇的关系</b>：final 类 = 一个都不许；sealed = 只许名单内的
+permitted 子句里的类名原样进常量池索引数组，运行期逐个比对。`,
+      fn:()=>{
+        zones(1); S.fnote.innerHTML='落点 1 声明域<br>sealed/permits';
+        stage(`<span class="blu">sealed → ACC_SEALED + 属性</span>
+<span class="dim">javac: sealed class S permits A, B;</span>
+<span class="grn">→ ACC_SEALED（0x20000）</span>
+<span class="grn">→ PermittedSubclasses: [A, B]</span>
+<span class="org">加载期校验（:3233 解析 → :282 校验）</span>
+<span class="org">子类 C 加载时：</span>
+<span class="org">  has_as_permitted_subclass(C)？</span>
+<span class="org">  不在名单 → ClassFormatError</span>
+<span class="pur">// 编译期拦一次 + 加载期再拦一次</span>`);
+        S.detail.textContent='permitted 子句里的类名原样进常量池索引数组——运行期逐个比对。';
+        src(`<span class="dim">// instanceKlass.cpp:282</span>
+bool InstanceKlass::
+   has_as_permitted_subclass(
+       const InstanceKlass* k, ...) const {
+  <span class="grn">// 遍历 _permitted_subclasses 数组</span>
+  <span class="grn">// 找到 → true；找不到 → 报错</span>
+}`);
+        scene('场景 5：<b>sealed 双重校验</b>');
+      }},
+    // 6 extends/implements
+    { d:`<b>extends/implements 是 class 头部的两个字段</b>：super_class 一个 u2 + interfaces 数组。
+<b>① super_class</b>：常量池里 Class 的索引；<b>interfaces</b>：直接实现的接口列表
+<b>② 解析期校验</b>（:4005）：super_class 不能是 final 类——否则 08 篇的 <code>IncompatibleClassChangeError</code>
+<b>③ 链接期</b>：<code>initialize_supers</code>（:5663）构建继承链
+<b>④ 闭环 06 篇</b>：instanceof 的 <code>super_check</code> 就跑在这条整理好的链上
+声明关键字的运行期生命 = 构建 06 篇的子类型检查数据结构。`,
+      fn:()=>{
+        zones(1); S.fnote.innerHTML='落点 1 声明域<br>extends/implements';
+        stage(`<span class="blu">extends/implements → 索引</span>
+<span class="grn">super_class: u2（常量池 Class 索引）</span>
+<span class="grn">interfaces:  u2[]（直接实现的接口）</span>
+<span class="dim">check_super_class（:4005）：</span>
+<span class="dim">  super_class_index == 0 → Object/接口</span>
+<span class="dim">  非数组类 · 非 final 类</span>
+<span class="org">链接期 initialize_supers（:5663）：</span>
+<span class="org">  _super_klass + _transitive_interfaces</span>
+<span class="pur">→ 06 篇 instanceof 的 super_check 数据结构！</span>`);
+        S.detail.textContent='声明关键字的运行期生命 = 构建 06 篇的子类型检查数据结构。';
+        src(`<span class="dim">// classFileParser.cpp:5663</span>
+ik->initialize_supers(_super_klass,
+    _transitive_interfaces, CHECK);
+<span class="grn">// 06 篇 check_klass_subtype 快路径</span>
+<span class="grn">// 查的就是这份整理结果</span>`);
+        scene('场景 6：<b>继承链 → 06 篇闭环</b>');
+      }},
+    // 7 访问控制
+    { d:`<b>访问控制"只有位没有兵"</b>——VM 只做一件事：三个位最多置一个，运行期零强制。
+<b>① VM 唯一动作</b>（:4551）：<code>has_illegal_visibility</code>，public ∧ protected 之类算非法
+<b>② 真正的访问控制在哪</b>：javac 编译期拦截 + 反射层 <code>verifyMemberAccess</code>
+<b>③ 所以</b>：反编译/字节码工具可以绕过访问控制——class 文件不携带访问校验逻辑
+<b>④ 为什么 VM 不强制</b>：规范把访问标志当"文档性"信息，强制靠编译器
+访问控制是编译期约定，不是运行期安保。`,
+      fn:()=>{
+        zones(2); S.fnote.innerHTML='落点 2 访问控制<br>只有位没有兵';
+        stage(`<span class="grn">VM 只做三互斥（:4551）</span>
+<span class="dim">public ∧ protected → 非法</span>
+<span class="dim">public ∧ private   → 非法</span>
+<span class="dim">protected ∧ private → 非法</span>
+<span class="org">运行期零强制：</span>
+<span class="org">  访问控制在 javac（编译期拦截）</span>
+<span class="org">  + 反射层（verifyMemberAccess）</span>
+<span class="pur">// 反编译/字节码工具可以绕过</span>
+<span class="pur">// class 文件不携带访问校验逻辑</span>`);
+        S.detail.textContent='JVM 规范里访问标志是"文档性"的——真正强制靠 javac + 反射层。';
+        src(`<span class="dim">// classFileParser.cpp:4551-4559（原文）</span>
+static bool has_illegal_visibility(jint flags) {
+  const bool is_public = (flags & JVM_ACC_PUBLIC) != 0;
+  const bool is_protected = (flags & JVM_ACC_PROTECTED) != 0;
+  const bool is_private = (flags & JVM_ACC_PRIVATE) != 0;
+  return ((is_public && is_protected) ||
+          (is_public && is_private) ||
+          (is_protected && is_private));
+}`);
+        scene('场景 7：<b>只有位没有兵</b>');
+      }},
+    // 8 package/import
+    { d:`<b>package/import 是零字节码双子</b>——一个并入名字，一个完全消失。
+<b>① package</b>：包名只是全限定名的一部分（<code>com.foo.Bar</code>），无字节码无属性无标志
+<b>② import</b>：javac 用它把简单名解析成全限定名，解析完直接丢弃
+<b>③ 铁证</b>：编译带 10 个 import 的类，<code>javap -v</code> 逐字段搜——找不到任何 import 信息
+<b>④ 全系列唯一</b>：import 是"完全零痕迹"的关键字
+对比 record/sealed 有专属属性，import 连个位都没有。`,
+      fn:()=>{
+        zones(2); S.fnote.innerHTML='落点 2 访问控制<br>package/import 零字节码';
+        stage(`<span class="grn">package：并入全限定名</span>
+<span class="dim">com.foo.Bar ← 包名是名字的一部分</span>
+<span class="dim">无字节码 · 无属性 · 无标志位</span>
+<span class="dim">运行期：getPackage() 反推 · 包→模块</span>
+<span class="org">import：全系列唯一完全零痕迹</span>
+<span class="org">javac 用它把简单名解析成全限定名</span>
+<span class="org">解析完直接丢弃 → javap 永远看不到</span>
+<span class="pur">// 对比 record/sealed 有专属属性</span>`);
+        S.detail.textContent='编译带 10 个 import 的类，javap -v 逐字段搜——找不到任何 import 信息。';
+        src(`<span class="dim">// 搜索整个 HotSpot + class 文件格式：</span>
+// import 没有对应属性、常量池项、标志位
+<span class="grn">// import java.util.*;  编译后 → 消失</span>
+<span class="dim">// javac 内部：ImportScanner / ImportFilter</span>
+<span class="dim">// （编译器私有，class 文件无痕）</span>`);
+        scene('场景 8：<b>零字节码双子</b>');
+      }},
+    // 9 transient
+    { d:`<b>transient 是"标志活着，机制死了"</b>——VM 只存一个位，没有任何机制消费它。
+<b>① VM 的全部存在</b>：<code>is_transient()</code> 访问器（accessFlags.hpp:57），全 HotSpot 只有 3 处引用
+<b>② 谁在消费</b>：反射 <code>getModifiers()</code> + 序列化 <code>ObjectStreamClass</code>，都是 Java 层
+<b>③ 对照 09 篇 strictfp</b>：strictfp 连位都被剥了；transient 至少位还在
+<b>④ 结论</b>：声明关键字 ≠ 有运行机制，很多只是"账本记录"
+VM 只负责"存下这个位"，至于这个位意味着什么，由 Java 层去解释。`,
+      fn:()=>{
+        zones(2); S.fnote.innerHTML='落点 2 访问控制<br>transient';
+        stage(`<span class="grn">transient 在 VM 的全部存在</span>
+<span class="blu">accessFlags.hpp:57</span>
+<span class="grn">bool is_transient() const {</span>
+<span class="grn">  return (_flags & JVM_ACC_TRANSIENT) != 0;</span>
+<span class="grn">}</span>
+<span class="dim">// 全 HotSpot 只有 3 处引用：</span>
+<span class="dim">// 常量定义 · 解析读取 · 访问器</span>
+<span class="org">谁在消费：</span>
+<span class="org">  反射 getModifiers()（Java 层）</span>
+<span class="org">  序列化 ObjectStreamClass（Java 层）</span>
+<span class="pur">// VM 只负责存位</span>`);
+        S.detail.textContent='对照 09 篇 strictfp（JDK 17 连位都剥了）：transient 是"标志活着、机制在别处"。';
+        src(`<span class="dim">// accessFlags.hpp:57（原文）</span>
+bool is_transient() const {
+  return (_flags & JVM_ACC_TRANSIENT) != 0;
+}
+<span class="grn">// java.io.ObjectStreamClass：</span>
+<span class="grn">// transient 字段跳过序列化（Java 层）</span>
+<span class="dim">// VM 自身没有任何 transient 机制</span>`);
+        scene('场景 9：<b>标志活着，机制死了</b>');
+      }},
+    // 10 module-info
+    { d:`<b>本批最大发现：Module 属性解析不在 HotSpot！在 java.base 的 Java 层。</b>
+<b>① module-info.class</b>：<code>ACC_MODULE</code>（0x8000）特殊类，没有 super_class/字段/方法
+<b>② 当普通类加载它</b>：→ <code>NoClassDefFoundError</code>（:4494）
+<b>③ 解析路径</b>：<code>ModuleDescriptor.read()</code> ← <code>jdk.internal.module.ModuleInfo</code>（纯 Java）
+<b>④ VM 只收结果</b>：<code>JVM_DefineModule</code>（jvm.cpp:1316）→ <code>ModuleEntry</code>（moduleEntry.cpp:263）
+HotSpot 整个 classFileParser 里搜不到 Module 属性解析代码——职责完全在 Java 层。`,
+      fn:()=>{
+        zones(3); S.fnote.innerHTML='落点 3 module 系<br>module-info 解析在 Java 层';
+        stage(`<span class="org">module-info.class = ACC_MODULE 特殊类</span>
+<span class="dim">无 super_class · 无字段 · 无方法</span>
+<span class="dim">当类加载 → NoClassDefFoundError（:4494）</span>
+<span class="blu">解析路径（全在 Java 层！）</span>
+<span class="grn">ModuleDescriptor.read() ← 字节流</span>
+<span class="grn">jdk.internal.module.ModuleInfo</span>
+<span class="grn">Modules.defineModule()</span>
+<span class="org">→ JVM_DefineModule（jvm.cpp:1316）</span>
+<span class="pur">→ ModuleEntry（moduleEntry.cpp:263）</span>`);
+        S.detail.textContent='HotSpot 整个 classFileParser 里搜不到 Module 属性解析代码——解析职责完全在 Java 层。';
+        src(`<span class="dim">// classFileParser.cpp:4492-4494（原文）</span>
+const bool is_module = (flags & JVM_ACC_MODULE) != 0;
+assert(_major_version >= JAVA_9_VERSION ||
+       !is_module, "JVM_ACC_MODULE should not be set");
+<span class="grn">// Module 属性解析在 java.base：</span>
+<span class="grn">// jdk.internal.module.ModuleInfo.java</span>
+<span class="dim">// HotSpot 只收 JVM_DefineModule（jvm.cpp:1316）</span>`);
+        scene('场景 10：<b>ACC_MODULE + Java 层解析</b>');
+      }},
+    // 11 module 指令
+    { d:`<b>requires/exports/opens/uses/provides/with 是受限关键字</b>，只对应 Module 属性里的五张表。
+<b>① 受限关键字</b>（JLS §3.9）：module-info 外可以当普通标识符用
+<b>② 五张表</b>：requires→Requires 表 / exports→Exports 表 / opens→Opens 表 / uses→Uses 表 / provides→Provides 表
+<b>③ 每张表干嘛</b>：模块依赖、包导出、反射开放、ServiceLoader 服务发现
+<b>④ VM 存储层</b>：<code>can_read</code>（moduleEntry.cpp:125），模块间类可见性检查
+模块图 = Java 层解析 + VM 存储（ModuleEntry）+ Java 层消费。`,
+      fn:()=>{
+        zones(3); S.fnote.innerHTML='落点 3 module 系<br>受限关键字 × 五张表';
+        stage(`<span class="org">requires/exports/... = 受限关键字</span>
+<span class="dim">模块声明外可当标识符（JLS §3.9）</span>
+<span class="grn">Module 属性内五张表：</span>
+<span class="grn">requires  → Requires 表 → add_read</span>
+<span class="grn">exports   → Exports 表 → 包访问控制</span>
+<span class="grn">opens     → Opens 表 → 反射开放</span>
+<span class="grn">uses      → Uses 表 → ServiceLoader</span>
+<span class="grn">provides→Provides 表 → 服务发现</span>
+<span class="pur">// can_read（moduleEntry.cpp:125）</span>
+<span class="pur">// 模块间类可见性检查</span>`);
+        S.detail.textContent='模块图 = Java 层解析 + VM 存储（ModuleEntry）+ Java 层消费（ServiceLoader/Module API）。';
+        src(`<span class="dim">// moduleEntry.cpp:125</span>
+bool ModuleEntry::can_read(ModuleEntry* m) const {
+  <span class="grn">// requires 表里的模块才可读</span>
+}
+<span class="dim">// exports/opens 非法访问 →</span>
+<span class="dim">// IllegalAccessError（Java 层 Module 检查）</span>`);
+        scene('场景 11：<b>受限关键字 + 五张表</b>');
+      }},
+    // 12 收官
+    { d:`<b>系列收官！</b>从 01 全景的 50 关键字 7 域地图出发，02-10 共 9 篇深读全部落位。
+<b>① 机制型（02-08）</b>：synchronized/volatile/new/static/instanceof/异常/final——HotSpot 行号实证
+<b>② 编译期型（09-10）</b>：var/import/assert/strictfp/声明域/访问控制——javac 源码
+<b>③ 字面量/受限名</b>：true/false/null/var/yield/requires——JLS + Tokens.java 修正分类
+<b>④ 成果</b>：每个关键字都能回答"行号在哪"
+阅读法不变：字节码第一落点，机制型读 HotSpot、编译期型读 javac。`,
+      fn:()=>{
+        zones(-1); S.fnote.innerHTML='系列收官<br>50 关键字全部落位';
+        stage(`<span class="blu">系列收官：50 关键字最终分布</span>
+<span class="grn">机制型（02-08）：</span>
+<span class="dim">  synchronized/volatile/new/static/instanceof</span>
+<span class="dim">  /异常/final → HotSpot 行号实证</span>
+<span class="grn">编译期型（09-10）：</span>
+<span class="dim">  var/import/assert/strictfp/声明域/访问控制</span>
+<span class="dim">  → javac（Gen/Lower/Resolve）</span>
+<span class="org">字面量/受限名：</span>
+<span class="org">  true/false/null/var/yield/requires...</span>
+<span class="org">  → JLS + Tokens.java 修正分类</span>
+<span class="pur">// 每个关键字都能回答"行号在哪"</span>`);
+        S.detail.textContent='全系列 10 篇 + 8 个交互动画 + 8 张 SVG：Java 关键字的源码级全景完结。';
+        src(`<span class="dim">// 系列路径</span>
+01 全景 → 02 synchronized → 03 volatile
+→ 04 new → 05 static → 06 instanceof
+→ 07 异常 → 08 final → 09 控制流/字面量
+→ 10 声明域/module（本篇）<span class="grn">✔ 收官</span>
+<span class="dim">// 阅读法不变：字节码第一落点</span>
+<span class="dim">// 机制型读 HotSpot · 编译期型读 javac</span>`);
+        scene('场景 12：<b>系列收官</b>');
+      }},
+  ];
+
+  let idx = -1, timer = null, playing = false;
+
+  function render(i){
+    idx = i;
+    steps[i].fn();
+    S.desc.innerHTML = (i+1) + '/' + steps.length + ' · ' + steps[i].d;
+    document.querySelectorAll('.step-pill').forEach((c,j)=>{
+      c.className = 'step-pill' + (j===i?' active':(j<i?' done':''));
+    });
+    document.getElementById('btnPlay').textContent = '▶';
+    playing = false;
+  }
+  function next(){ if(idx < steps.length-1) render(idx+1); }
+  function prev(){ if(idx > 0) render(idx-1); }
+  function play(){
+    if(playing){ clearInterval(timer); playing=false; document.getElementById('btnPlay').textContent='▶'; return; }
+    if(idx >= steps.length-1){ render(0); }
+    playing = true; document.getElementById('btnPlay').textContent='⏸';
+    timer = setInterval(()=>{
+      if(idx >= steps.length-1){ clearInterval(timer); playing=false; document.getElementById('btnPlay').textContent='▶'; return; }
+      render(idx+1);
+    }, 3600);
+  }
+  function reset(){ clearInterval(timer); playing=false; render(0); }
+
+  steps.forEach((s,i)=>{
+    const c = document.createElement('div');
+    c.className='step-pill'; c.textContent=i+1; c.title=s.d;
+    c.onclick = ()=>render(i);
+    S.pills.appendChild(c);
+  });
+
+  document.getElementById('btnPrev').onclick = prev;
+  document.getElementById('btnNext').onclick = next;
+  document.getElementById('btnPlay').onclick = play;
+  document.getElementById('btnReset').onclick = reset;
+  document.addEventListener('keydown', e=>{
+    if(e.code==='Space'){ e.preventDefault(); play(); }
+    else if(e.key==='ArrowRight') next();
+    else if(e.key==='ArrowLeft') prev();
+    else if(e.key==='r'||e.key==='R') reset();
+  });
+
+  render(0);
+})();
+</script>
+</body>
+</html>

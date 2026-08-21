@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>06 · instanceof 类型检查全链路交互动画</title>
+<style>
+  :root{
+    --blue:#3b82f6; --purple:#8b5cf6; --orange:#f59e0b; --green:#10b981;
+    --bg:#f6f7fb; --card:#FFFFFF; --ink:#1f2937; --sub:#6b7280; --line:#e5e7eb;
+    --shadow:0 2px 6px rgba(17,24,39,.05);
+  
+    --blue-bg:#eff6ff; --blue-bd:#bfdbfe;
+    --purple-bg:#f5f3ff; --purple-bd:#ddd6fe;
+    --orange-bg:#fffbeb; --orange-bd:#fde68a;
+    --green-bg:#ecfdf5; --green-bd:#a7f3d0;
+    --red:#ef4444; --red-bg:#fef2f2; --red-bd:#fecaca;
+    --ink-2:#6b7280; --ink-3:#9ca3af;
+    --code-bg:#111827; --code-ink:#e5e7eb;
+  }
+  /* header / badges（与 02/03/04 对齐） */
+  header{text-align:center;margin-bottom:18px}
+  header h1{font-size:25px;letter-spacing:.5px}
+  header h1 .mono{font-family:Consolas,monospace;color:var(--blue)}
+  header .sub{color:var(--ink-2);font-size:13.5px;margin-top:6px}
+  .badges{margin-top:12px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+  header .badge{font-size:12px;padding:3px 12px;border-radius:999px;border:1px solid var(--blue-bd);
+    background:var(--blue-bg);color:var(--blue);font-family:Consolas,monospace}
+  header .badge.purple{border-color:var(--purple-bd);background:var(--purple-bg);color:var(--purple)}
+  header .badge.green{border-color:var(--green-bd);background:var(--green-bg);color:var(--green)}
+  header .badge.orange{border-color:var(--orange-bd);background:var(--orange-bg);color:var(--orange)}
+  header .badge.red{border-color:var(--red-bd);background:var(--red-bg);color:var(--red)}
+
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{background:var(--bg); color:var(--ink); font-family:'Segoe UI','Microsoft YaHei',sans-serif; padding:18px;}
+  .wrap{max-width:1180px; margin:0 auto;}
+
+  h1{font-size:22px; margin-bottom:4px;}
+  .sub{font-size:13px; color:var(--sub); margin-bottom:14px;}
+  .steps{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:16px; justify-content:center;}
+  .step-pill{font-size:11.5px; padding:5px 11px; border-radius:999px; cursor:pointer; border:1.5px solid var(--line); background:var(--card); color:var(--sub); display:flex; align-items:center; justify-content:center; transition:all .2s; user-select:none; white-space:nowrap; min-width:30px;}
+  .step-pill.active{border-color:var(--blue); background:var(--blue); color:#fff; box-shadow:0 4px 12px rgba(59,130,246,.35);}
+  .step-pill.done{border-color:var(--green); background:var(--green); color:#fff;}
+
+  .grid{display:grid; grid-template-columns:290px 1fr 300px; gap:12px; margin-bottom:12px;}
+  .panel{background:var(--card); border-radius:12px; padding:14px; box-shadow:var(--shadow);}
+  .panel h2{font-size:14px; margin-bottom:10px; padding-left:8px; border-left:4px solid var(--green);}
+  .panel.p2 h2{border-color:var(--blue);}
+  .panel.p3 h2{border-color:var(--purple);}
+
+  /* left: obj & klasses */
+  .obj{display:flex; align-items:center; gap:8px; padding:8px 10px; border-radius:10px; background:#d1fae5; border:1.5px solid var(--green); margin-bottom:8px; font-size:12.5px;}
+  .obj .hl{font-weight:bold; color:var(--green);}
+  .kbox{border:1.5px dashed var(--line); border-radius:10px; padding:8px 10px; margin-bottom:8px; font-size:12px;}
+  .kbox .cap{font-size:11px; color:var(--sub); margin-bottom:5px;}
+  .krow{display:flex; gap:6px; align-items:center; padding:2px 0; font-family:Consolas,monospace; font-size:11.5px;}
+  .krow .k{color:var(--blue); min-width:92px;}
+  .krow .v{color:#4b5563;}
+  .secsup{font-size:10.5px; color:#9ca3af; padding:1px 0;}
+  .chiplet{display:inline-block; padding:1px 6px; border-radius:8px; background:#eff6ff; margin:1px 2px; font-size:10.5px;}
+  .chiplet.hit{background:var(--orange); color:#fff;}
+  .reg{margin-top:6px; background:#f3f4f6; border-radius:9px; padding:7px 9px; font-size:11.5px; font-family:Consolas,monospace;}
+  .reg .r{color:var(--purple);}
+
+  /* middle: pipeline */
+  .pipe{display:flex; gap:4px; margin-bottom:10px;}
+  .pstep{flex:1; text-align:center; font-size:10.5px; padding:5px 2px; border-radius:7px; background:#eff6ff; color:var(--sub); transition:all .3s; border:1.5px solid transparent;}
+  .pstep.on{background:#fef3c7; border-color:var(--orange); color:#334155; font-weight:bold;}
+  .pstep.ok{background:#d1fae5; border-color:var(--green); color:var(--green);}
+  .stageBox{background:#111827; border-radius:10px; padding:10px 12px; font-family:Consolas,monospace; font-size:12px; line-height:1.75; color:#e5e7eb; min-height:150px;}
+  .stageBox .hl{background:#4a3410; border-radius:3px; color:#fbbf24;}
+  .stageBox .dim{color:#64748b;}
+  .stageBox .grn{color:#a7f3d0;}
+  .stageBox .org{color:#fde68a;}
+  .stageBox .pur{color:#ddd6fe;}
+  .stageBox .blu{color:#bfdbfe;}
+  .detail{margin-top:8px; font-size:12px; color:#4b5563; background:#f3f4f6; border-radius:8px; padding:7px 9px; min-height:34px;}
+
+  /* right: bytecode */
+  .bc{font-family:Consolas,monospace; font-size:12.5px; line-height:1.85;}
+  .bc .l{display:flex; gap:8px; padding:0 6px; border-radius:5px; transition:background .25s;}
+  .bc .l.hl{background:#fef3c7; outline:1px solid var(--orange);}
+  .bc .l.ok{background:#d1fae5; outline:1px solid var(--green);}
+  .bc .addr{color:#9ca3af; min-width:22px; text-align:right; user-select:none;}
+  .bc .op{color:var(--blue); font-weight:bold;}
+  .bc .comment{color:#9ca3af; font-size:11px;}
+  .cpool{margin-top:10px; font-size:11.5px; color:var(--sub); line-height:1.8;}
+  .cpool b{color:var(--purple);}
+  .scene{margin-top:8px; font-size:11px; color:#6b7280; background:#f3f4f6; border-radius:8px; padding:6px 8px;}
+
+  /* controls */
+  .ctl{display:flex; align-items:center; gap:10px; justify-content:center; padding:10px; background:var(--card); border-radius:12px; box-shadow:var(--shadow);}
+  .btn{width:44px; height:44px; border-radius:50%; border:none; background:var(--blue); color:#fff; font-size:16px; cursor:pointer; transition:all .15s; font-weight:bold;}
+  .btn:hover{transform:scale(1.08);}
+  .btn.green{background:var(--green);}
+  .btn.orange{background:var(--orange); width:52px; height:52px;}
+  .hint{font-size:12px; color:var(--sub);}
+  .stepDesc{font-size:14px; font-weight:bold; color:#334155; background:#eff6ff; border-radius:9px; padding:8px 14px; margin-bottom:12px; border-left:4px solid var(--orange);}
+  .kbd{display:inline-block; border:1px solid var(--line); border-radius:4px; padding:0 6px; background:#fff; font-size:11px; color:#4b5563;}
+
+  @media(max-width:1000px){.grid{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1><span class="mono">instanceof</span> · 类型检查全链路</h1>
+    <div class="sub">0xc1 字节码 → templateTable_x86.cpp:3934 → check_klass_subtype（macroAssembler_x86.cpp:4047）→ Klass 双通道 · JDK 28</div>
+    <div class="badges">
+      <span class="badge ">0xc1 字节码</span>
+      <span class="badge purple">check_klass_subtype</span>
+      <span class="badge green">Klass 双通道</span>
+      <span class="badge orange">macroAssembler_x86</span>
+    </div>
+  </header>
+
+  <div class="steps" id="pills"></div>
+  <div class="stepDesc" id="stepDesc">点击 ▶ 开始播放，Space 播放/暂停，← → 步进，R 重置</div>
+
+  <div class="grid">
+    <!-- 左：对象与 Klass -->
+    <div class="panel p1">
+      <h2>对象与类型 · o = "str"</h2>
+      <div class="obj">对象头: mark=unlocked · <span class="hl">_klass → String</span></div>
+      <div class="kbox">
+        <div class="cap">String Klass（子类）</div>
+        <div class="krow"><span class="k">_super</span><span class="v">→ Object</span></div>
+        <div class="krow"><span class="k">_secondary_supers</span><span class="v" id="secArr">…</span></div>
+        <div class="krow"><span class="k">_bitmap</span><span class="v" id="bitmap">…</span></div>
+      </div>
+      <div class="kbox">
+        <div class="cap">目标 Klass（检查对象）</div>
+        <div class="krow"><span class="k">名字</span><span class="v" id="tgtName">String</span></div>
+        <div class="krow"><span class="k">类型</span><span class="v" id="tgtType">普通类</span></div>
+        <div class="krow"><span class="k">super_check_offset</span><span class="v" id="sco">…</span></div>
+      </div>
+      <div class="reg">
+        rax=<span class="r" id="regRax">obj</span> &nbsp; rdx=<span class="r" id="regRdx">-</span><br>
+        结果: <span class="r" id="regRes">（未定）</span>
+      </div>
+    </div>
+
+    <!-- 中：流水线 -->
+    <div class="panel p2">
+      <h2>检查流水线（字节码 → 汇编 → Klass）</h2>
+      <div class="pipe">
+        <div class="pstep" id="ps0">null 短路</div>
+        <div class="pstep" id="ps1">quicken 判定</div>
+        <div class="pstep" id="ps2">取两个 Klass</div>
+        <div class="pstep" id="ps3">子类型检查</div>
+        <div class="pstep" id="ps4">出结果</div>
+      </div>
+      <div class="stageBox" id="stage">// 检查阶段代码</div>
+      <div class="detail" id="detail">—</div>
+    </div>
+
+    <!-- 右：字节码 -->
+    <div class="panel p3">
+      <h2>javap 字节码 + 常量池</h2>
+      <div class="bc">
+        <div class="l" id="b0"><span class="addr">0</span><span class="op">aload_1</span><span>// o</span></div>
+        <div class="l" id="b1"><span class="addr">1</span><span class="op">instanceof</span><span>#5</span><span class="comment">← 0xc1</span></div>
+        <div class="l" id="b2"><span class="addr">4</span><span class="op">istore_2</span><span>// b</span></div>
+      </div>
+      <div class="cpool" id="cpool">
+        #5 = <b>Class String</b>（已快速化 tag=JVM_CONSTANT_Class）<br>
+        #6 = <b>Class Object</b> · #7 = <b>Class Comparable</b><br>
+        #8 = <b>Class Runnable</b>
+      </div>
+      <div class="scene" id="scene">场景：<b>o instanceof String</b>（自我相等）</div>
+    </div>
+  </div>
+
+  <!-- 控制 -->
+  <div class="ctl">
+    <button class="btn" id="btnPrev" title="上一步">◀</button>
+    <button class="btn orange" id="btnPlay" title="播放/暂停 (Space)">▶</button>
+    <button class="btn" id="btnNext" title="下一步">▶</button>
+    <button class="btn green" id="btnReset" title="重置 (R)">↺</button>
+    <span class="hint"><span class="kbd">Space</span> 播放/暂停 · <span class="kbd">←</span> <span class="kbd">→</span> 步进 · <span class="kbd">R</span> 重置 · 点击步骤胶囊跳转</span>
+  </div>
+
+</div>
+
+<script>
+(() => {
+  const S = {
+    secArr: document.getElementById('secArr'),
+    bitmap: document.getElementById('bitmap'),
+    tgtName: document.getElementById('tgtName'),
+    tgtType: document.getElementById('tgtType'),
+    sco: document.getElementById('sco'),
+    regRax: document.getElementById('regRax'),
+    regRdx: document.getElementById('regRdx'),
+    regRes: document.getElementById('regRes'),
+    stage: document.getElementById('stage'),
+    detail: document.getElementById('detail'),
+    desc: document.getElementById('stepDesc'),
+    pills: document.getElementById('pills'),
+    cpool: document.getElementById('cpool'),
+    scene: document.getElementById('scene'),
+    b: [0,1,2].map(i => document.getElementById('b'+i)),
+    ps: [0,1,2,3,4].map(i => document.getElementById('ps'+i)),
+  };
+
+  const COL = { blue:'#3b82f6', purple:'#8b5cf6', orange:'#f59e0b', green:'#10b981' };
+
+  function setTgt(name, type, scoVal){
+    S.tgtName.textContent = name;
+    S.tgtType.textContent = type;
+    S.sco.textContent = scoVal;
+  }
+  function setRegs(rax, rdx, res){
+    S.regRax.textContent = rax;
+    S.regRdx.textContent = rdx;
+    S.regRes.textContent = res;
+    S.regRes.style.color = res==='1 ✅' ? COL.green : (res==='0 ❌' ? COL.orange : '#9ca3af');
+  }
+  function pipe(n, mode){
+    S.ps.forEach((el,i)=>{
+      el.className = 'pstep' + (i<n?' ok':(i===n?' on':''));
+      if(mode==='clear') el.className='pstep';
+    });
+  }
+  function stage(html){ S.stage.innerHTML = html; }
+  function bcHl(idxArr, mode){
+    S.b.forEach((el,i)=>{ el.className='l'; if(idxArr.includes(i)) el.className='l '+(mode||'hl'); });
+  }
+  function scene(txt){ S.scene.innerHTML = txt; }
+
+  const steps = [
+    // 0 初始
+    { d:'初始：Object o = "str"。编译产物为 aload_1 / instanceof #5 / istore_2。目标 #5 首次是 Class 引用（未快速化）。',
+      fn:()=>{
+        setTgt('String','普通类','primary(显示表偏移)');
+        setRegs('o(对象)','-','（未定）');
+        pipe(-1); stage(`<span class="blu">// 常量池 #5 尚未解析为 Class</span>\n<span class="dim">o instanceof String → 编译器期望</span>\n<span class="org">boolean b = (o instanceof String);</span>`);
+        S.detail.textContent='字节码 0xc1 已就位；现在看解释器怎么执行它。';
+        bcHl([1],'hl'); S.cpool.innerHTML='#5 = <b>Class 引用</b>（tag=Utf8/ClassRef，未快速化）';
+        scene('场景 0：<b>o instanceof String</b>');
+      }},
+    // 1 入栈
+    { d:'模板 instanceof() 执行（templateTable_x86.cpp:3934）：栈型 atos→itos。操作数栈顶的引用被装入 rax。',
+      fn:()=>{
+        setRegs('o(对象)','-','（未定）');
+        pipe(0); stage(`<span class="blu">transition(atos, itos);</span>          <span class="dim">// 栈型：引用 → int</span>\n<span class="grn">mov rcx, rsp</span>; <span class="org">obj → rax</span>  <span class="dim">// TOS 出栈到 rax</span>\n<span class="dim">// rax 现在持有对象引用 "str"</span>`);
+        S.detail.textContent='操作数栈：对象引用出栈进 rax（atos 态）。';
+        bcHl([0],'ok'); scene('场景 1：<b>入栈 → rax</b>');
+      }},
+    // 2 null 短路
+    { d:'第一关 null 短路：testptr(rax,rax) 判空。o 非 null → jcc(zero) 不跳，继续检查。（null 会直接出 0，连类型都不看）',
+      fn:()=>{
+        setRegs('o(对象)','-','（未定）');
+        pipe(1); stage(`<span class="blu">testptr(rax, rax);</span>            <span class="dim">// 判 null（:3937）</span>\n<span class="grn">jcc(zero, is_null);</span>        <span class="dim">// null → 直接出 0，不检查！</span>\n<span class="org">rax != null → 继续</span>  <span class="dim">// 本例非 null</span>`);
+        S.detail.textContent='null 短路判定：非 null，进入正式检查。若 null，此处直接 rax=0 完事。';
+        bcHl([1],'hl'); scene('场景 2：<b>testptr 判 null → 非 null</b>');
+      }},
+    // 3 quicken 判定
+    { d:'第二关常量池快速化（:3940-3951）：读 #5 的 tag，发现不是 JVM_CONSTANT_Class → 首次执行！调 InterpreterRuntime::quicken_io_cc 把常量池条目解析成真正的 Class。',
+      fn:()=>{
+        setRegs('o(对象)','-','（未定）');
+        pipe(2); stage(`<span class="blu">get_cpool_and_tags(rcx, rdx);</span>  <span class="dim">// :3940</span>\n<span class="blu">cmpl(rdx, JVM_CONSTANT_Class);</span> <span class="dim">// #5 的 tag</span>\n<span class="org">tag != Class → 首次执行</span>\n<span class="grn">call VM :: quicken_io_cc</span>  <span class="dim">// 解析 + 快速化（:3951）</span>`);
+        S.detail.textContent='quicken_io_cc 解析 #5 → String Class；完成后 tag 永久变为 JVM_CONSTANT_Class，下次直接走 quiked 分支。';
+        bcHl([1],'hl'); S.cpool.innerHTML='#5 = <b>Class String</b>（quicken 中…）'; scene('场景 3：<b>首次执行 → quicken_io_cc</b>');
+      }},
+    // 4 quicken 完成
+    { d:'quicken 完成：常量池 #5 已变成解析后的 Class 条目（tag=JVM_CONSTANT_Class）。get_vm_result_metadata 取回目标 Klass。',
+      fn:()=>{
+        setRegs('o(对象)','String Klass(目标)','（未定）');
+        pipe(2); stage(`<span class="grn">get_vm_result_metadata(rax);</span>  <span class="dim">// 目标 Klass → rax（:3953）</span>\n<span class="grn">pop_ptr(rdx);</span>             <span class="dim">// 恢复对象 → rdx</span>\n<span class="dim">// 现在：#5 已快速化，tag=JVM_CONSTANT_Class</span>\n<span class="org">下次执行直接走 quiked 分支</span>`);
+        S.detail.textContent='快速化完成。注意 quicken 只发生一次——热路径上 99.99% 直接走 quiked。';
+        bcHl([],''); S.cpool.innerHTML='#5 = <b>Class String</b> ✅（已快速化）'; scene('场景 4：<b>#5 → Class String</b>');
+      }},
+    // 5 取两个 Klass
+    { d:'第三关取 Klass（:3961-3963）：load_klass 从对象头取实际 Klass（rdx=String）；load_resolved_klass_at_index 取目标 Klass（rax=String）。两个 Klass 就位。',
+      fn:()=>{
+        setTgt('String','普通类','primary(显示表偏移)');
+        setRegs('String Klass(目标)','String Klass(子类)','（未定）');
+        pipe(3); stage(`<span class="blu">load_klass(rdx, rax);</span>              <span class="dim">// 子类 = 对象头 _klass（:3962）</span>\n<span class="blu">load_resolved_klass_at_index(rax, rcx, rbx);</span>  <span class="dim">// 目标（:3963）</span>\n<span class="org">rdx = String Klass · rax = String Klass</span>\n<span class="dim">// 关键：子类型检查现在才开始</span>`);
+        S.detail.textContent='子类 Klass 来自对象头 _klass 字段（与 getClass 同一块数据），目标 Klass 来自常量池。';
+        bcHl([1],'hl'); scene('场景 5：<b>rdx=子类 String · rax=目标 String</b>');
+      }},
+    // 6 进入 check_klass_subtype
+    { d:'第四关核心检查：gen_subtype_check（interp_masm_x86.cpp:586）先做 profile_typecheck 收集画像，再调 check_klass_subtype（macroAssembler_x86.cpp:4047）——快慢双路径。',
+      fn:()=>{
+        setRegs('String Klass','String Klass','（未定）');
+        pipe(3); stage(`<span class="pur">gen_subtype_check(rdx, ok_is_subtype);</span>  <span class="dim">// :3969</span>\n  <span class="dim">├─ profile_typecheck(rcx, rdx);   // 画像（:596）</span>\n  <span class="dim">└─ check_klass_subtype(rdx, rax, rcx, ok); // :599</span>\n<span class="org">   ↓ 汇编快慢双路径</span>`);
+        S.detail.textContent='profile_typecheck 记录"这里查过 String/String"供 C2 使用；真正的类型判定在 check_klass_subtype。';
+        bcHl([],''); scene('场景 6：<b>进入汇编核心</b>');
+      }},
+    // 7 fast path self-check 命中
+    { d:'快路径（macroAssembler_x86.cpp:4058）① self-check：cmpptr(sub_klass, super_klass) —— String == String，相等！jcc(equal, L_success) 直接命中，O(1) 结束。',
+      fn:()=>{
+        setTgt('String','普通类','primary(显示表偏移)');
+        setRegs('String Klass','String Klass','1 ✅');
+        pipe(4); stage(`<span class="pur">① cmpptr(sub_klass, super_klass);</span>\n<span class="grn">   jcc(equal, L_success);</span>   <span class="dim">// String == String</span>\n<span class="org">   self-check 命中 → 立即成功 ✅</span>\n<span class="dim">// 数组-of-接口等场景靠它共享 secondary 数组</span>`);
+        S.detail.textContent='self-check 让"查自己"O(1) 秒出——这是最常见的命中方式（如 String[] instanceof String[]）。';
+        bcHl([1,2],'ok'); scene('场景 7：<b>String instanceof String → self-check 命中</b>');
+      }},
+    // 8 显示表路径
+    { d:'换个场景 o instanceof Object：self-check 不等（String≠Object）→ 快路径② 显示表比对：读目标的 super_check_offset，从子类 Klass 偏移处取超类槽，cmp 命中（String 的 super 链 = [Object]）。',
+      fn:()=>{
+        setTgt('Object','普通类','primary(显示表偏移)');
+        setRegs('Object Klass(目标)','String Klass(子类)','1 ✅');
+        pipe(4); stage(`<span class="pur">② movl(temp, [super + sco_offset]);</span>  <span class="dim">// 目标.super_check_offset</span>\n<span class="pur">   cmpptr(super, [sub + temp]);</span>      <span class="dim">// 读子类显示表槽</span>\n<span class="grn">   jcc(equal, L_success);</span>   <span class="dim">// String 的 super 槽 == Object</span>\n<span class="org">   一次读 + 一次比较 = O(1) 热路径 ✅</span>`);
+        S.detail.textContent='这就是教科书"上溯父类链"的真相——实际是显示表 O(1) 比对，上溯链只在极慢路径出现。';
+        bcHl([1],'hl'); scene('场景 8：<b>o instanceof Object → 显示表命中</b>');
+      }},
+    // 9 接口：位图 + 哈希
+    { d:'接口场景 o instanceof Comparable（String 实现了它）：目标的 super_check_offset == secondary_super_cache_offset → 进慢路径 search_secondary_supers（klass.inline.hpp:169）。先查位图：Comparable 的 hash 槽 = 1 → 再哈希一次命中。',
+      fn:()=>{
+        setTgt('Comparable','接口','secondary(哈希)');
+        S.secArr.innerHTML='<span class="chiplet">CharSequence</span><span class="chiplet hit">Comparable</span><span class="chiplet">Serializable</span><span class="chiplet">Constable</span>…';
+        S.bitmap.textContent='1010 0101 …（Comparable 槽 = 1）';
+        setRegs('Comparable Klass','String Klass','1 ✅');
+        pipe(4); stage(`<span class="org">off == secondary_offset → 慢路径</span>\n<span class="blu">lookup_secondary_supers_table(Comparable);</span>  <span class="dim">// :134</span>\n  <span class="dim">├─ 位图查 slot：bit==1 → 可能存在</span>\n  <span class="dim">└─ index = popcount(shifted)-1 → 一次命中 ✅</span>\n<span class="grn">return true;</span>`);
+        S.detail.textContent='位图 + 哈希把接口检查压到平均 O(1)：位图可"确定性拒绝"，哈希一次命中免去线性扫描。';
+        bcHl([1],'hl'); scene('场景 9：<b>o instanceof Comparable → 位图+哈希命中</b>');
+      }},
+    // 10 接口：位图拒绝
+    { d:'反例 o instanceof Runnable（String 没实现）：同样进慢路径，但查位图时 Runnable 的 hash 槽 = 0 —— 位图为 0 可确定性判定"绝对不在" → return false，连数组都不用扫。',
+      fn:()=>{
+        setTgt('Runnable','接口','secondary(哈希)');
+        setRegs('Runnable Klass','String Klass','0 ❌');
+        pipe(4); stage(`<span class="org">off == secondary_offset → 慢路径</span>\n<span class="blu">lookup_secondary_supers_table(Runnable);</span>\n  <span class="dim">├─ 位图查 slot：<span class="pur">bit==0</span></span>\n  <span class="org">└─ 确定性拒绝 → return false（不扫数组！）</span>\n<span class="dim">// 位图为 0 ⇒ 该接口绝不在集合中</span>`);
+        S.detail.textContent='位图拒绝是 JDK 28 接口检查最狠的一招：多数"不匹配"在 O(1) 内确定性结束。';
+        bcHl([1],'hl'); scene('场景 10：<b>o instanceof Runnable → 位图拒绝 ❌</b>');
+      }},
+    // 11 结果 merge
+    { d:'第五关出结果（:3972-3976）：ok_is_subtype → movl(rax,1)；失败 → xorl(rax,rax)。rax 压栈（itos），Java 层 b 得到 true/false。C2 会把检查建模成三路 merge（null/命中/未命中）。',
+      fn:()=>{
+        setRegs('（结果值）','-','1 ✅');
+        pipe(4); stage(`<span class="blu">bind(ok_is_subtype); movl(rax, 1);</span>  <span class="dim">// 成功（:3975-3976）</span>\n<span class="org">xorl(rax, rax);</span>                <span class="dim">// 失败 → 0（:3972）</span>\n<span class="grn">push_i();</span>                      <span class="dim">// itos 压栈</span>\n<span class="dim">// C2：Region 三路 merge（graphKit.cpp:3584）</span>\n<span class="blu">null→0 · fail→0 · obj→1</span>`);
+        S.detail.textContent='解释器出 0/1；C2 编译器可静态折叠（类型系统证明）或用画像收窄后检查。';
+        bcHl([2],'ok'); scene('场景 11：<b>结果 merge → b = true</b>');
+      }},
+    // 12 对比 checkcast
+    { d:'对比收尾：checkcast（0xc0, templateTable_x86.cpp:3879）用同一套子类型检查，但失败时 push 对象 + jump 抛 ClassCastException；null 直接放行。instanceof 只出 bool 不改类型，checkcast 会让对象类型收窄。',
+      fn:()=>{
+        setTgt('checkcast','对比','—');
+        setRegs('obj','-','异常!');
+        pipe(-1); stage(`<span class="pur">checkcast():</span>  <span class="dim">// 0xc0 · :3879</span>\n  <span class="blu">gen_subtype_check(rbx, ok_is_subtype);</span>\n  <span class="org">push_ptr(rdx);</span>  <span class="dim">// 失败：对象压回栈</span>\n  <span class="pur">jump(_throw_ClassCastException_entry);</span>  <span class="dim">// 抛异常</span>\n<span class="grn">ok: mov(rax, rdx);</span>  <span class="dim">// 成功：对象原样</span>\n<span class="dim">// atos→atos：对象留下（instanceof 是 atos→itos）</span>`);
+        S.detail.textContent='同一套检查引擎，两种失败语义：instanceof 温和返回 false，checkcast 直接炸异常。';
+        bcHl([],''); S.cpool.innerHTML='instanceof <b>0xc1</b> · checkcast <b>0xc0</b>（bytecodes.hpp:236-237）'; scene('场景 12：<b>instanceof vs checkcast 对比</b>');
+      }},
+  ];
+
+  let idx = -1, timer = null, playing = false;
+
+  function render(i){
+    idx = i;
+    steps[i].fn();
+    S.desc.textContent = (i+1) + '/' + steps.length + ' · ' + steps[i].d;
+    document.querySelectorAll('.step-pill').forEach((c,j)=>{
+      c.className = 'step-pill' + (j===i?' active':(j<i?' done':''));
+    });
+    document.getElementById('btnPlay').textContent = '▶';
+    playing = false;
+  }
+  function next(){ if(idx < steps.length-1) render(idx+1); }
+  function prev(){ if(idx > 0) render(idx-1); }
+  function play(){
+    if(playing){ clearInterval(timer); playing=false; document.getElementById('btnPlay').textContent='▶'; return; }
+    if(idx >= steps.length-1){ render(0); }
+    playing = true; document.getElementById('btnPlay').textContent='⏸';
+    timer = setInterval(()=>{
+      if(idx >= steps.length-1){ clearInterval(timer); playing=false; document.getElementById('btnPlay').textContent='▶'; return; }
+      render(idx+1);
+    }, 3600);
+  }
+  function reset(){ clearInterval(timer); playing=false; render(0); }
+
+  steps.forEach((s,i)=>{
+    const c = document.createElement('div');
+    c.className='step-pill'; c.textContent=i+1; c.title=s.d;
+    c.onclick = ()=>render(i);
+    S.pills.appendChild(c);
+  });
+
+  document.getElementById('btnPrev').onclick = prev;
+  document.getElementById('btnNext').onclick = next;
+  document.getElementById('btnPlay').onclick = play;
+  document.getElementById('btnReset').onclick = reset;
+  document.addEventListener('keydown', e=>{
+    if(e.code==='Space'){ e.preventDefault(); play(); }
+    else if(e.key==='ArrowRight') next();
+    else if(e.key==='ArrowLeft') prev();
+    else if(e.key==='r'||e.key==='R') reset();
+  });
+
+  render(0);
+})();
+</script>
+</body>
+</html>

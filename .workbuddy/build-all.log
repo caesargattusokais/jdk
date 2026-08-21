@@ -1,0 +1,687 @@
+==> [0] 环境已清理: BASH_ENV=''; rm 解析为: /usr/bin/rm
+==> [1/3] configure ...
+configure: Configuration created at Wed Aug 19 16:51:34     2026.
+checking for basename... /usr/bin/basename
+checking for dirname... /usr/bin/dirname
+checking for file... /usr/bin/file
+checking for ldd... /usr/bin/ldd
+checking for echo... echo [builtin]
+checking for tr... /usr/bin/tr
+checking for uname... /usr/bin/uname
+checking for wc... /usr/bin/wc
+checking for grep that handles long lines and -e... /usr/bin/grep
+checking for egrep... /usr/bin/grep -E
+checking for a sed that does not truncate output... /usr/bin/sed
+checking for locale... /usr/bin/locale
+checking for cygpath... /usr/bin/cygpath
+checking for cmd.exe... /cygdrive/c/WINDOWS/system32/cmd.exe
+checking for lsb_release... [not found]
+checking build system type... x86_64-pc-cygwin
+checking host system type... x86_64-pc-cygwin
+checking target system type... x86_64-pc-cygwin
+checking openjdk-build os-cpu... windows-x86_64
+checking openjdk-target os-cpu... windows-x86_64
+checking compilation type... native
+checking Windows environment type... cygwin
+checking cygwin drive prefix... '/cygdrive'
+checking cygwin root directory as Windows path... 'C:\cygwin64'
+checking cygwin temp directory... /cygdrive/c/Users/EDY/AppData/Local/Temp
+checking cygwin release... 3.6.10-1.x86_64
+checking cygwin version... 2026-07-13 20:20 UTC
+checking Windows version... 10.0.26200.9168
+checking what kind of 'find' is first on the PATH... unix style
+checking for top-level directory... /cygdrive/d/project/jdk
+checking for bash... /usr/bin/bash
+checking for cat... /usr/bin/cat
+checking for chmod... /usr/bin/chmod
+checking for cp... /usr/bin/cp
+checking for cut... /usr/bin/cut
+checking for date... /usr/bin/date
+checking for gdiff... [not found]
+checking for diff... /usr/bin/diff
+checking for expr... /usr/bin/expr
+checking for find... /usr/bin/find
+checking for gunzip... /usr/bin/gunzip
+checking for pigz... [not found]
+checking for gzip... /usr/bin/gzip
+checking for head... /usr/bin/head
+checking for ln... /usr/bin/ln
+checking for ls... /usr/bin/ls
+checking for gmkdir... [not found]
+checking for mkdir... /usr/bin/mkdir
+checking for mktemp... /usr/bin/mktemp
+checking for mv... /usr/bin/mv
+checking for gawk... /usr/bin/gawk
+checking for printf... printf [builtin]
+checking for rm... /usr/bin/rm
+checking for rmdir... /usr/bin/rmdir
+checking for sh... /usr/bin/sh
+checking for sort... /usr/bin/sort
+checking for tail... /usr/bin/tail
+checking for gtar... [not found]
+checking for tar... /usr/bin/tar
+checking for tee... /usr/bin/tee
+checking for touch... /usr/bin/touch
+checking for xargs... /usr/bin/xargs
+checking for fgrep... /usr/bin/grep -F
+checking for cmake... [not found]
+checking for df... /usr/bin/df
+checking for git... $FIXPATH /cygdrive/c/users/edy/.workbuddy/binaries/portablegit/versions/1.2.0/mingw64/bin/git.exe
+checking for nice... /usr/bin/nice
+checking for greadlink... [not found]
+checking for readlink... /usr/bin/readlink
+checking for whoami... /usr/bin/whoami
+checking for cmp... /usr/bin/cmp
+checking for uniq... /usr/bin/uniq
+checking for build environment type... dev, default (calculated from 'auto')
+checking for locale to use... C.UTF-8 (recommended)
+checking if custom source is suppressed (openjdk-only)... disabled, default
+checking for --enable-debug... disabled, default
+checking which debug level to use... release
+checking which variants of the JVM to build... server
+checking if absolute paths should be allowed in the build output... no, release build
+checking for toolchain path... 
+checking for sysroot... 
+checking for extra path... 
+checking where to store configuration... in default location
+checking what configuration name to use... windows-x86_64-server-release
+checking for zypper... [not found]
+checking for apt-get... [not found]
+checking for yum... [not found]
+checking for brew... [not found]
+checking for port... [not found]
+checking for pkgutil... [not found]
+checking for pkgadd... [not found]
+checking for pacman... [not found]
+checking for apk... [not found]
+checking for pandoc... [not found]
+checking for gmake... [not found]
+checking for make... /usr/bin/make
+configure: Testing potential make at /usr/bin/make, found using make in PATH
+configure: Using GNU make at /usr/bin/make (version: GNU Make 4.4.1)
+checking if make --output-sync is supported... yes
+checking for make --output-sync value... none, default
+checking if find supports -delete... yes
+checking what type of tar was found... gnu
+checking that grep (/usr/bin/grep) -Fx handles empty lines in the pattern list correctly... yes
+checking for unzip... /usr/bin/unzip
+checking for zip... /usr/bin/zip
+checking for greadelf... [not found]
+checking for readelf... /usr/bin/readelf
+checking for dot... [not found]
+checking for stat... /usr/bin/stat
+checking for time... time [builtin]
+checking for flock... /usr/bin/flock
+checking for dtrace... [not found]
+checking for gpatch... [not found]
+checking for patch... [not found]
+checking if date is a GNU compatible version... yes
+checking bash version... 5.2.21
+checking if bash supports pipefail... yes
+checking if bash supports errexit (-e)... yes
+checking for pkg-config... /usr/bin/pkg-config
+checking pkg-config is at least version 0.9.0... yes
+checking for default LOG value... 
+checking for JMOD compression type... zip-6, default
+checking whether or not a JDK suitable for linking from the run-time image should be produced... disabled, default
+checking if packaged modules are kept... enabled, default
+checking for --with-extra-jlink-flags... <disabled>, default
+checking for --with-build-user... EDY, default
+checking for --with-jdk-rc-name... OpenJDK Platform, default
+checking for --with-vendor-name... N/A, default
+checking for --with-jdk-rc-company-name... N/A, default
+checking for --with-vendor-url... https://openjdk.org/, default
+checking for --with-vendor-bug-url... https://bugreport.java.com/bugreport/, default
+checking for --with-vendor-vm-bug-url... https://bugreport.java.com/bugreport/crash.jsp, default
+checking for --with-version-string... <none>, default
+checking for --with-version-feature... 28, default
+checking for --with-version-date... 2027-03-23, default
+checking for --with-vendor-version-string... <disabled>, default
+checking for --with-macosx-bundle-name-base... OpenJDK, default
+checking for --with-macosx-bundle-id-base... net.java.openjdk-internal, default
+checking for --with-macosx-bundle-build-version... 0, default
+checking for version string... 28-internal-adhoc.EDY.jdk
+configure: Found potential Boot JDK using configure arguments
+checking for Boot JDK... /cygdrive/c/Users/EDY/.jdks/openjdk-ea-27-ea+34-2321
+checking Boot JDK version... openjdk version "27-ea" 2026-09-15 OpenJDK Runtime Environment (build 27-ea+34-2321) OpenJDK 64-Bit Server VM (build 27-ea+34-2321, mixed mode, sharing)
+checking for java [Boot JDK]... $BOOT_JDK/bin/java
+checking for javac [Boot JDK]... $BOOT_JDK/bin/javac
+checking for javadoc [Boot JDK]... $BOOT_JDK/bin/javadoc
+checking for jar [Boot JDK]... $BOOT_JDK/bin/jar
+checking if Boot JDK jar supports --date=TIMESTAMP... true
+checking if Boot JDK is 32 or 64 bits... 64
+checking for docs-reference JDK... no, using interim javadoc for the docs-reference targets
+checking what source date to use... 1787129702, from 'current' (default)
+checking if we should build with sound support... enabled, default
+checking if we should build headless-only (no GUI)... disabled, default
+checking if linker should clean out unused code (linktime-gc)... disabled, default
+checking for graphviz dot... no, cannot generate full docs or man pages
+checking for pandoc... no, cannot generate full docs or man pages
+checking for --enable-full-docs... disabled, from default 'auto'
+checking for cacerts file... default
+checking for cacerts source... default
+checking for --enable-unlimited-crypto... enabled, default
+checking for jni library path... default
+configure: Using default toolchain microsoft (Microsoft Visual Studio)
+configure: Found Visual Studio installation at /cygdrive/c/progra~1/micros~2/2022/Community using well-known name
+configure: Found Microsoft Visual Studio 2022
+configure: Trying to extract Visual Studio environment variables for x86_64
+configure: using /cygdrive/c/progra~1/micros~2/2022/Community/vc/auxiliary/build/vcvars64.bat 
+configure: Setting extracted environment variables for x86_64
+checking that Visual Studio variables have been correctly extracted... ok
+checking for cl... $FIXPATH /cygdrive/c/progra~1/micros~2/2022/community/vc/tools/msvc/14.44.35207/bin/hostx64/x64/cl.exe
+checking resolved symbolic links for CC... no symlink
+configure: Using microsoft C compiler version 19.44.35228 [Microsoft (R) C/C++ Optimizing Compiler Version 19.44.35228 for x64]
+checking whether the C compiler works... yes
+checking for C compiler default output file name... conftest.exe
+checking for suffix of executables... .exe
+checking whether we are cross compiling... no
+checking for suffix of object files... obj
+checking whether /cygdrive/d/project/jdk/build/windows-x86_64-server-release/fixpath exec /cygdrive/c/progra~1/micros~2/2022/community/vc/tools/msvc/14.44.35207/bin/hostx64/x64/cl.exe accepts -g... yes
+checking for cl... $FIXPATH /cygdrive/c/progra~1/micros~2/2022/community/vc/tools/msvc/14.44.35207/bin/hostx64/x64/cl.exe
+checking resolved symbolic links for CXX... no symlink
+configure: Using microsoft C++ compiler version 19.44.35228 [Microsoft (R) C/C++ Optimizing Compiler Version 19.44.35228 for x64]
+checking whether /cygdrive/d/project/jdk/build/windows-x86_64-server-release/fixpath exec /cygdrive/c/progra~1/micros~2/2022/community/vc/tools/msvc/14.44.35207/bin/hostx64/x64/cl.exe accepts -g... yes
+checking how to run the C preprocessor... /cygdrive/d/project/jdk/build/windows-x86_64-server-release/fixpath exec /cygdrive/c/progra~1/micros~2/2022/community/vc/tools/msvc/14.44.35207/bin/hostx64/x64/cl.exe -E
+checking how to run the C++ preprocessor... /cygdrive/d/project/jdk/build/windows-x86_64-server-release/fixpath exec /cygdrive/c/progra~1/micros~2/2022/community/vc/tools/msvc/14.44.35207/bin/hostx64/x64/cl.exe -E
+checking for link... $FIXPATH /cygdrive/c/progra~1/micros~2/2022/community/vc/tools/msvc/14.44.35207/bin/hostx64/x64/link.exe
+checking if the found link.exe is actually the Visual Studio linker... yes
+configure: Using microsoft linker version 14.44.35228.0 [Microsoft (R) Incremental Linker Version 14.44.35228.0]
+checking for ml64... $FIXPATH /cygdrive/c/progra~1/micros~2/2022/community/vc/tools/msvc/14.44.35207/bin/hostx64/x64/ml64.exe
+checking for lib... $FIXPATH /cygdrive/c/progra~1/micros~2/2022/community/vc/tools/msvc/14.44.35207/bin/hostx64/x64/lib.exe
+checking for mt... $FIXPATH /cygdrive/c/progra~2/wi3cf2~1/10/bin/100261~1.0/x64/mt.exe
+checking for rc... $FIXPATH /cygdrive/c/progra~2/wi3cf2~1/10/bin/100261~1.0/x64/rc.exe
+checking for dumpbin... $FIXPATH /cygdrive/c/progra~1/micros~2/2022/community/vc/tools/msvc/14.44.35207/bin/hostx64/x64/dumpbin.exe
+checking for gobjdump... [not found]
+checking for objdump... /usr/bin/objdump
+checking for jtreg... [not found]
+checking for jtreg test harness... no, not found
+checking for jtreg jdk... no, using BOOT_JDK
+checking for jmh (Java Microbenchmark Harness)... no, disabled
+checking for jib... no
+checking for tidy... [not found]
+checking for stdio.h... yes
+checking for stdlib.h... yes
+checking for string.h... yes
+checking for inttypes.h... yes
+checking for stdint.h... yes
+checking for strings.h... no
+checking for sys/stat.h... yes
+checking for sys/types.h... yes
+checking for unistd.h... no
+checking for stdio.h... (cached) yes
+checking size of int *... 8
+checking for target address size... 64 bits
+checking whether byte ordering is bigendian... no
+checking for --enable-branch-protection... disabled, default
+checking for --with-native-debug-symbols-level... <invalid>, not available
+checking for --enable-warnings-as-errors... disabled, from command line
+checking if CC supports "-experimental:deterministic"... yes
+checking if CXX supports "-experimental:deterministic"... yes
+checking if both CC and CXX support "-experimental:deterministic"... yes
+checking if CC supports "-pathmap:/cygdrive/d/project/jdk=s"... yes
+checking if CXX supports "-pathmap:/cygdrive/d/project/jdk=s"... yes
+checking if both CC and CXX support "-pathmap:/cygdrive/d/project/jdk=s"... yes
+checking how to prevent absolute paths in output... using compiler options
+checking if BUILD_CC supports "-experimental:deterministic"... yes
+checking if BUILD_CXX supports "-experimental:deterministic"... yes
+checking if both BUILD_CC and BUILD_CXX support "-experimental:deterministic"... yes
+checking if BUILD_CC supports "-pathmap:/cygdrive/d/project/jdk=s"... yes
+checking if BUILD_CXX supports "-pathmap:/cygdrive/d/project/jdk=s"... yes
+checking if both BUILD_CC and BUILD_CXX support "-pathmap:/cygdrive/d/project/jdk=s"... yes
+checking how to prevent absolute paths in output... using compiler options
+checking if linker supports "-experimental:deterministic"... yes
+checking for --enable-aarch64-sve... disabled, from default 'auto'
+checking what type of native debug symbols to use... external
+checking if debuginfo compression with objcopy is done... disabled, default
+checking if we should add external native debug symbols to the shipped bundles... no (default)
+checking if native coverage is available... no
+checking for --enable-native-coverage... disabled, default
+checking for --with-jcov-modules... <disabled>, default
+checking if AddressSanitizer (asan) is available... yes
+checking for --enable-asan... disabled, default
+checking for --with-additional-ubsan-checks... <disabled>, default
+checking if UndefinedBehaviorSanitizer (ubsan) is available... no
+checking for --enable-ubsan... disabled, default
+checking if LeakSanitizer (lsan) is available... no
+checking for --enable-lsan... disabled, default
+checking if static analyzer is available... no
+checking for --enable-static-analyzer... disabled, default
+checking if fallback linker enabled... disabled, default
+configure: Found vcruntime140.dll at /cygdrive/c/progra~1/micros~2/2022/community/vc/redist/msvc/14.44.35112//x64/microsoft.vc143.crt/vcruntime140.dll using well-known location in VCINSTALLDIR
+checking found vcruntime140.dll architecture... ok
+checking for vcruntime140.dll... /cygdrive/c/progra~1/micros~2/2022/community/vc/redist/msvc/14.44.35112//x64/microsoft.vc143.crt/vcruntime140.dll
+configure: Found msvcp140.dll at /cygdrive/c/progra~1/micros~2/2022/community/vc/redist/msvc/14.44.35112//x64/microsoft.vc143.crt/msvcp140.dll using well-known location in VCINSTALLDIR
+checking found msvcp140.dll architecture... ok
+checking for msvcp140.dll... /cygdrive/c/progra~1/micros~2/2022/community/vc/redist/msvc/14.44.35112//x64/microsoft.vc143.crt/msvcp140.dll
+configure: Found vcruntime140_1.dll at /cygdrive/c/progra~1/micros~2/2022/community/vc/redist/msvc/14.44.35112//x64/microsoft.vc143.crt/vcruntime140_1.dll using well-known location in VCINSTALLDIR
+checking found vcruntime140_1.dll architecture... ok
+checking for vcruntime140_1.dll... /cygdrive/c/progra~1/micros~2/2022/community/vc/redist/msvc/14.44.35112//x64/microsoft.vc143.crt/vcruntime140_1.dll
+checking for UCRT DLL dir... /cygdrive/c/progra~2/wi3cf2~1/10//redist/10.0.26100.0/ucrt/dlls/x64
+checking for which libjpeg to use... bundled
+checking for which giflib to use... bundled
+checking for PNG... yes
+checking for which libpng to use... bundled
+checking for compress in -lz... no
+checking for which zlib to use... bundled
+checking for which lcms to use... bundled
+checking for which harfbuzz to use... bundled
+Using freetype: bundled
+checking for --enable-hsdis-bundling... disabled, default
+checking what hsdis backend to use... 'none', hsdis will not be built
+checking if hsdis should be bundled... no
+checking for --with-print-assembly-options... <none>, default
+checking for --enable-libffi-bundling... disabled, default
+checking for dlopen in -ldl... no
+checking for JVM features enabled by the user... none
+checking for JVM features disabled by the user... none
+checking if platform is supported by CDS... yes
+checking if JVM feature 'cds' is available... yes
+checking for dtrace tool and platform support... no
+checking for sys/sdt.h... no
+configure: Cannot enable dtrace with missing dependencies. See above.
+checking if JVM feature 'dtrace' is available... no
+checking if platform is supported by Shenandoah... yes
+checking if JVM feature 'shenandoahgc' is available... yes
+checking if platform is supported by ZGC... yes
+checking if Windows APIs required for ZGC is present... yes
+checking if JVM feature 'zgc' is available... yes
+checking JVM features to use for variant 'server'... 'cds compiler1 compiler2 epsilongc g1gc jfr jni-check jvmti management parallelgc serialgc services shenandoahgc vm-structs zgc'
+checking what hotspot build time to use... 2026-08-19T08:55:02Z (from --with-source-date)
+checking if the jtreg failure handler is available... no (jtreg not present)
+checking if the jtreg failure handler should be built... disabled, default
+checking if the jtreg test thread factory is available... no (jtreg not present)
+checking if the jtreg test thread factory should be built... disabled, from default 'auto'
+checking if the CDS classlist generation should be enabled... enabled, from default 'auto'
+checking if any translations should be excluded... no
+checking if CDS archive is available... yes
+checking if a default CDS archive should be generated... enabled, from default 'auto'
+checking if CDS archive with no compact object headers is available... yes
+checking if default CDS archives for no compact object headers should be generated... enabled, from default 'auto'
+checking if default CDS archives for no compressed oops should be generated... enabled, default
+checking if default CDS archives for preview should be generated... enabled, default
+checking if CDS archive is available... yes
+checking if compatible cds region alignment enabled... disabled, default
+checking for --with-signing-hook... <disabled>, default
+checking for signing hook... none
+checking for --enable-java-warnings-as-errors... enabled, default
+checking for number of cores... 16
+checking for memory size... 32609 MB
+checking for appropriate number of jobs to run in parallel... 16
+checking whether to use javac server... enabled, default
+checking flags for boot jdk java command ...  -Duser.language=en -Duser.country=US -Xlog:all=off:stdout -Xlog:all=warning:stderr 
+checking flags for boot jdk java command for big workloads...  -Xms64M -Xmx2048M
+checking flags for bootcycle boot jdk java command for big workloads... -Xms64M -Xmx2048M
+checking flags for boot jdk java command for small workloads...  -Xms32M -Xmx512M -XX:TieredStopAtLevel=1
+checking for --enable-icecc... disabled, default
+checking if precompiled headers are available... yes
+checking for --enable-precompiled-headers... enabled, from default 'auto'
+checking for ccache... [not found]
+checking if ccache is available... no, not supported for toolchain type microsoft
+checking if ccache is enabled... disabled, default
+checking for sccache... [not found]
+checking if sccache is available... no, sccache binary missing or not executable
+checking if sccache is enabled... disabled, default
+checking if build directory is on local disk... yes
+configure: creating /cygdrive/d/project/jdk/build/windows-x86_64-server-release/configure-support/config.status
+config.status: creating /cygdrive/d/project/jdk/build/windows-x86_64-server-release/spec.gmk
+config.status: creating /cygdrive/d/project/jdk/build/windows-x86_64-server-release/bootcycle-spec.gmk
+config.status: creating /cygdrive/d/project/jdk/build/windows-x86_64-server-release/buildjdk-spec.gmk
+config.status: creating /cygdrive/d/project/jdk/build/windows-x86_64-server-release/compare.sh
+config.status: creating /cygdrive/d/project/jdk/build/windows-x86_64-server-release/Makefile
+
+====================================================
+The existing configuration has been successfully updated in
+/cygdrive/d/project/jdk/build/windows-x86_64-server-release
+using configure arguments '--with-boot-jdk=/cygdrive/c/Users/EDY/.jdks/openjdk-ea-27-ea+34-2321 --with-toolchain-version=2022 --disable-warnings-as-errors --with-freetype=bundled'.
+
+Configuration summary:
+* Name:           windows-x86_64-server-release
+* Debug level:    release
+* HS debug level: product
+* JVM variants:   server
+* JVM features:   server: 'cds compiler1 compiler2 epsilongc g1gc jfr jni-check jvmti management parallelgc serialgc services shenandoahgc vm-structs zgc' 
+* OpenJDK target: OS: windows, CPU architecture: x86, address length: 64
+* Version string: 28-internal-adhoc.EDY.jdk (28-internal)
+* Source date:    1787129702 (2026-08-19T08:55:02Z)
+
+Tools summary:
+* Environment:    cygwin version 3.6.10-1.x86_64, 2026-07-13 20:20 UTC; windows version 10.0.26200.9168; prefix "/cygdrive"; root "C:\cygwin64"
+* Boot JDK:       openjdk version "27-ea" 2026-09-15 OpenJDK Runtime Environment (build 27-ea+34-2321) OpenJDK 64-Bit Server VM (build 27-ea+34-2321, mixed mode, sharing) (at /cygdrive/c/Users/EDY/.jdks/openjdk-ea-27-ea+34-2321)
+* Toolchain:      microsoft (Microsoft Visual Studio 2022)
+* C Compiler:     Version 19.44.35228 (at /cygdrive/c/progra~1/micros~2/2022/community/vc/tools/msvc/14.44.35207/bin/hostx64/x64/cl.exe)
+* C++ Compiler:   Version 19.44.35228 (at /cygdrive/c/progra~1/micros~2/2022/community/vc/tools/msvc/14.44.35207/bin/hostx64/x64/cl.exe)
+
+Build performance summary:
+* Build jobs:     16
+* Memory limit:   32609 MB
+
+WARNING: The result of this configuration has overridden an older
+configuration. You *should* run 'make clean' to make sure you get a
+proper build. Failure to do so might result in strange build problems.
+
+==> [2/3] make images (首次约 30-60 分钟) ...
+Building target 'images' in configuration 'windows-x86_64-server-release'
+Compiling up to 1 files for BUILD_TOOLS_HOTSPOT
+Compiling up to 9 files for BUILD_TOOLS_LANGTOOLS
+Compiling 19 properties into resource bundles for jdk.javadoc
+Compiling 10 properties into resource bundles for jdk.jshell
+Generating classes for compiler.properties launcher.properties
+Compiling 15 properties into resource bundles for jdk.jdeps
+Generating FlagsEnum
+Compiling 18 properties into resource bundles for jdk.compiler
+Compiling up to 361 files for BUILD_jdk.compiler.interim
+Compiling up to 145 files for BUILD_jdk.internal.md.interim
+d:\project\jdk\make\langtools\tools\previewfeature\SetupPreviewFeature.java:72: warning: [removal] getStartPosition(CompilationUnitTree,Tree) in SourcePositions has been deprecated and marked for removal
+                                                    .getStartPosition(elPath.getCompilationUnit(),
+                                                    ^
+1 warning
+Compiling up to 215 files for BUILD_jdk.javadoc.interim
+Compiling up to 17 files for BUILD_JAVAC_SERVER
+Compiling up to 136 files for BUILD_java.compiler.interim
+Compiling up to 33 files for BUILD_JRTFS
+Compiling up to 191 files for BUILD_TOOLS_JDK
+Compiling up to 2 files for COMPILE_DEPEND
+Creating support/modules_libs/java.base/jrt-fs.jar
+Compiling 4 properties into resource bundles for java.logging
+Compiling up to 2 files for BUILD_BREAKITERATOR_BASE
+Compiling up to 2 files for BUILD_BREAKITERATOR_LD
+Compiling 4 properties into resource bundles for jdk.httpserver
+Compiling 4 properties into resource bundles for jdk.jartool
+Compiling 4 properties into resource bundles for jdk.jartool
+Compiling 4 properties into resource bundles for jdk.management.agent
+Compiling 8 properties into resource bundles for jdk.jlink
+Compiling 4 properties into resource bundles for jdk.jdi
+Compiling 4 properties into resource bundles for jdk.jlink
+Compiling 4 properties into resource bundles for jdk.jlink
+SocketOptionRegistry.java.template
+Compiling 4 properties into resource bundles for java.base
+Compiling 3 properties into resource bundles for java.base
+Compiling 8 properties into resource bundles for java.base
+Compiling 4 properties into resource bundles for java.base
+Compiling up to 3376 files for java.base
+Compiling up to 31 files for java.base-preview
+Compiling 100 properties into resource bundles for java.desktop
+Creating hotspot/variant-server/tools/adlc/adlc.exe from 13 file(s)
+Compiling up to 2 files for BUILD_JVMTI_TOOLS
+Creating support/modules_libs/java.base/server/jvm.dll from 1235 file(s)
+Updating support/src.zip
+Note: Some input files use preview features of Java SE 28.
+Note: Recompile with -Xlint:preview for details.
+Compiling up to 136 files for java.compiler
+Compiling up to 18 files for java.datatransfer
+Compiling up to 10 files for java.instrument
+Compiling up to 27 files for java.logging
+Compiling up to 328 files for java.management
+Compiling up to 313 files for java.net.http
+Compiling up to 14 files for java.scripting
+Compiling up to 5 files for java.transaction.xa
+Compiling up to 22 files for java.smartcardio
+Compiling up to 60 files for jdk.internal.jvmstat
+Compiling up to 130 files for jdk.charsets
+Compiling up to 14 files for jdk.zipfs
+Compiling up to 52 files for jdk.internal.opt
+Compiling up to 82 files for jdk.crypto.cryptoki
+Compiling up to 1 files for jdk.crypto.ec
+Compiling up to 11 files for jdk.crypto.mscapi
+Compiling up to 67 files for jdk.dynalink
+Compiling up to 3 files for jdk.internal.ed
+Compiling up to 62 files for jdk.incubator.vector
+Compiling up to 58 files for jdk.httpserver
+Compiling up to 20 files for jdk.jartool
+Compiling up to 1 files for jdk.jdwp.agent
+Compiling up to 1578 files for jdk.localedata
+Compiling up to 322 files for jdk.jfr
+Compiling up to 9 files for jdk.net
+Compiling up to 3 files for jdk.nio.mapmode
+Compiling up to 26 files for jdk.sctp
+Compiling up to 9 files for jdk.unsupported
+Compiling up to 30 files for java.security.sasl
+Compiling up to 118 files for jdk.internal.le
+Compiling up to 15 files for jdk.attach
+Compiling up to 29 files for jdk.management
+Compiling up to 105 files for java.rmi
+Compiling up to 370 files for jdk.compiler
+Compiling up to 204 files for java.naming
+Compiling up to 259 files for jdk.jdi
+Compiling up to 41 files for jdk.jcmd
+Compiling up to 11 files for jdk.jstatd
+Compiling up to 15 files for jdk.management.jfr
+Compiling up to 16 files for java.management.rmi
+Compiling up to 215 files for java.security.jgss
+Compiling up to 16 files for jdk.naming.dns
+Compiling up to 8 files for jdk.naming.rmi
+Compiling up to 145 files for jdk.internal.md
+Compiling up to 22 files for jdk.management.agent
+Compiling up to 80 files for jdk.jdeps
+Compiling up to 30 files for jdk.security.auth
+Compiling up to 16 files for jdk.security.jgss
+Compiling up to 99 files for jdk.jlink
+Compiling up to 215 files for jdk.javadoc
+Compiling up to 1800 files for java.xml
+Compiling up to 15 files for java.prefs
+Compiling up to 78 files for java.sql
+Compiling up to 94 files for jdk.xml.dom
+Compiling up to 272 files for java.xml.crypto
+Compiling up to 56 files for java.sql.rowset
+Compiling up to 103 files for jdk.jshell
+Compiling up to 2608 files for java.desktop
+Creating support/modules_libs/java.base/verify.dll from 1 file(s)
+Creating support/modules_libs/java.base/java.dll from 67 file(s)
+Creating support/modules_libs/java.base/zip.dll from 20 file(s)
+Creating support/modules_libs/java.base/jimage.dll from 6 file(s)
+Creating support/modules_libs/java.base/jli.dll from 15 file(s)
+Creating support/modules_libs/java.base/net.dll from 13 file(s)
+Creating support/modules_libs/java.base/nio.dll from 20 file(s)
+Creating support/modules_libs/java.base/syslookup.dll from 2 file(s)
+Creating support/modules_libs/java.prefs/prefs.dll from 1 file(s)
+Creating support/modules_libs/java.instrument/instrument.dll from 12 file(s)
+Creating support/modules_libs/java.management/management.dll from 9 file(s)
+Creating support/modules_libs/java.rmi/rmi.dll from 1 file(s)
+Creating support/modules_cmds/java.rmi/rmiregistry.exe from 1 file(s)
+Creating support/modules_libs/java.smartcardio/j2pcsc.dll from 2 file(s)
+Creating support/modules_libs/jdk.attach/attach.dll from 2 file(s)
+Creating support/modules_libs/jdk.crypto.cryptoki/j2pkcs11.dll from 14 file(s)
+Creating support/modules_cmds/java.base/java.exe from 1 file(s)
+Creating support/modules_libs/jdk.crypto.mscapi/sunmscapi.dll from 1 file(s)
+Creating support/modules_cmds/jdk.hotspot.agent/jhsdb.exe from 1 file(s)
+Creating support/modules_cmds/jdk.compiler/javac.exe from 1 file(s)
+Creating support/modules_cmds/java.security.jgss/kinit.exe from 1 file(s)
+Creating support/modules_cmds/jdk.accessibility/jabswitch.exe from 1 file(s)
+Creating support/modules_libs/java.security.jgss/j2gss.dll from 3 file(s)
+Creating support/modules_libs/java.security.jgss/sspi_bridge.dll from 1 file(s)
+Creating support/modules_cmds/jdk.accessibility/jaccessinspector.exe from 6 file(s)
+Creating support/modules_cmds/java.base/javaw.exe from 1 file(s)
+Creating support/modules_cmds/jdk.compiler/serialver.exe from 1 file(s)
+Creating support/modules_cmds/java.security.jgss/klist.exe from 1 file(s)
+Creating support/modules_libs/java.security.jgss/w2k_lsa_auth.dll from 2 file(s)
+Creating support/modules_cmds/jdk.accessibility/jaccesswalker.exe from 5 file(s)
+Creating support/modules_cmds/java.base/keytool.exe from 1 file(s)
+Creating support/modules_cmds/java.security.jgss/ktab.exe from 1 file(s)
+Creating support/modules_cmds/jdk.httpserver/jwebserver.exe from 1 file(s)
+Creating support/modules_libs/jdk.incubator.vector/jsvml.dll from 36 file(s)
+Creating support/modules_cmds/jdk.jartool/jar.exe from 1 file(s)
+Creating support/modules_cmds/jdk.javadoc/javadoc.exe from 1 file(s)
+Creating support/modules_cmds/jdk.jartool/jarsigner.exe from 1 file(s)
+Creating support/modules_libs/jdk.management/management_ext.dll from 7 file(s)
+Creating support/modules_cmds/jdk.jcmd/jinfo.exe from 1 file(s)
+Creating support/modules_libs/jdk.management.agent/management_agent.dll from 1 file(s)
+Creating support/modules_cmds/jdk.jconsole/jconsole.exe from 1 file(s)
+Creating support/modules_cmds/jdk.jdeps/javap.exe from 1 file(s)
+Creating support/modules_cmds/jdk.jcmd/jmap.exe from 1 file(s)
+Creating support/modules_libs/jdk.jdwp.agent/dt_socket.dll from 2 file(s)
+Creating support/modules_libs/jdk.jdwp.agent/jdwp.dll from 43 file(s)
+Creating support/modules_cmds/jdk.jcmd/jps.exe from 1 file(s)
+Creating support/modules_cmds/jdk.jdeps/jdeps.exe from 1 file(s)
+Creating support/modules_cmds/jdk.jdeps/jdeprscan.exe from 1 file(s)
+Creating support/modules_cmds/jdk.jcmd/jstack.exe from 1 file(s)
+Creating support/modules_libs/jdk.jdi/dt_shmem.dll from 5 file(s)
+Creating support/modules_cmds/jdk.jdi/jdb.exe from 1 file(s)
+Creating support/modules_cmds/jdk.jfr/jfr.exe from 1 file(s)
+Creating support/modules_cmds/jdk.jcmd/jstat.exe from 1 file(s)
+Creating support/modules_cmds/jdk.jlink/jimage.exe from 1 file(s)
+Creating support/modules_cmds/jdk.jdeps/jnativescan.exe from 1 file(s)
+Creating support/modules_cmds/jdk.jcmd/jcmd.exe from 1 file(s)
+Creating support/modules_cmds/jdk.jpackage/jpackage.exe from 1 file(s)
+Creating support/modules_cmds/jdk.jshell/jshell.exe from 1 file(s)
+Creating support/modules_cmds/jdk.jlink/jlink.exe from 1 file(s)
+Creating support/modules_cmds/jdk.jstatd/jstatd.exe from 1 file(s)
+Creating support/modules_libs/jdk.net/extnet.dll from 1 file(s)
+Creating support/modules_cmds/jdk.jlink/jmod.exe from 1 file(s)
+Creating support/modules_libs/jdk.security.auth/jaas.dll from 1 file(s)
+Updating images/sec-bin.zip
+Updating images/sec-windows-bin.zip
+Updating images/jgss-windows-x64-bin.zip
+Compiling up to 1 files for java.se
+Compiling up to 20 files for jdk.accessibility
+Creating support/modules_libs/java.desktop/awt.dll from 180 file(s)
+Compiling up to 3 files for jdk.editpad
+Creating support/modules_libs/java.desktop/jawt.dll from 1 file(s)
+Creating support/modules_libs/java.desktop/mlib_image.dll from 50 file(s)
+Creating support/modules_libs/java.desktop/lcms.dll from 27 file(s)
+Creating support/modules_libs/java.desktop/javajpeg.dll from 46 file(s)
+Creating support/modules_libs/java.desktop/splashscreen.dll from 82 file(s)
+Creating support/modules_libs/java.desktop/freetype.dll from 107 file(s)
+Compiling up to 8 files for jdk.unsupported.desktop
+Compiling up to 4 files for COMPILE_CREATE_SYMBOLS
+Creating support/modules_libs/java.desktop/fontmanager.dll from 65 file(s)
+Compiling up to 64 files for jdk.jconsole
+Creating support/modules_libs/java.desktop/jsound.dll from 16 file(s)
+Compiling up to 828 files for jdk.hotspot.agent
+Compiling up to 229 files for jdk.jpackage
+Creating jdk/modules/jdk.jpackage/jdk/jpackage/internal/resources/jpackageapplauncher.exe from 24 file(s)
+Creating support/modules_libs/jdk.jpackage/jpackage.dll from 23 file(s)
+Compiling up to 4 files for COMPILE_CREATE_SYMBOLS
+Creating jdk/modules/jdk.jpackage/jdk/jpackage/internal/resources/msica.dll from 19 file(s)
+Creating support/modules_libs/jdk.hotspot.agent/saproc.dll from 3 file(s)
+Creating jdk/modules/jdk.jpackage/jdk/jpackage/internal/resources/msiwrapper.exe from 18 file(s)
+Creating jdk/modules/jdk.jpackage/jdk/jpackage/internal/resources/jpackageapplauncherw.exe from 24 file(s)
+Creating ct.sym classes
+Generating code
+Previous IPDB not found, fall back to full compilation.
+All 666 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
+Finished generating code
+Creating support/modules_libs/jdk.accessibility/javaaccessbridge.dll from 5 file(s)
+Creating support/modules_libs/jdk.accessibility/windowsaccessbridge-64.dll from 7 file(s)
+Compiling up to 4 files for BUILD_JIGSAW_TOOLS
+Optimizing the exploded image
+Creating java.instrument.jmod
+Creating java.datatransfer.jmod
+Creating java.logging.jmod
+Creating java.compiler.jmod
+Creating java.management.rmi.jmod
+Creating java.naming.jmod
+Creating java.management.jmod
+Creating java.net.http.jmod
+Creating java.prefs.jmod
+Creating java.desktop.jmod
+Creating java.rmi.jmod
+Creating java.scripting.jmod
+Creating java.se.jmod
+Creating java.security.jgss.jmod
+Creating java.security.sasl.jmod
+Creating java.smartcardio.jmod
+Creating java.sql.jmod
+Creating java.sql.rowset.jmod
+Creating java.transaction.xa.jmod
+Creating java.xml.crypto.jmod
+Creating jdk.accessibility.jmod
+Creating java.xml.jmod
+Creating jdk.attach.jmod
+Creating jdk.charsets.jmod
+Creating jdk.compiler.jmod
+Creating jdk.crypto.cryptoki.jmod
+Creating jdk.crypto.ec.jmod
+Creating jdk.crypto.mscapi.jmod
+Creating jdk.dynalink.jmod
+Creating jdk.editpad.jmod
+Creating jdk.hotspot.agent.jmod
+Creating jdk.httpserver.jmod
+Creating jdk.incubator.vector.jmod
+Creating jdk.internal.ed.jmod
+Creating jdk.internal.jvmstat.jmod
+Creating jdk.internal.le.jmod
+Creating jdk.internal.md.jmod
+Creating jdk.internal.opt.jmod
+Creating jdk.jartool.jmod
+Creating jdk.javadoc.jmod
+Creating jdk.jcmd.jmod
+Creating jdk.jconsole.jmod
+Creating jdk.jdeps.jmod
+Creating jdk.jdi.jmod
+Creating jdk.jdwp.agent.jmod
+Creating jdk.jfr.jmod
+Creating jdk.jpackage.jmod
+Creating interim java.logging.jmod
+Creating jdk.jshell.jmod
+Creating jdk.jstatd.jmod
+Creating jdk.management.jmod
+Creating jdk.localedata.jmod
+Creating jdk.management.agent.jmod
+Creating interim java.base.jmod
+Creating jdk.management.jfr.jmod
+Creating jdk.naming.dns.jmod
+Creating jdk.naming.rmi.jmod
+Creating jdk.net.jmod
+Creating jdk.nio.mapmode.jmod
+Creating jdk.sctp.jmod
+Creating jdk.security.auth.jmod
+Creating jdk.security.jgss.jmod
+Creating jdk.unsupported.jmod
+Creating jdk.unsupported.desktop.jmod
+Creating jdk.xml.dom.jmod
+Creating jdk.zipfs.jmod
+Creating interim jimage
+Compiling up to 2 files for CLASSLIST_JAR
+Creating support/classlist.jar
+Compiling up to 3 files for BUILD_DEMO_CodePointIM
+Updating support/demos/image/jfc/CodePointIM/src.zip
+Compiling up to 3 files for BUILD_DEMO_FileChooserDemo
+Updating support/demos/image/jfc/FileChooserDemo/src.zip
+Creating jdk.jlink.jmod
+Creating java.base.jmod
+Compiling up to 29 files for BUILD_DEMO_SwingSet2
+Updating support/demos/image/jfc/SwingSet2/src.zip
+Compiling up to 3 files for BUILD_DEMO_Font2DTest
+Updating support/demos/image/jfc/Font2DTest/src.zip
+Compiling up to 64 files for BUILD_DEMO_J2Ddemo
+Updating support/demos/image/jfc/J2Ddemo/src.zip
+Compiling up to 15 files for BUILD_DEMO_Metalworks
+Updating support/demos/image/jfc/Metalworks/src.zip
+Compiling up to 2 files for BUILD_DEMO_Notepad
+Updating support/demos/image/jfc/Notepad/src.zip
+Compiling up to 5 files for BUILD_DEMO_Stylepad
+Updating support/demos/image/jfc/Stylepad/src.zip
+Compiling up to 5 files for BUILD_DEMO_SampleTree
+Updating support/demos/image/jfc/SampleTree/src.zip
+Compiling up to 7 files for BUILD_DEMO_TableExample
+Updating support/demos/image/jfc/TableExample/src.zip
+Compiling up to 1 files for BUILD_DEMO_TransparentRuler
+Updating support/demos/image/jfc/TransparentRuler/src.zip
+Creating support/demos/image/jfc/CodePointIM/CodePointIM.jar
+Creating support/demos/image/jfc/FileChooserDemo/FileChooserDemo.jar
+Creating support/demos/image/jfc/SwingSet2/SwingSet2.jar
+Creating support/demos/image/jfc/J2Ddemo/J2Ddemo.jar
+Creating support/demos/image/jfc/Font2DTest/Font2DTest.jar
+Creating support/demos/image/jfc/Metalworks/Metalworks.jar
+Creating support/demos/image/jfc/Notepad/Notepad.jar
+Creating support/demos/image/jfc/SampleTree/SampleTree.jar
+Creating support/demos/image/jfc/Stylepad/Stylepad.jar
+Creating support/demos/image/jfc/TableExample/TableExample.jar
+Creating support/demos/image/jfc/TransparentRuler/TransparentRuler.jar
+Creating jdk image
+Creating CDS archive for jdk image for server
+Creating CDS-PREVIEW archive for jdk image for server
+Creating CDS-NOCOOPS archive for jdk image for server
+Creating CDS-NOCOOPS-PREVIEW archive for jdk image for server
+Creating CDS-NOCOH archive for jdk image for server
+Creating CDS-NOCOH-PREVIEW archive for jdk image for server
+Creating CDS-NOCOOPS-NOCOH archive for jdk image for server
+Creating CDS-NOCOOPS-NOCOH-PREVIEW archive for jdk image for server
+Stopping javac server
+Finished building target 'images' in configuration 'windows-x86_64-server-release'
+==> [3/3] 验证 + 生成 IDEA 工程 ...
+openjdk version "28-internal" 2027-03-23
+OpenJDK Runtime Environment (build 28-internal-adhoc.EDY.jdk)
+OpenJDK 64-Bit Server VM (build 28-internal-adhoc.EDY.jdk, mixed mode, sharing)
+rm: cannot remove 'jdk.iml': Permission denied

@@ -1,0 +1,118 @@
+ <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 560" font-family="'Segoe UI','Microsoft YaHei',sans-serif">
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#64748b"/>
+    </marker>
+    <marker id="ar-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#3b82f6"/>
+    </marker>
+    <marker id="ar-orange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#f59e0b"/>
+    </marker>
+    <marker id="ar-green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#10b981"/>
+    </marker>
+    <marker id="ar-purple" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#8b5cf6"/>
+    </marker>
+  </defs>
+
+  <!-- 背景 -->
+  <rect x="0" y="0" width="900" height="560" rx="16" fill="#f6f7fb"/>
+
+  <!-- 标题 -->
+  <text x="450" y="38" text-anchor="middle" font-size="20" font-weight="bold" fill="#1f2937">常量池站① · 类文件常量池全景（#12 的出生地）</text>
+  <text x="450" y="60" text-anchor="middle" font-size="12.5" fill="#6b7280">classfile/classFileParser.cpp · oops/constantPool.hpp · JDK 28</text>
+
+  <!-- ================= .class 文件头（橙） ================= -->
+  <rect x="36" y="96" width="236" height="250" rx="14" fill="#fffbeb" stroke="#f59e0b" stroke-width="1.6"/>
+  <text x="154" y="122" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#b45309">.class 文件头</text>
+  <text x="154" y="140" text-anchor="middle" font-size="10.5" fill="#92400e" opacity="0.8">parse_stream · classFileParser.cpp:6024</text>
+
+  <rect x="52" y="154" width="204" height="30" rx="7" fill="#ffffff" stroke="#f59e0b" stroke-width="1.2"/>
+  <text x="64" y="174" font-size="11" fill="#92400e" font-family="Consolas,monospace">magic u4  CAFEBABE (:6033)</text>
+
+  <rect x="52" y="190" width="204" height="30" rx="7" fill="#ffffff" stroke="#f59e0b" stroke-width="1.2"/>
+  <text x="64" y="210" font-size="11" fill="#92400e" font-family="Consolas,monospace">minor+major u4 0x34 (:6043)</text>
+
+  <rect x="52" y="226" width="204" height="30" rx="7" fill="#ffffff" stroke="#f59e0b" stroke-width="2"/>
+  <text x="64" y="246" font-size="11.5" font-weight="bold" fill="#b45309" font-family="Consolas,monospace">cp_count u2 = 16  (:6046)</text>
+
+  <rect x="52" y="262" width="204" height="34" rx="7" fill="#fff7ed" stroke="#f59e0b" stroke-width="1.2" stroke-dasharray="5 3"/>
+  <text x="64" y="276" font-size="10.5" fill="#92400e" font-family="Consolas,monospace">常量池表 cp_count 格</text>
+  <text x="64" y="289" font-size="10.5" fill="#92400e" font-family="Consolas,monospace">(:6064 parse_constant_pool)</text>
+
+  <rect x="52" y="302" width="204" height="30" rx="7" fill="#ffffff" stroke="#f59e0b" stroke-width="1.2"/>
+  <text x="64" y="322" font-size="11" fill="#92400e" font-family="Consolas,monospace">interfaces/fields/methods…</text>
+
+  <!-- 箭头：文件头 → 常量池表 -->
+  <line x1="272" y1="210" x2="330" y2="210" stroke="#64748b" stroke-width="1.6" marker-end="url(#ar)"/>
+  <text x="301" y="200" text-anchor="middle" font-size="10" fill="#64748b">allocate</text>
+
+  <!-- ================= 常量池表（蓝） ================= -->
+  <rect x="330" y="96" width="280" height="250" rx="14" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.6"/>
+  <text x="470" y="122" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#1d4ed8">运行态常量池表（ConstantPool）</text>
+  <text x="470" y="140" text-anchor="middle" font-size="10.5" fill="#1d4ed8" opacity="0.8">第一遍 :171 · 逐格读 tag · switch :201</text>
+
+  <!-- 格子 -->
+  <rect x="346" y="152" width="248" height="26" rx="6" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1"/>
+  <text x="356" y="170" font-size="10.5" fill="#64748b" font-family="Consolas,monospace">#0 invalid（保留）</text>
+
+  <rect x="346" y="182" width="248" height="26" rx="6" fill="#ffffff" stroke="#3b82f6" stroke-width="1.2"/>
+  <text x="356" y="200" font-size="10.5" fill="#1d4ed8" font-family="Consolas,monospace">#1 Utf8 "Dog"  #2 Utf8 "speak"  #4 Utf8 "()V"</text>
+
+  <rect x="346" y="212" width="248" height="26" rx="6" fill="#ffffff" stroke="#8b5cf6" stroke-width="1.2"/>
+  <text x="356" y="230" font-size="10.5" fill="#6d28d9" font-family="Consolas,monospace">#3 Class "Dog" → UnresolvedClass(100)</text>
+
+  <rect x="346" y="242" width="248" height="26" rx="6" fill="#ffffff" stroke="#3b82f6" stroke-width="1.2"/>
+  <text x="356" y="260" font-size="10.5" fill="#1d4ed8" font-family="Consolas,monospace">#6 Long 42（占双槽 #6/#7）</text>
+
+  <rect x="346" y="272" width="248" height="26" rx="6" fill="#ffffff" stroke="#3b82f6" stroke-width="1.2"/>
+  <text x="356" y="290" font-size="10.5" fill="#1d4ed8" font-family="Consolas,monospace">#9 NameAndType "speak" "()V"</text>
+
+  <rect x="346" y="302" width="248" height="28" rx="6" fill="#fef3c7" stroke="#f59e0b" stroke-width="2.2"/>
+  <text x="356" y="321" font-size="11" font-weight="bold" fill="#b45309" font-family="Consolas,monospace">#12 Methodref → #3 + #9 （invokevirtual #12）</text>
+
+  <!-- ================= 两遍 fixup（紫） ================= -->
+  <rect x="636" y="96" width="228" height="250" rx="14" fill="#f5f3ff" stroke="#8b5cf6" stroke-width="1.6"/>
+  <text x="750" y="122" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#6d28d9">两遍 fixup（:436）</text>
+  <text x="750" y="140" text-anchor="middle" font-size="10.5" fill="#6d28d9" opacity="0.8">为什么：前向引用后面才读到的 Utf8</text>
+
+  <rect x="652" y="156" width="196" height="52" rx="8" fill="#ffffff" stroke="#8b5cf6" stroke-width="1.2"/>
+  <text x="662" y="176" font-size="11" fill="#6d28d9" font-family="Consolas,monospace">ClassIndex(101)</text>
+  <text x="662" y="194" font-size="10.5" fill="#6d28d9" opacity="0.85" font-family="Consolas,monospace">StringIndex(102) 暂存</text>
+
+  <line x1="750" y1="208" x2="750" y2="224" stroke="#8b5cf6" stroke-width="1.6" marker-end="url(#ar-purple)"/>
+  <text x="758" y="220" font-size="10" fill="#8b5cf6">第二遍转正</text>
+
+  <rect x="652" y="226" width="196" height="52" rx="8" fill="#ffffff" stroke="#8b5cf6" stroke-width="1.2"/>
+  <text x="662" y="246" font-size="11" fill="#6d28d9" font-family="Consolas,monospace">UnresolvedClass(100)</text>
+  <text x="662" y="264" font-size="10.5" fill="#6d28d9" opacity="0.85" font-family="Consolas,monospace">+ resolved_klass_index 预留</text>
+
+  <rect x="652" y="286" width="196" height="46" rx="8" fill="#ffffff" stroke="#8b5cf6" stroke-width="1.2"/>
+  <text x="662" y="306" font-size="11" fill="#6d28d9" font-family="Consolas,monospace">String(8) + Symbol 直写</text>
+  <text x="662" y="322" font-size="10.5" fill="#6d28d9" opacity="0.85">双槽校验 :473</text>
+
+  <!-- 箭头：表 → 两遍 fixup -->
+  <line x1="610" y1="210" x2="636" y2="210" stroke="#8b5cf6" stroke-width="1.6" marker-end="url(#ar-purple)"/>
+
+  <!-- ================= 挂载（绿） ================= -->
+  <rect x="236" y="404" width="448" height="96" rx="14" fill="#ecfdf5" stroke="#10b981" stroke-width="1.6"/>
+  <text x="460" y="430" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#047857">挂载与闭环（:3961）→ 站②：名字 → 真身</text>
+
+  <rect x="256" y="444" width="200" height="42" rx="8" fill="#ffffff" stroke="#10b981" stroke-width="1.2"/>
+  <text x="266" y="463" font-size="11" fill="#047857" font-family="Consolas,monospace">set_pool_holder</text>
+  <text x="266" y="478" font-size="10.5" fill="#047857" opacity="0.85">常量池 ↔ 类互指</text>
+
+  <rect x="472" y="444" width="196" height="42" rx="8" fill="#ffffff" stroke="#10b981" stroke-width="1.2"/>
+  <text x="482" y="463" font-size="11" fill="#047857" font-family="Consolas,monospace">set_constants → _constants</text>
+  <text x="482" y="478" font-size="10.5" fill="#047857" opacity="0.85">instanceKlass.hpp:218</text>
+
+  <!-- 箭头：表 #12 → 挂载 -->
+  <line x1="470" y1="346" x2="470" y2="388" stroke="#10b981" stroke-width="1.8" marker-end="url(#ar-green)"/>
+  <text x="480" y="372" font-size="10.5" fill="#10b981">#12 全是名字</text>
+
+  <!-- 底部站②预告 -->
+  <rect x="236" y="512" width="448" height="34" rx="10" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.4" stroke-dasharray="6 4"/>
+  <text x="460" y="534" text-anchor="middle" font-size="11.5" fill="#1d4ed8">站②预告：klass_at_impl（constantPool.cpp:631）把 UnresolvedClass 解析成 Klass*，Methodref → Method*</text>
+</svg>

@@ -1,0 +1,97 @@
+ <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 520" font-family="'Segoe UI','Microsoft YaHei',sans-serif">
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#64748b"/>
+    </marker>
+    <marker id="ar-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#3b82f6"/>
+    </marker>
+    <marker id="ar-orange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#f59e0b"/>
+    </marker>
+    <marker id="ar-green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#10b981"/>
+    </marker>
+    <marker id="ar-purple" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#8b5cf6"/>
+    </marker>
+  </defs>
+
+  <!-- 背景 -->
+  <rect x="0" y="0" width="900" height="520" rx="16" fill="#f6f7fb"/>
+
+  <!-- 标题 -->
+  <text x="450" y="38" text-anchor="middle" font-size="20" font-weight="bold" fill="#1f2937">方法调用全链路 · 第一站：LinkResolver 符号解析</text>
+  <text x="450" y="60" text-anchor="middle" font-size="12.5" fill="#6b7280">interpreter/linkResolver.cpp · 冷路径只走一次，热路径免解析</text>
+
+  <!-- ================= 入口 ================= -->
+  <rect x="330" y="86" width="240" height="66" rx="12" fill="#fffbeb" stroke="#f59e0b" stroke-width="1.6"/>
+  <text x="450" y="108" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#b45309">入口：invoke 字节码</text>
+  <text x="450" y="128" text-anchor="middle" font-size="12" fill="#92400e" font-family="Consolas,monospace">invokevirtual #12 // Dog.speak()</text>
+  <text x="450" y="143" text-anchor="middle" font-size="10.5" fill="#92400e" opacity="0.8">javac 生成 · 常量池 Methodref 符号</text>
+
+  <!-- 入口分叉 -->
+  <line x1="450" y1="152" x2="450" y2="180" stroke="#64748b" stroke-width="1.6" marker-end="url(#ar)"/>
+  <text x="458" y="172" font-size="10.5" fill="#64748b">首次？</text>
+
+  <!-- ================= 冷路径 ================= -->
+  <rect x="30" y="186" width="840" height="150" rx="14" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.4" stroke-dasharray="6 4"/>
+  <text x="50" y="212" font-size="13" font-weight="bold" fill="#1d4ed8">❄ 冷路径（首次执行 · 只走一次）—— resolve_invoke 六路分发 → linktime 解析 → runtime 分派</text>
+
+  <!-- 节点1 分发器 -->
+  <rect x="46" y="228" width="150" height="62" rx="10" fill="#ffffff" stroke="#3b82f6" stroke-width="1.6"/>
+  <text x="121" y="250" text-anchor="middle" font-size="12" font-weight="bold" fill="#1d4ed8">resolve_invoke</text>
+  <text x="121" y="268" text-anchor="middle" font-size="10.5" fill="#3b82f6" font-family="Consolas,monospace">linkResolver.cpp:1715</text>
+  <text x="121" y="283" text-anchor="middle" font-size="10" fill="#6b7280">6 种字节码各走各路</text>
+
+  <!-- 节点2 linktime -->
+  <rect x="236" y="228" width="150" height="62" rx="10" fill="#ffffff" stroke="#8b5cf6" stroke-width="1.6"/>
+  <text x="311" y="248" text-anchor="middle" font-size="12" font-weight="bold" fill="#6d28d9">linktime 解析</text>
+  <text x="311" y="266" text-anchor="middle" font-size="10.5" fill="#8b5cf6" font-family="Consolas,monospace">resolve_method :753</text>
+  <text x="311" y="281" text-anchor="middle" font-size="10" fill="#6b7280">七步：查类链/接口链/访问</text>
+
+  <!-- 节点3 runtime -->
+  <rect x="426" y="228" width="150" height="62" rx="10" fill="#ffffff" stroke="#f59e0b" stroke-width="1.6"/>
+  <text x="501" y="248" text-anchor="middle" font-size="12" font-weight="bold" fill="#b45309">runtime 分派</text>
+  <text x="501" y="266" text-anchor="middle" font-size="10.5" fill="#f59e0b" font-family="Consolas,monospace">runtime_resolve_* :1412</text>
+  <text x="501" y="281" text-anchor="middle" font-size="10" fill="#6b7280">按接收者实际类型选方法</text>
+
+  <!-- 节点4 缓存 -->
+  <rect x="616" y="228" width="150" height="62" rx="10" fill="#ffffff" stroke="#10b981" stroke-width="1.6"/>
+  <text x="691" y="248" text-anchor="middle" font-size="12" font-weight="bold" fill="#047857">写回缓存</text>
+  <text x="691" y="266" text-anchor="middle" font-size="10.5" fill="#10b981" font-family="Consolas,monospace">set_common :138</text>
+  <text x="691" y="281" text-anchor="middle" font-size="10" fill="#6b7280">ConstantPoolCache 记录</text>
+
+  <!-- 冷路径箭头 -->
+  <line x1="196" y1="259" x2="234" y2="259" stroke="#3b82f6" stroke-width="1.6" marker-end="url(#ar-blue)"/>
+  <line x1="386" y1="259" x2="424" y2="259" stroke="#8b5cf6" stroke-width="1.6" marker-end="url(#ar-purple)"/>
+  <line x1="576" y1="259" x2="614" y2="259" stroke="#f59e0b" stroke-width="1.6" marker-end="url(#ar-orange)"/>
+  <line x1="766" y1="259" x2="802" y2="259" stroke="#10b981" stroke-width="1.6" marker-end="url(#ar-green)"/>
+  <text x="802" y="238" font-size="10" fill="#6b7280">下一次</text>
+
+  <!-- ================= 热路径 ================= -->
+  <rect x="30" y="360" width="840" height="120" rx="14" fill="#ecfdf5" stroke="#10b981" stroke-width="1.4" stroke-dasharray="6 4"/>
+  <text x="50" y="386" font-size="13" font-weight="bold" fill="#047857">🔥 热路径（第 N 次执行）—— 免解析：查缓存 index + 一次查表</text>
+
+  <rect x="46" y="400" width="200" height="58" rx="10" fill="#ffffff" stroke="#10b981" stroke-width="1.6"/>
+  <text x="146" y="420" text-anchor="middle" font-size="12" font-weight="bold" fill="#047857">ConstantPoolCache 命中</text>
+  <text x="146" y="440" text-anchor="middle" font-size="10.5" fill="#10b981" font-family="Consolas,monospace">cp_cache 查 index</text>
+  <text x="146" y="453" text-anchor="middle" font-size="10" fill="#6b7280">linktime/runtime 全跳过</text>
+
+  <rect x="300" y="400" width="200" height="58" rx="10" fill="#ffffff" stroke="#10b981" stroke-width="1.6"/>
+  <text x="400" y="420" text-anchor="middle" font-size="12" font-weight="bold" fill="#047857">method_at_vtable</text>
+  <text x="400" y="440" text-anchor="middle" font-size="10.5" fill="#10b981" font-family="Consolas,monospace">:1464 一次查表</text>
+  <text x="400" y="453" text-anchor="middle" font-size="10" fill="#6b7280">接收者实际类型 → 方法</text>
+
+  <rect x="554" y="400" width="200" height="58" rx="10" fill="#ffffff" stroke="#10b981" stroke-width="1.6"/>
+  <text x="654" y="420" text-anchor="middle" font-size="12" font-weight="bold" fill="#047857">解释器 / C2 直接调用</text>
+  <text x="654" y="440" text-anchor="middle" font-size="10.5" fill="#10b981" font-family="Consolas,monospace">或去虚化 → 内联</text>
+  <text x="654" y="453" text-anchor="middle" font-size="10" fill="#6b7280">08 篇 final 可内联衔接</text>
+
+  <line x1="246" y1="429" x2="298" y2="429" stroke="#10b981" stroke-width="1.6" marker-end="url(#ar-green)"/>
+  <line x1="500" y1="429" x2="552" y2="429" stroke="#10b981" stroke-width="1.6" marker-end="url(#ar-green)"/>
+
+  <!-- 底部结论 -->
+  <rect x="30" y="492" width="840" height="0" rx="10" fill="#f5f3ff"/>
+  <text x="450" y="512" text-anchor="middle" font-size="11" fill="#6d28d9">核心认知：解析只在冷路径发生一次并写回 ConstantPoolCache；热路径成本 ≈ 一次数组查表。linktime 看编译期静态类型（resolved），runtime 看接收者实际类型（selected）——多态语义的落点。</text>
+</svg>

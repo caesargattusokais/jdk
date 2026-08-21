@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>类加载站② · 链接三阶段：验证 / 链接 / 准备与解析（交互动画）</title>
+<style>
+
+  :root{
+    --blue:#3b82f6; --purple:#8b5cf6; --orange:#f59e0b; --green:#10b981;
+    --bg:#f6f7fb; --card:#FFFFFF; --ink:#1f2937; --sub:#6b7280; --line:#e5e7eb;
+    --shadow:0 2px 6px rgba(17,24,39,.05);
+    --blue-bg:#eff6ff; --blue-bd:#bfdbfe;
+    --purple-bg:#f5f3ff; --purple-bd:#ddd6fe;
+    --orange-bg:#fffbeb; --orange-bd:#fde68a;
+    --green-bg:#ecfdf5; --green-bd:#a7f3d0;
+    --red:#ef4444; --red-bg:#fef2f2; --red-bd:#fecaca;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{background:var(--bg); color:var(--ink); font-family:'Segoe UI','Microsoft YaHei',sans-serif; padding:18px;}
+  .wrap{max-width:1180px; margin:0 auto;}
+  header{text-align:center; margin-bottom:18px}
+  header h1{font-size:23px; letter-spacing:.5px}
+  header h1 .mono{font-family:Consolas,monospace; color:var(--blue)}
+  header .sub{color:var(--sub); font-size:13px; margin-top:6px}
+  .badges{margin-top:12px; display:flex; gap:8px; justify-content:center; flex-wrap:wrap}
+  header .badge{font-size:12px; padding:3px 12px; border-radius:999px; border:1px solid var(--blue-bd);
+    background:var(--blue-bg); color:var(--blue); font-family:Consolas,monospace}
+  header .badge.purple{border-color:var(--purple-bd); background:var(--purple-bg); color:var(--purple)}
+  header .badge.green{border-color:var(--green-bd); background:var(--green-bg); color:var(--green)}
+  header .badge.orange{border-color:var(--orange-bd); background:var(--orange-bg); color:var(--orange)}
+  .steps{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px; justify-content:center;}
+  .step-pill{font-size:11.5px; padding:5px 11px; border-radius:999px; cursor:pointer; border:1.5px solid var(--line); background:var(--card); color:var(--sub); display:flex; align-items:center; justify-content:center; transition:all .2s; user-select:none; white-space:nowrap; min-width:30px;}
+  .step-pill.active{border-color:var(--blue); background:var(--blue); color:#fff; box-shadow:0 4px 12px rgba(59,130,246,.35);}
+  .step-pill.done{border-color:var(--green); background:var(--green); color:#fff;}
+  .grid{display:grid; grid-template-columns:290px 1fr 320px; gap:12px; margin-bottom:12px;}
+  .panel{background:var(--card); border-radius:12px; padding:14px; box-shadow:var(--shadow);}
+  .panel h2{font-size:14px; margin-bottom:10px; padding-left:8px; border-left:4px solid var(--green);}
+  .panel.p2 h2{border-color:var(--orange);}
+  .panel.p3 h2{border-color:var(--blue);}
+  .face{display:flex; align-items:center; gap:8px; padding:10px 12px; border-radius:10px; margin-bottom:8px;
+        background:var(--blue-bg); cursor:pointer; transition:all .3s; border:1.5px solid transparent;}
+  .face .num{width:26px; height:26px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:bold; color:#fff; font-size:13px;}
+  .face .tt{font-size:13px; font-weight:bold;}
+  .face .ds{font-size:11px; color:var(--sub); margin-top:2px;}
+  .face.f1 .num{background:var(--orange);} .face.f2 .num{background:var(--blue);} .face.f3 .num{background:var(--purple);} .face.f4 .num{background:var(--green);}
+  .face.on{border-color:var(--orange); background:var(--orange-bg); box-shadow:var(--shadow);}
+  .face.f2.on{border-color:var(--blue); background:var(--blue-bg);}
+  .face.f3.on{border-color:var(--purple); background:var(--purple-bg);}
+  .face.f4.on{border-color:var(--green); background:var(--green-bg);}
+  .note{margin-top:10px; font-size:11.5px; color:var(--sub); background:#f3f4f6; border-radius:8px; padding:7px 9px;}
+  .stageBox{background:#111827; border-radius:10px; padding:10px 12px; font-family:Consolas,monospace; font-size:12px; line-height:1.75; color:#e5e7eb; min-height:230px; white-space:pre;}
+  .stageBox .hl{background:#4a3410; border-radius:3px; color:#fbbf24;}
+  .stageBox .dim{color:#64748b;}
+  .stageBox .grn{color:#a7f3d0;}
+  .stageBox .org{color:#fde68a;}
+  .stageBox .pur{color:#ddd6fe;}
+  .stageBox .blu{color:#bfdbfe;}
+  .stageBox .red{color:#fca5a5;}
+  .detail{margin-top:8px; font-size:12px; color:#4b5563; background:#f3f4f6; border-radius:8px; padding:7px 9px; min-height:34px;}
+  .src{background:#111827; border-radius:12px; padding:12px 14px; box-shadow:var(--shadow); margin-bottom:12px;}
+  .src h2{font-size:13px; color:#9ca3af; margin-bottom:8px;}
+  .src .code{font-family:Consolas,monospace; font-size:12px; line-height:1.7; white-space:pre; overflow-x:auto; color:#e5e7eb;}
+  .src .code .hl{background:#4a3410; border-radius:3px; color:#fbbf24;}
+  .src .code .dim{color:#64748b;}
+  .src .code .grn{color:#a7f3d0;}
+  .src .code .org{color:#fde68a;}
+  .src .code .pur{color:#ddd6fe;}
+  .src .code .blu{color:#bfdbfe;}
+  .scene{margin-top:8px; font-size:11px; color:#6b7280; background:#f3f4f6; border-radius:8px; padding:6px 8px;}
+  .ctl{display:flex; align-items:center; gap:10px; justify-content:center; padding:10px; background:var(--card); border-radius:12px; box-shadow:var(--shadow);}
+  .btn{width:44px; height:44px; border-radius:50%; border:none; background:var(--blue); color:#fff; font-size:16px; cursor:pointer; transition:all .15s; font-weight:bold;}
+  .btn:hover{transform:scale(1.08);}
+  .btn.green{background:var(--green);}
+  .btn.orange{background:var(--orange); width:52px; height:52px;}
+  .hint{font-size:12px; color:var(--sub);}
+  .stepDesc{font-size:14px; font-weight:normal; line-height:1.85; color:#334155; background:var(--blue-bg); border-radius:9px; padding:11px 16px; margin-bottom:12px; border-left:4px solid var(--blue);}
+  .stepDesc b{color:var(--blue); font-weight:600;}
+  .stepDesc code{color:#7c3aed; font-family:Consolas,monospace; background:rgba(139,92,246,.10); padding:0 5px; border-radius:4px; font-size:12.5px;}
+  .kbd{display:inline-block; border:1px solid var(--line); border-radius:4px; padding:0 6px; background:#fff; font-size:11px; color:#4b5563;}
+  @media(max-width:1000px){.grid{grid-template-columns:1fr;}}
+
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>类加载站② · <span class="mono">链接三阶段</span>——验证 / 链接 / 准备与解析</h1>
+    <div class="sub">parse 验明正身 → verify 体检 → link 接线 → prepare 铺默认值 → resolve 懒解析（JDK 28 · hotspot）</div>
+    <div class="badges">
+      <span class="badge">classFileParser.cpp</span>
+      <span class="badge purple">verifier.cpp</span>
+      <span class="badge orange">instanceKlass.cpp</span>
+      <span class="badge green">klassVtable.cpp</span>
+    </div>
+  </header>
+
+  <div class="faces">
+    <div class="face f1" id="face1"><b>关①</b><span>解析 parse</span></div>
+    <div class="face f2" id="face2"><b>关②</b><span>验证 verify</span></div>
+    <div class="face f3" id="face3"><b>关③</b><span>链接 link</span></div>
+    <div class="face f4" id="face4"><b>关④</b><span>准备与解析</span></div>
+    <div class="fnote" id="fnote"></div>
+  </div>
+
+  <div class="steps" id="pills"></div>
+
+  <div class="grid">
+    <div class="panel p1">
+      <h2>讲解 <span class="tag" id="stepDesc"></span></h2>
+      <div class="desc" id="desc"></div>
+      <div class="note" id="note"></div>
+    </div>
+
+    <div class="panel p2">
+      <h2>场景</h2>
+      <div class="stageBox" id="stage"></div>
+      <div class="detail" id="detail"></div>
+    </div>
+
+    <div class="panel p3">
+      <h2>源码</h2>
+      <div class="src">
+        <h2>classFileParser.cpp · verifier.cpp · instanceKlass.cpp · klassVtable.cpp</h2>
+        <div class="code" id="src"></div>
+      </div>
+      <div class="scene" id="scene"></div>
+    </div>
+  </div>
+
+  <div class="ctl">
+    <button class="btn" id="btnPrev" title="上一步 (←)">\u25C0</button>
+    <button class="btn orange" id="btnPlay" title="播放/暂停 (Space)">\u25B6</button>
+    <button class="btn" id="btnNext" title="下一步 (→)">\u25B6</button>
+    <button class="btn green" id="btnReset" title="重置 (R)">\u21BA</button>
+    <span class="hint"><span class="kbd">Space</span> 播放/暂停 · <span class="kbd">←</span> <span class="kbd">→</span> 步进 · <span class="kbd">R</span> 重置 · 点击步骤胶囊跳转</span>
+  </div>
+</div>
+
+<script>
+(() => {
+  const S = {
+    face1: document.getElementById('face1'),
+    face2: document.getElementById('face2'),
+    face3: document.getElementById('face3'),
+    face4: document.getElementById('face4'),
+    fnote: document.getElementById('fnote'),
+    stage: document.getElementById('stage'),
+    detail: document.getElementById('detail'),
+    src: document.getElementById('src'),
+    scene: document.getElementById('scene'),
+    desc: document.getElementById('stepDesc'),
+    pills: document.getElementById('pills'),
+  };
+  function faces(n){
+    ['face1','face2','face3','face4'].forEach((id,i)=>{
+      const el = S[id];
+      el.className = 'face f' + (i+1) + (i+1 === n ? ' on' : '');
+    });
+  }
+  function stage(html){ S.stage.innerHTML = html; }
+  function src(html){ S.src.innerHTML = html; }
+  function scene(txt){ S.scene.innerHTML = txt; }
+
+  const steps = [
+    // 0 白话速览：链接三阶段
+    {"d": "<span style=\"display:inline-block;background:#dbeafe;color:#1d4ed8;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500\">白话速览</span> 这一站在演什么：<b>「入职培训」——链接三阶段</b>。\n<b>比喻</b>：站①把人招进公司（InstanceKlass 骨架），站②办入职：先<b>体检</b>（验证字节码）→ 再<b>领工位和默认装备</b>（静态字段默认值）→ 最后<b>把花名册上的岗位名逐个对上真人</b>（符号引用解析）。HotSpot 中间还多一道<b>接线</b>工序：改写字节码、接方法入口、填 vtable/itable 员工名册。\n<b>技术对照</b>：结构解析 = <code>parse_stream</code>（classFileParser.cpp:6024）；验证 = <code>Verifier::verify</code>（verifier.cpp:183）；接线 = <code>link_class_impl</code>（instanceKlass.cpp:1123）；准备 = 静态字段内存清零（instanceKlass.cpp:522）；符号解析 = 懒加载（constantPool.cpp:631）。\n<b>记住一句</b>：规范说「验证 → 准备 → 解析」，HotSpot 实际是「parse → verify → link（接线）→ 运行期懒解析」——两个「链接」别搞混。", "stage": "<span class=\"blu\">白话速览 · 链接三阶段</span>\n<span class=\"dim\">InstanceKlass 骨架（站①产出）</span>\n<span class=\"blu\">① 验明正身：parse_stream :6024（魔数/版本/常量池）</span>\n<span class=\"blu\">② 体检：verify_code :1063 → Verifier::verify :183</span>\n<span class=\"org\">③ 接线：link_class_impl :1123（rewrite/方法入口/vtable）</span>\n<span class=\"grn\">④ 准备：静态字段清零 :522 · 解析：懒加载 :631</span>\n<span class=\"dim\">「体检 → 铺默认值 → 接线 → 用到才解析」</span>", "src": "<span class=\"dim\">// 术语对照（人话 → 黑话）</span>\n<span class=\"blu\">验明正身</span>→ <span class=\"grn\">parse_stream（classFileParser.cpp:6024）</span>\n<span class=\"blu\">体检</span>      → <span class=\"grn\">Verifier::verify（verifier.cpp:183）</span>\n<span class=\"blu\">接线</span>      → <span class=\"grn\">link_class_impl（instanceKlass.cpp:1123）</span>\n<span class=\"blu\">铺默认值</span>  → <span class=\"grn\">allocate_instance_klass（instanceKlass.cpp:522）</span>\n<span class=\"blu\">懒解析</span>    → <span class=\"grn\">klass_at_impl（constantPool.cpp:631）</span>", "scene": "白话速览：<b>链接三阶段</b>", "detail": "本站回答：JVM 规范链接三阶段（验证/准备/解析）在 HotSpot 里如何实现，外加 HotSpot 独有的接线工序。", "note": "当前：白话速览<br>先讲人话", "face": 1}
+,
+    // 1 场景1：结构解析总入口
+    {"d": "<span style=\"display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500\">人话</span> <b>这一步在干嘛</b>：结构解析开始——<code>ClassFileParser::parse_stream</code> 拿着 ClassFileStream 只读游标，从 .class 文件头逐字节往下读。<b>这是「验明正身」的第一步。</b>\n站①的 <code>KlassFactory::create_from_stream</code>（klassFactory.cpp:172）构造出 ClassFileParser 后，调用 <code>parse_stream</code>（classFileParser.cpp:6024）。\n开头 <code>stream-&gt;guarantee_more(8, CHECK)</code>（:6031）——先确认至少还有 8 字节可读（magic 4 字节 + major 2 字节 + minor 2 字节）。", "stage": "<span class=\"blu\">parse_stream（classFileParser.cpp:6024）</span>\n<span class=\"dim\">ClassFileStream 只读游标</span>\n<span class=\"blu\">guarantee_more(8) :6031</span>\n<span class=\"blu\">magic(4B) + major(2B) + minor(2B)</span>\n<span class=\"dim\">逐字节往下读 .class</span>", "src": "<span class=\"dim\">// classFileParser.cpp:6024</span>\n<span class=\"blu\">void ClassFileParser::parse_stream(</span>\n<span class=\"blu\">    const ClassFileStream* const stream, TRAPS) {</span>\n<span class=\"blu\">  stream-&gt;guarantee_more(8, CHECK);  // :6031 magic, major, minor</span>\n<span class=\"dim\">  // 下面开始读 magic / 版本 / 常量池</span>", "scene": "场景1：结构解析总入口", "detail": "parse_stream（classFileParser.cpp:6024）逐字节解析 class 文件，先保证 8 字节可读（:6031）。", "note": "当前：关卡 ①<br>解析 parse：验明正身", "face": 1}
+,
+    // 2 场景2：魔数 + 版本校验
+    {"d": "<span style=\"display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500\">人话</span> <b>这一步在干嘛</b>：查身份证——先看<b>魔数</b>（4 字节必须是 <code>0xCAFEBABE</code>），再看<b>版本号</b>（大版本不能超过 JVM 支持上限）。<b>两项不过都直接拒收。</b>\n魔数校验（:6033-6036）：<code>guarantee_property(magic == JAVA_CLASSFILE_MAGIC, ...)</code>——不是 0xCAFEBABE 就抛 <code>ClassFormatError</code>（「这不是合法的 class 文件」）。\n版本校验（:6039-6043）：读小版本 <code>_minor_version</code>（:6039）、大版本 <code>_major_version</code>（:6040），然后 <code>verify_class_version</code>（:6043）——大版本超上限抛 <code>UnsupportedClassVersionError</code>（「用新 JDK 编的类跑在旧 JVM」就是这个）。", "stage": "<span class=\"blu\">魔数校验 :6033-6036</span>\n<span class=\"blu\">magic == 0xCAFEBABE（JAVA_CLASSFILE_MAGIC :101）</span>\n<span class=\"dim\">非法 → ClassFormatError</span>\n<span class=\"blu\">版本校验 :6039-6043</span>\n<span class=\"blu\">_major_version / verify_class_version</span>\n<span class=\"dim\">超上限 → UnsupportedClassVersionError</span>", "src": "<span class=\"dim\">// classFileParser.cpp:6033-6043</span>\n<span class=\"blu\">const u4 magic = stream-&gt;get_u4_fast();</span>\n<span class=\"blu\">guarantee_property(magic == JAVA_CLASSFILE_MAGIC, // :6034</span>\n<span class=\"blu\">_minor_version = stream-&gt;get_u2_fast();  // :6039</span>\n<span class=\"blu\">_major_version = stream-&gt;get_u2_fast();  // :6040</span>\n<span class=\"blu\">verify_class_version(...);  // :6043</span>", "scene": "场景2：魔数 + 版本校验", "detail": "魔数 0xCAFEBABE（:6034）与版本校验（:6043），失败抛 ClassFormatError / UnsupportedClassVersionError。", "note": "当前：关卡 ①<br>解析 parse：验明正身", "face": 1}
+,
+    // 3 场景3：常量池读入 + InstanceKlass 分配
+    {"d": "<span style=\"display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500\">人话</span> <b>这一步在干嘛</b>：验完身份读<b>常量池</b>（常量池站①的 #12 条目们），然后 <code>allocate_instance_klass</code> 按布局分配 InstanceKlass 内存——<b>静态字段内存随对象一起分配并清零，「准备」的默认值在这里顺带铺好。</b>\n常量池：<code>ConstantPool::allocate</code>（:6058）+ <code>parse_constant_pool</code>（:6064）——运行时常量池逐项读入。\nInstanceKlass 分配：<code>InstanceKlass::allocate_instance_klass</code>（instanceKlass.cpp:522），size 计算（:523-527）含 <code>parser.static_field_size()</code>（classFileParser.cpp:5194）——<b>静态字段区就长在 InstanceKlass 对象后面</b>，Metaspace 分配默认清零。", "stage": "<span class=\"blu\">常量池 :6058/:6064</span>\n<span class=\"blu\">ConstantPool::allocate + parse_constant_pool</span>\n<span class=\"dim\">#12 Methodref 等条目读入运行时常量池</span>\n<span class=\"grn\">allocate_instance_klass（instanceKlass.cpp:522）</span>\n<span class=\"grn\">size 含 static_field_size :5194</span>\n<span class=\"dim\">静态字段内存随对象分配并清零（准备）</span>", "src": "<span class=\"dim\">// classFileParser.cpp:6058-6064</span>\n<span class=\"blu\">_cp = ConstantPool::allocate(_loader_data, cp_size, CHECK);</span>\n<span class=\"blu\">parse_constant_pool(stream, cp, _orig_cp_size, CHECK);</span>\n<span class=\"dim\">// instanceKlass.cpp:522（准备前置）</span>\n<span class=\"grn\">InstanceKlass* InstanceKlass::allocate_instance_klass(</span>\n<span class=\"grn\">    const ClassFileParser&amp; parser, TRAPS) {</span>", "scene": "场景3：常量池读入 + InstanceKlass 分配", "detail": "常量池读入（:6058/:6064）；allocate_instance_klass（instanceKlass.cpp:522）按含静态字段的布局分配并清零。", "note": "当前：关卡 ①<br>解析 parse：验明正身", "face": 1}
+,
+    // 4 场景4：验证触发
+    {"d": "<span style=\"display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500\">人话</span> <b>这一步在干嘛</b>：结构解析完毕，开始<b>验证字节码</b>（体检）。<code>link_class_impl</code> 内部调用 <code>verify_code</code>，验证不过直接返回 false，类留下 error 状态。<b>体检是链接的第一道正式工序。</b>\n调用点：instanceKlass.cpp:1218 <code>bool verify_ok = verify_code(THREAD);</code>——验证不通过（:1219）<code>return false;</code>。\n<code>verify_code</code> 定义（instanceKlass.cpp:1063）：<code>return Verifier::verify(this, should_verify_class(), THREAD);</code>——真正的体检医生是 <code>Verifier::verify</code>。", "stage": "<span class=\"blu\">link_class_impl（instanceKlass.cpp:1123）</span>\n<span class=\"blu\">verify_code(THREAD) :1218</span>\n<span class=\"dim\">验证不过 → return false :1219</span>\n<span class=\"blu\">verify_code 定义 :1063</span>\n<span class=\"blu\">→ Verifier::verify（verifier.cpp:183）</span>", "src": "<span class=\"dim\">// instanceKlass.cpp:1218（link_class_impl 内）</span>\n<span class=\"blu\">bool verify_ok = verify_code(THREAD);</span>\n<span class=\"blu\">if (!verify_ok) { return false; }</span>\n<span class=\"dim\">// instanceKlass.cpp:1063</span>\n<span class=\"blu\">return Verifier::verify(this, should_verify_class(), THREAD);</span>", "scene": "场景4：验证触发", "detail": "link_class_impl（instanceKlass.cpp:1123）内调用 verify_code（:1218），定义 :1063，实现在 Verifier::verify。", "note": "当前：关卡 ②<br>验证 verify：字节码体检", "face": 2}
+,
+    // 5 场景5：Verifier::verify 三道检查
+    {"d": "<span style=\"display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500\">人话</span> <b>这一步在干嘛</b>：体检医生 <code>Verifier::verify</code>（verifier.cpp:183）上场，三道检查：<b>① 准入</b>（能不能跳过）→ <b>② 分裂验证器</b>（主流）→ <b>③ 老验证器回退</b>。<b>体检核心是按 StackMap 做类型检查。</b>\n准入（:199）：<code>is_eligible_for_verification</code>（verifier.cpp:136-147）——<code>-Xverify:none</code> 或 AOT 缓存且已改写的类，直接放行。\n分裂验证器（:222-225）：版本 ≥ StackMap 时代（JDK 6+）走 <code>ClassVerifier</code>——逐条字节码做<b>类型检查</b>，依赖 class 文件里的 StackMapTable（栈映射帧）。\n回退（:248）：老版本类没 StackMap，用 <code>inference_verify</code> 做数据流推断。", "stage": "<span class=\"blu\">Verifier::verify（verifier.cpp:183）</span>\n<span class=\"blu\">① 准入 :199 is_eligible :136</span>\n<span class=\"dim\">-Xverify:none / AOT 已改写 → 放行</span>\n<span class=\"blu\">② split verifier :222 ClassVerifier</span>\n<span class=\"dim\">逐条字节码类型检查 · StackMap</span>\n<span class=\"blu\">③ inference verifier :248</span>\n<span class=\"dim\">老类无 StackMap → 数据流推断</span>", "src": "<span class=\"dim\">// verifier.cpp:183</span>\n<span class=\"blu\">bool Verifier::verify(InstanceKlass* klass,</span>\n<span class=\"blu\">    bool should_verify_class, TRAPS) {</span>\n<span class=\"blu\">  if (!is_eligible_for_verification(klass,</span>\n<span class=\"blu\">      should_verify_class)) { return true; }  // :199</span>\n<span class=\"blu\">  ClassVerifier split_verifier(jt, klass);  // :223</span>\n<span class=\"blu\">  split_verifier.verify_class(THREAD);      // :225</span>", "scene": "场景5：Verifier::verify 三道检查", "detail": "准入检查（verifier.cpp:136-147 / :199）→ 分裂验证器 ClassVerifier（:222-225）→ 老验证器回退（:248）。", "note": "当前：关卡 ②<br>验证 verify：字节码体检", "face": 2}
+,
+    // 6 场景6：验证失败 → VerifyError
+    {"d": "<span style=\"display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500\">人话</span> <b>这一步在干嘛</b>：体检不过 = <b>淘汰</b>——抛 <code>VerifyError</code>，链接中断，类留在 error 状态。<b>手写/工具生成的非法字节码在这里被拦下。</b>\n验证不通过 → <code>verify_code</code> 返回 false → <code>link_class_impl</code> 里 <code>return false</code>（instanceKlass.cpp:1219）——类无法进入 linked 状态。\n为什么要拦：字节码可以不经 javac 生成，非法字节码可能让解释器/JIT 执行类型不安全的代码——验证是 JVM 安全的第一道防线。", "stage": "<span class=\"blu\">验证失败路径</span>\n<span class=\"blu\">split verifier 结果 = VerifyError</span>\n<span class=\"dim\">exception_name :226</span>\n<span class=\"blu\">verify_code 返回 false :1065</span>\n<span class=\"blu\">link_class_impl return false :1219</span>\n<span class=\"dim\">类留在 error 状态，无法 linked</span>", "src": "<span class=\"dim\">// instanceKlass.cpp:1218-1222</span>\n<span class=\"blu\">bool verify_ok = verify_code(THREAD);</span>\n<span class=\"blu\">if (!verify_ok) {</span>\n<span class=\"blu\">  return false;  // 链接中断</span>\n<span class=\"blu\">}</span>\n<span class=\"dim\">// 失败 = VerifyError（非法字节码被拦下）</span>", "scene": "场景6：验证失败 → VerifyError", "detail": "验证失败抛 VerifyError，link_class_impl 返回 false（instanceKlass.cpp:1219），类无法进入 linked 状态。", "note": "当前：关卡 ②<br>验证 verify：字节码体检", "face": 2}
+,
+    // 7 场景7：接线开始：先父后己
+    {"d": "<span style=\"display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500\">人话</span> <b>这一步在干嘛</b>：体检通过，进入 HotSpot 独有的<b>接线工序</b>（JVM 规范里没有这个名字）。第一步：<b>先链接父类和接口</b>（递归）——保证 vtable 继承关系成立，子类才能继承父类的分发表。<b>先父后己，深度优先。</b>\n<code>link_class_impl</code>（instanceKlass.cpp:1123）：先检查父类（:1150-1166）——若父类是接口（<code>extends</code> 了 interface）抛 <code>IncompatibleClassChangeError</code>（:1155-1162）；正常则递归 <code>super_klass-&gt;link_class_impl</code>（:1165）。\n再链接所有接口（:1168-1174）：<code>interk-&gt;link_class_impl</code>（:1173）。\n之后加 <code>init_lock</code> 互斥锁（:1200-1205），防并发重复链接。", "stage": "<span class=\"org\">link_class_impl（instanceKlass.cpp:1123）</span>\n<span class=\"org\">① 父类是接口？ :1152</span>\n<span class=\"dim\">是 → IncompatibleClassChangeError :1155</span>\n<span class=\"org\">父类递归 link :1165</span>\n<span class=\"org\">接口递归 link :1173</span>\n<span class=\"org\">init_lock 加锁 :1200-1205</span>\n<span class=\"dim\">深度优先：先父后己</span>", "src": "<span class=\"dim\">// instanceKlass.cpp:1150-1174</span>\n<span class=\"org\">InstanceKlass* super_klass = super();</span>\n<span class=\"org\">super_klass-&gt;link_class_impl(CHECK_false);  // :1165</span>\n<span class=\"org\">for (...) { interk-&gt;link_class_impl(CHECK_false); }  // :1173</span>\n<span class=\"dim\">// :1200-1205 ObjectLocker 加锁</span>", "scene": "场景7：接线开始：先父后己", "detail": "link_class_impl（instanceKlass.cpp:1123）先递归链接父类（:1165）与接口（:1173），加 init_lock（:1200-1205）。", "note": "当前：关卡 ③<br>链接 link：接线工序", "face": 3}
+,
+    // 8 场景8：改写字节码
+    {"d": "<span style=\"display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500\">人话</span> <b>这一步在干嘛</b>：<b>改写字节码</b>——把常量池索引换成常量池缓存（cpCache）索引（方法调用站讲的「小本本」），jsr/ret 重定位。<b>改写只做一次</b>（防重入）。\n<code>rewrite_class</code>（instanceKlass.cpp:1232 调用 / :1296 定义）：<code>Rewriter::rewrite(this, CHECK)</code>（:1302）改写字节点，<code>set_rewritten()</code>（:1303）打标。\n前置判断（:1213）：<code>if (!is_rewritten())</code>——已改写跳过；<code>is_rewritten()</code>（:1298）防止重复执行。\n为什么改：解释器执行时直接查 cpCache（O(1)），不用每次去常量池翻索引再解析。", "stage": "<span class=\"org\">rewrite_class :1232 → :1296</span>\n<span class=\"org\">Rewriter::rewrite :1302</span>\n<span class=\"dim\">常量池索引 → cpCache 索引</span>\n<span class=\"dim\">jsr/ret 重定位</span>\n<span class=\"org\">set_rewritten :1303</span>\n<span class=\"dim\">is_rewritten 防重入 :1298</span>", "src": "<span class=\"dim\">// instanceKlass.cpp:1296-1304</span>\n<span class=\"org\">void InstanceKlass::rewrite_class(TRAPS) {</span>\n<span class=\"org\">  if (is_rewritten()) { return; }  // :1298 防重入</span>\n<span class=\"org\">  Rewriter::rewrite(this, CHECK);  // :1302</span>\n<span class=\"org\">  set_rewritten();                 // :1303</span>", "scene": "场景8：改写字节码", "detail": "rewrite_class（instanceKlass.cpp:1296）调 Rewriter::rewrite（:1302），常量池索引改写为 cpCache 索引，只做一次。", "note": "当前：关卡 ③<br>链接 link：接线工序", "face": 3}
+,
+    // 9 场景9：接方法入口 + 填 vtable/itable
+    {"d": "<span style=\"display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500\">人话</span> <b>这一步在干嘛</b>：<b>接方法入口 + 填员工名册</b>。每个方法定好解释器/JIT 入口（<code>link_method</code>），vtable/itable 按继承层次填好——方法调用站讲的「分发表」就绪。<b>类和接口表都在这步接线。</b>\n<code>link_methods</code>（instanceKlass.cpp:1238 调用 / :1309 定义）：对每个 Method 调 <code>m-&gt;link_method(m, THREAD)</code>（:1317）——决定方法入口（第一次执行还是解释器，见方法调用站⑤）。\nvtable/itable 填充（:1256-1257）：<code>initialize_vtable_and_check_constraints</code>（klassVtable.cpp:615）/ <code>initialize_itable_and_check_constraints</code>（klassVtable.cpp:1223）——同时做<b>加载器约束检查</b>（父子加载器对同一类的解析必须一致）。", "stage": "<span class=\"org\">link_methods :1238 → :1309</span>\n<span class=\"org\">Method::link_method :1317</span>\n<span class=\"dim\">方法入口：解释器 / JIT</span>\n<span class=\"org\">vtable :1256（klassVtable.cpp:615）</span>\n<span class=\"org\">itable :1257（klassVtable.cpp:1223）</span>\n<span class=\"dim\">填名册 + 加载器约束检查</span>", "src": "<span class=\"dim\">// instanceKlass.cpp:1309-1319</span>\n<span class=\"org\">void InstanceKlass::link_methods(TRAPS) {</span>\n<span class=\"org\">  ... m-&gt;link_method(m, THREAD);  // :1317</span>\n<span class=\"dim\">// instanceKlass.cpp:1256-1257</span>\n<span class=\"org\">vtable().initialize_vtable_and_check_constraints(</span>\n<span class=\"org\">    CHECK_false);  // klassVtable.cpp:615</span>", "scene": "场景9：接方法入口 + 填 vtable/itable", "detail": "link_methods（instanceKlass.cpp:1309 → :1317）接方法入口；vtable/itable 初始化（:1256-1257，klassVtable.cpp:615/:1223）。", "note": "当前：关卡 ③<br>链接 link：接线工序", "face": 3}
+,
+    // 10 场景10：标记 linked 完成
+    {"d": "<span style=\"display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500\">人话</span> <b>这一步在干嘛</b>：全部接线完成，<b>标记 linked</b>——类从「档案」变成「可上岗员工」：<code>is_linked()</code> 从此返回 true。<b>这是 HotSpot 链接工序的完成标志。</b>\n<code>set_init_state(linked)</code>（instanceKlass.cpp:1271，Universe 未完全初始化时 :1277）——设置 <code>_init_state = linked</code>。\n标记前先拿 <code>Compile_lock</code>（:1269）并让依赖该类的编译代码失效（<code>CodeCache::mark_dependents_on</code> :1272）。\nJVMTI 回调（:1279-1281）：<code>post_class_prepare</code>——调试器/代理可收到「类准备完成」事件。", "stage": "<span class=\"org\">set_init_state(linked)</span>\n<span class=\"org\">instanceKlass.cpp:1271 / :1277</span>\n<span class=\"dim\">_init_state = linked</span>\n<span class=\"org\">Compile_lock :1269</span>\n<span class=\"org\">CodeCache::mark_dependents_on :1272</span>\n<span class=\"org\">JVMTI post_class_prepare :1279</span>\n<span class=\"dim\">is_linked() = true</span>", "src": "<span class=\"dim\">// instanceKlass.cpp:1264-1281</span>\n<span class=\"org\">if (Universe::is_fully_initialized()) {</span>\n<span class=\"org\">  set_init_state(linked);          // :1271</span>\n<span class=\"org\">  CodeCache::mark_dependents_on(</span>\n<span class=\"org\">      &amp;deopt_scope, this);      // :1272</span>\n<span class=\"org\">} else { set_init_state(linked); }  // :1277</span>", "scene": "场景10：标记 linked 完成", "detail": "set_init_state(linked)（instanceKlass.cpp:1271/:1277），链接完成，is_linked() = true；JVMTI 回调 :1279。", "note": "当前：关卡 ③<br>链接 link：接线工序", "face": 3}
+,
+    // 11 场景11：准备：静态字段默认值
+    {"d": "<span style=\"display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500\">人话</span> <b>这一步在干嘛</b>：<b>准备（prepare）= 给静态字段铺默认值</b>（0 / null / false）。HotSpot 的做法是：静态字段内存长在 InstanceKlass 对象后面，<b>在站①分配时就一并清零</b>——所以准备不需要单独一道工序。<b>真正赋值留给 &lt;clinit&gt;（站③）。</b>\n<code>allocate_instance_klass</code>（instanceKlass.cpp:522）：size 计算（:523-527）包含 <code>parser.static_field_size()</code>（classFileParser.cpp:5194）——静态字段区随 InstanceKlass 一起分配。\nMetaspace 分配内存默认清零 = 规范要求的「默认值」。\n调用点：classFileParser.cpp:5312（create_instance_klass :5304 内部）。", "stage": "<span class=\"grn\">准备：静态字段默认值</span>\n<span class=\"grn\">allocate_instance_klass（instanceKlass.cpp:522）</span>\n<span class=\"dim\">size 含 static_field_size :5194</span>\n<span class=\"grn\">静态字段区随对象分配并清零</span>\n<span class=\"dim\">默认值 0 / null / false</span>\n<span class=\"dim\">真正赋值 → &lt;clinit&gt;（站③）</span>", "src": "<span class=\"dim\">// instanceKlass.cpp:522-527</span>\n<span class=\"grn\">InstanceKlass* InstanceKlass::allocate_instance_klass(</span>\n<span class=\"grn\">    const ClassFileParser&amp; parser, TRAPS) {</span>\n<span class=\"grn\">  const int size = InstanceKlass::size(parser.vtable_size(),</span>\n<span class=\"grn\">      parser.itable_size(), ...);</span>\n<span class=\"dim\">// classFileParser.cpp:5194 static_field_size()</span>", "scene": "场景11：准备：静态字段默认值", "detail": "静态字段内存随 InstanceKlass 分配并清零（instanceKlass.cpp:522，static_field_size :5194），默认值在分配时就绪。", "note": "当前：关卡 ④<br>准备与解析", "face": 4}
+,
+    // 12 场景12：解析：懒加载
+    {"d": "<span style=\"display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500\">人话</span> <b>这一步在干嘛</b>：<b>解析（resolve）= 符号引用换真身</b>——把常量池里的「岗位名」（<code>Dog</code>、<code>Dog.bark:()V</code>）换成真人（Klass*、Method*）。HotSpot 不集中解析，<b>用到才查、查完缓存</b>——这是常量池站②的全部内容。\n类解析：<code>ConstantPool::klass_at_impl</code>（constantPool.cpp:631）——快路径查 <code>_resolved_klasses</code>，慢路径走 SystemDictionary 触发加载。\n方法解析：<code>InterpreterRuntime::resolve_invoke</code>（interpreterRuntime.cpp:864）→ LinkResolver（linkResolver.cpp:1715）→ 写 ConstantPoolCache。\n<b>关键</b>：这些都不在链接期执行——<code>is_linked()</code> 不要求符号解析完毕，类先「接线」后「用到了再查人」。", "stage": "<span class=\"grn\">解析：懒加载（用才查）</span>\n<span class=\"grn\">类：klass_at_impl（constantPool.cpp:631）</span>\n<span class=\"dim\">快路径 _resolved_klasses / 慢路径触发加载</span>\n<span class=\"grn\">方法：resolve_invoke（interpreterRuntime.cpp:864）</span>\n<span class=\"dim\">→ LinkResolver :1715 → 写 cpCache</span>\n<span class=\"dim\">不在链接期执行，首次用到才解析</span>", "src": "<span class=\"dim\">// 常量池站②核心链路（懒解析）</span>\n<span class=\"grn\">constantPool.cpp:631  klass_at_impl（类）</span>\n<span class=\"grn\">interpreterRuntime.cpp:864 resolve_invoke（方法）</span>\n<span class=\"grn\">linkResolver.cpp:1715  resolve_invoke 分路</span>\n<span class=\"grn\">cpCache.cpp:79 set_direct_or_vtable_call（缓存）</span>\n<span class=\"dim\">// 结果缓存在 ConstantPoolCache / _resolved_klasses</span>", "scene": "场景12：解析：懒加载", "detail": "符号解析懒加载：类 klass_at_impl（constantPool.cpp:631）、方法 resolve_invoke（interpreterRuntime.cpp:864），缓存结果。", "note": "当前：关卡 ④<br>准备与解析", "face": 4}
+,
+    // 13 场景13：两个解析 + 懒的动机
+    {"d": "<span style=\"display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500\">人话</span> <b>这一步在干嘛</b>：分清<b>两个「解析」</b>，并理解<b>为什么符号解析要懒</b>。\n两个解析：\n① <b>结构解析 parse</b>（classFileParser.cpp:6024）——加载期读 .class 布局（魔数/版本/常量池/字段/方法），站①已走完；\n② <b>符号解析 resolve</b>（constantPool.cpp:631）——运行期把符号引用换成真身，用到才做。\n为什么懒：类可能<b>永远用不到</b>某个符号（比如异常路径里的类）——链接期全解析既慢，又可能<b>误报 NoClassDefFoundError</b>（引用了存在但不加载的类）。懒解析 + 缓存 = 只付一次钱。", "stage": "<span class=\"grn\">两个「解析」要分清</span>\n<span class=\"blu\">① 结构解析 parse（加载期）</span>\n<span class=\"dim\">classFileParser.cpp:6024 读 .class 布局</span>\n<span class=\"grn\">② 符号解析 resolve（运行期）</span>\n<span class=\"dim\">constantPool.cpp:631 用到才查</span>\n<span class=\"dim\">为什么懒：省时间 + 不误报</span>", "src": "<span class=\"dim\">// 对比</span>\n<span class=\"blu\">parse_stream :6024  结构解析（加载期）</span>\n<span class=\"blu\">  → 魔数/版本/常量池/字段/方法</span>\n<span class=\"grn\">klass_at_impl :631  符号解析（运行期）</span>\n<span class=\"grn\">  → 符号引用换真身，用才查</span>\n<span class=\"dim\">// 懒 = 可能永远用不到 + 避免误报</span>", "scene": "场景13：两个解析 + 懒的动机", "detail": "区分结构解析（parse，加载期）与符号解析（resolve，运行期懒做）；懒解析避免浪费与误报。", "note": "当前：关卡 ④<br>准备与解析", "face": 4}
+,
+    // 14 场景14：站末闭环：全链路串讲
+    {"d": "<span style=\"display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500\">人话</span> <b>这一步在干嘛</b>：把整条链串一遍——parse 验明正身 → verify 体检 → link 接线 → prepare 铺默认值 → resolve 懒解析 → initialize 通电（下一站）。<b>「入职培训」完成。</b>\n全链路：① 结构解析 <code>parse_stream</code>（classFileParser.cpp:6024，魔数 :6034 / 版本 :6043 / 常量池 :6058）；② 验证 <code>verify_code</code>（instanceKlass.cpp:1218 → :1063）→ <code>Verifier::verify</code>（verifier.cpp:183，split :222 / inference :248）；③ 接线 <code>link_class_impl</code>（instanceKlass.cpp:1123，先父后己 :1165/:1173 → rewrite :1232 → link_methods :1238 → vtable/itable :1256-1257 → linked :1271）；④ 准备：静态字段清零（instanceKlass.cpp:522）；⑤ 符号解析：懒（constantPool.cpp:631）。\n<b>一句话总结</b>：<b>JVM 规范三阶段（验证/准备/解析）是逻辑划分，HotSpot 的实际流水线是「parse → verify → link（接线）→ 运行期懒解析」</b>——规范与实现的分工不同，但结果等价。", "stage": "<span class=\"org\">全链路：InstanceKlass → 可用</span>\n<span class=\"blu\">① parse_stream :6024 验明正身</span>\n<span class=\"blu\">② verify_code :1218 → Verifier :183</span>\n<span class=\"org\">③ link_class_impl :1123 接线（rewrite/入口/vtable）</span>\n<span class=\"grn\">④ 静态字段清零 :522（准备）</span>\n<span class=\"grn\">⑤ 懒解析 :631（用到才查）</span>\n<span class=\"dim\">→ 下一站：initialize :961（&lt;clinit&gt;）</span>", "src": "<span class=\"dim\">// 全流程行号速查</span>\n<span class=\"org\">classFileParser.cpp:6024 parse_stream（结构解析）</span>\n<span class=\"org\">classFileParser.cpp:6034 魔数 · :6043 版本</span>\n<span class=\"org\">instanceKlass.cpp:1218 verify_code · verifier.cpp:183</span>\n<span class=\"org\">instanceKlass.cpp:1123 link_class_impl（接线）</span>\n<span class=\"org\">instanceKlass.cpp:522 静态字段清零（准备）</span>\n<span class=\"grn\">// 懒解析：constantPool.cpp:631 → 常量池站②</span>\n<span class=\"grn\">// 下一站：instanceKlass.cpp:961 initialize</span>", "scene": "场景14：站末闭环：全链路串讲", "detail": "全链路：parse（:6024）→ verify（:1218/:183）→ link（:1123）→ 静态字段清零（:522）→ 懒解析（:631）→ initialize（:961，下一站）。", "note": "当前：关卡 ④<br>准备与解析 · 闭环", "face": 4}
+
+  ];
+
+  // 通用 fn：由数据驱动（JSON 序列化方案，杜绝转义问题）
+  steps.forEach((st, i) => {
+    st.fn = () => {
+      faces(st.face);
+      S.fnote.innerHTML = st.note;
+      stage(st.stage);
+      S.detail.textContent = st.detail;
+      src(st.src);
+      scene(st.scene);
+    };
+  });
+
+  const N = steps.length;
+  let cur = 0;
+
+  function go(n) {
+    cur = Math.max(0, Math.min(N - 1, n));
+    steps[cur].fn();
+    S.desc.innerHTML = steps[cur].d;
+    S.scene.innerHTML += ' 第 ' + cur + ' / ' + (N - 1) + ' 步';
+    [...S.pills.children].forEach((p, i) => {
+      p.className = 'step-pill' + (i === cur ? ' active' : (i < cur ? ' done' : ''));
+    });
+  }
+
+  function next() { go(cur + 1); }
+  function prev() { go(cur - 1); }
+  function reset() { go(0); }
+
+  S.pills.innerHTML = steps.map((s, i) =>
+    '<span class="step-pill" data-i="' + i + '">' + i + '</span>'
+  ).join('');
+  [...S.pills.children].forEach(p =>
+    p.addEventListener('click', () => go(+p.dataset.i))
+  );
+  document.getElementById('btnNext').addEventListener('click', next);
+  document.getElementById('btnPrev').addEventListener('click', prev);
+  document.getElementById('btnReset').addEventListener('click', reset);
+  let timer = null;
+  document.getElementById('btnPlay').addEventListener('click', () => {
+    if (timer) { clearInterval(timer); timer = null; return; }
+    timer = setInterval(() => { if (cur >= N - 1) { clearInterval(timer); timer = null; } else next(); }, 2600);
+  });
+  window.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight') next();
+    else if (e.key === 'ArrowLeft') prev();
+    else if (e.key === ' ') { e.preventDefault(); document.getElementById('btnPlay').click(); }
+    else if (e.key.toLowerCase() === 'r') reset();
+  });
+
+  go(0);
+})();
+</script>
+</body>
+</html>

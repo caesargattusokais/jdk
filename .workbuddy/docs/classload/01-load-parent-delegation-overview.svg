@@ -1,0 +1,145 @@
+ <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 600" font-family="'Segoe UI','Microsoft YaHei',sans-serif">
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#64748b"/>
+    </marker>
+    <marker id="ar-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#3b82f6"/>
+    </marker>
+    <marker id="ar-orange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#f59e0b"/>
+    </marker>
+    <marker id="ar-green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#10b981"/>
+    </marker>
+    <marker id="ar-purple" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#8b5cf6"/>
+    </marker>
+  </defs>
+
+  <!-- 背景 -->
+  <rect x="0" y="0" width="900" height="600" rx="16" fill="#f6f7fb"/>
+
+  <!-- 标题 -->
+  <text x="450" y="32" text-anchor="middle" font-size="19" font-weight="bold" fill="#1f2937">类加载站① · 加载与双亲委派全景（loadClass → InstanceKlass）</text>
+  <text x="450" y="54" text-anchor="middle" font-size="12" fill="#6b7280">java/lang/ClassLoader.java · prims/jvm.cpp · classfile/systemDictionary.cpp · classLoader.cpp · klassFactory.cpp · JDK 28</text>
+
+  <!-- ================= 层1 Java 层双亲委派（蓝） ================= -->
+  <rect x="36" y="72" width="828" height="22" rx="8" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.2"/>
+  <text x="46" y="87" font-size="11" font-weight="bold" fill="#1d4ed8">关卡① · Java 层双亲委派（java/lang/ClassLoader.java）</text>
+
+  <rect x="36" y="100" width="176" height="50" rx="10" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.8"/>
+  <text x="124" y="122" text-anchor="middle" font-size="12" font-weight="bold" fill="#1d4ed8" font-family="Consolas,monospace">loadClass(name)</text>
+  <text x="124" y="140" text-anchor="middle" font-size="10.5" fill="#1d4ed8">:501 → loadClass(name, resolve) :546</text>
+
+  <line x1="212" y1="125" x2="258" y2="125" stroke="#3b82f6" stroke-width="1.6" marker-end="url(#ar-blue)"/>
+
+  <rect x="258" y="100" width="186" height="50" rx="10" fill="#ffffff" stroke="#3b82f6" stroke-width="1.4"/>
+  <text x="351" y="122" text-anchor="middle" font-size="12" font-weight="bold" fill="#1d4ed8" font-family="Consolas,monospace">findLoadedClass :551</text>
+  <text x="351" y="140" text-anchor="middle" font-size="10.5" fill="#1d4ed8">已加载？直接返回</text>
+
+  <line x1="444" y1="125" x2="490" y2="125" stroke="#3b82f6" stroke-width="1.6" marker-end="url(#ar-blue)"/>
+
+  <rect x="490" y="100" width="180" height="50" rx="10" fill="#ffffff" stroke="#3b82f6" stroke-width="1.4"/>
+  <text x="580" y="120" text-anchor="middle" font-size="11" font-weight="bold" fill="#1d4ed8" font-family="Consolas,monospace">parent.loadClass :556</text>
+  <text x="580" y="136" text-anchor="middle" font-size="10" fill="#1d4ed8">向上委派（递归）</text>
+  <text x="580" y="150" text-anchor="middle" font-size="9.5" fill="#1d4ed8" opacity="0.8">bootstrap :558（父链顶端）</text>
+
+  <line x1="670" y1="125" x2="716" y2="125" stroke="#3b82f6" stroke-width="1.6" marker-end="url(#ar-blue)"/>
+
+  <rect x="716" y="100" width="148" height="50" rx="10" fill="#ffffff" stroke="#3b82f6" stroke-width="1.4"/>
+  <text x="790" y="122" text-anchor="middle" font-size="12" font-weight="bold" fill="#1d4ed8" font-family="Consolas,monospace">findClass :569</text>
+  <text x="790" y="140" text-anchor="middle" font-size="10.5" fill="#1d4ed8">父都找不到，自己找</text>
+
+  <!-- 箭头：findClass → native 边界 -->
+  <line x1="790" y1="150" x2="790" y2="174" stroke="#8b5cf6" stroke-width="1.6"/>
+  <line x1="790" y1="174" x2="450" y2="174" stroke="#8b5cf6" stroke-width="1.4"/>
+  <line x1="450" y1="174" x2="450" y2="202" stroke="#8b5cf6" stroke-width="1.6" marker-end="url(#ar-purple)"/>
+  <text x="620" y="170" text-anchor="middle" font-size="10" fill="#8b5cf6">defineClass → defineClass1 native（ClassLoader.java:1088）</text>
+
+  <!-- ================= 层2 native 边界（紫） ================= -->
+  <rect x="36" y="202" width="828" height="22" rx="8" fill="#f5f3ff" stroke="#8b5cf6" stroke-width="1.2"/>
+  <text x="46" y="217" font-size="11" font-weight="bold" fill="#6d28d9">关卡② · native 边界（prims/jvm.cpp）</text>
+
+  <rect x="36" y="230" width="260" height="52" rx="10" fill="#ffffff" stroke="#8b5cf6" stroke-width="1.4"/>
+  <text x="166" y="252" text-anchor="middle" font-size="12" font-weight="bold" fill="#6d28d9" font-family="Consolas,monospace">JVM_DefineClass :1240</text>
+  <text x="166" y="270" text-anchor="middle" font-size="10.5" fill="#6d28d9">JNI 入口</text>
+
+  <line x1="296" y1="256" x2="336" y2="256" stroke="#8b5cf6" stroke-width="1.6" marker-end="url(#ar-purple)"/>
+
+  <rect x="336" y="230" width="248" height="52" rx="10" fill="#ffffff" stroke="#8b5cf6" stroke-width="1.4"/>
+  <text x="460" y="252" text-anchor="middle" font-size="12" font-weight="bold" fill="#6d28d9" font-family="Consolas,monospace">jvm_define_class_common</text>
+  <text x="460" y="270" text-anchor="middle" font-size="10.5" fill="#6d28d9">:1073 · ClassFileStream :1098</text>
+
+  <line x1="584" y1="256" x2="624" y2="256" stroke="#8b5cf6" stroke-width="1.6" marker-end="url(#ar-purple)"/>
+
+  <rect x="624" y="230" width="240" height="52" rx="10" fill="#ffffff" stroke="#8b5cf6" stroke-width="1.4"/>
+  <text x="744" y="252" text-anchor="middle" font-size="12" font-weight="bold" fill="#6d28d9" font-family="Consolas,monospace">resolve_from_stream</text>
+  <text x="744" y="270" text-anchor="middle" font-size="10.5" fill="#6d28d9">jvm.cpp:1102 → systemDictionary.cpp:934</text>
+
+  <!-- 箭头：层2 → 层3 -->
+  <line x1="744" y1="282" x2="744" y2="308" stroke="#f59e0b" stroke-width="1.6" marker-end="url(#ar-orange)"/>
+  <text x="756" y="300" font-size="10" fill="#b45309">协调者接管</text>
+
+  <!-- ================= 层3 SystemDictionary 协调（橙） ================= -->
+  <rect x="36" y="308" width="828" height="22" rx="8" fill="#fffbeb" stroke="#f59e0b" stroke-width="1.2"/>
+  <text x="46" y="323" font-size="11" font-weight="bold" fill="#b45309">关卡③ · SystemDictionary 协调（classfile/systemDictionary.cpp）</text>
+
+  <rect x="36" y="336" width="260" height="74" rx="10" fill="#fffbeb" stroke="#f59e0b" stroke-width="1.6"/>
+  <text x="166" y="356" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#b45309" font-family="Consolas,monospace">resolve_instance_class_or_null :606</text>
+  <text x="166" y="374" text-anchor="middle" font-size="9.5" fill="#92400e">register_loader :618 · find_class :622</text>
+  <text x="166" y="390" text-anchor="middle" font-size="9.5" fill="#92400e">ObjectLocker :635 · 占位 :654/:705</text>
+  <text x="166" y="405" text-anchor="middle" font-size="9.5" fill="#92400e" opacity="0.85">查已加载字典 → 未命中才加载</text>
+
+  <line x1="296" y1="373" x2="336" y2="373" stroke="#f59e0b" stroke-width="1.6" marker-end="url(#ar-orange)"/>
+
+  <rect x="336" y="336" width="248" height="74" rx="10" fill="#fffbeb" stroke="#f59e0b" stroke-width="1.6"/>
+  <text x="460" y="356" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#b45309" font-family="Consolas,monospace">load_instance_class :1505</text>
+  <text x="460" y="374" text-anchor="middle" font-size="9.5" fill="#92400e">→ _impl :1363</text>
+  <text x="460" y="390" text-anchor="middle" font-size="9.5" fill="#92400e">CDS :1430 · 回调 Java :1454</text>
+  <text x="460" y="405" text-anchor="middle" font-size="9.5" fill="#92400e" opacity="0.85">bootstrap → load_class</text>
+
+  <line x1="584" y1="373" x2="624" y2="373" stroke="#f59e0b" stroke-width="1.6" marker-end="url(#ar-orange)"/>
+
+  <rect x="624" y="336" width="240" height="74" rx="10" fill="#fffbeb" stroke="#f59e0b" stroke-width="1.6"/>
+  <text x="744" y="356" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#b45309" font-family="Consolas,monospace">ClassLoader::load_class</text>
+  <text x="744" y="374" text-anchor="middle" font-size="9.5" fill="#92400e">classLoader.cpp:1100</text>
+  <text x="744" y="390" text-anchor="middle" font-size="9.5" fill="#92400e">patch-module :1137/:1149</text>
+  <text x="744" y="405" text-anchor="middle" font-size="9.5" fill="#92400e" opacity="0.85">搬运工：打开字节流</text>
+
+  <!-- 箭头：层3 → 层4 -->
+  <line x1="744" y1="410" x2="744" y2="436" stroke="#10b981" stroke-width="1.6" marker-end="url(#ar-green)"/>
+  <text x="756" y="428" font-size="10" fill="#047857">工匠接手</text>
+
+  <!-- ================= 层4 工匠（绿） ================= -->
+  <rect x="36" y="436" width="828" height="22" rx="8" fill="#ecfdf5" stroke="#10b981" stroke-width="1.2"/>
+  <text x="46" y="451" font-size="11" font-weight="bold" fill="#047857">关卡④ · 字节流 → InstanceKlass（classLoader.cpp · klassFactory.cpp · classFileParser.cpp）</text>
+
+  <rect x="36" y="464" width="260" height="62" rx="10" fill="#ecfdf5" stroke="#10b981" stroke-width="1.6"/>
+  <text x="166" y="486" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#047857" font-family="Consolas,monospace">open_stream :1160</text>
+  <text x="166" y="504" text-anchor="middle" font-size="9.5" fill="#047857">jrt / jimage / 文件系统</text>
+  <text x="166" y="519" text-anchor="middle" font-size="9.5" fill="#047857" opacity="0.85">ClassFileStream 只读游标</text>
+
+  <line x1="296" y1="495" x2="336" y2="495" stroke="#10b981" stroke-width="1.6" marker-end="url(#ar-green)"/>
+
+  <rect x="336" y="464" width="248" height="62" rx="10" fill="#ecfdf5" stroke="#10b981" stroke-width="1.6"/>
+  <text x="460" y="486" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#047857" font-family="Consolas,monospace">KlassFactory :172</text>
+  <text x="460" y="504" text-anchor="middle" font-size="9.5" fill="#047857">ClassFileParser 构造 :200</text>
+  <text x="460" y="519" text-anchor="middle" font-size="9.5" fill="#047857" opacity="0.85">parse_stream :6024 逐段读</text>
+
+  <line x1="584" y1="495" x2="624" y2="495" stroke="#10b981" stroke-width="1.6" marker-end="url(#ar-green)"/>
+
+  <rect x="624" y="464" width="240" height="62" rx="10" fill="#ecfdf5" stroke="#10b981" stroke-width="1.6"/>
+  <text x="744" y="486" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#047857" font-family="Consolas,monospace">create_instance_klass</text>
+  <text x="744" y="504" text-anchor="middle" font-size="9.5" fill="#047857">classFileParser.cpp:5304</text>
+  <text x="744" y="519" text-anchor="middle" font-size="9.5" fill="#047857" opacity="0.85">InstanceKlass 骨架产出</text>
+
+  <!-- ================= 底部：循环检测 + 下一站（红/橙虚线） ================= -->
+  <rect x="36" y="546" width="404" height="40" rx="10" fill="#fef2f2" stroke="#ef4444" stroke-width="1.4"/>
+  <text x="238" y="564" text-anchor="middle" font-size="11" font-weight="bold" fill="#b91c1c">循环检测：PlaceholderTable</text>
+  <text x="238" y="580" text-anchor="middle" font-size="9.5" fill="#b91c1c" opacity="0.9">get_entry :225 · DETECT_CIRCULARITY :267 · 抛 ClassCircularityError :718</text>
+
+  <rect x="460" y="546" width="404" height="40" rx="10" fill="#fffbeb" stroke="#f59e0b" stroke-width="1.6" stroke-dasharray="6 4"/>
+  <text x="662" y="564" text-anchor="middle" font-size="11" font-weight="bold" fill="#b45309">下一站 · 链接三阶段</text>
+  <text x="662" y="580" text-anchor="middle" font-size="9.5" fill="#92400e" opacity="0.9">verify → prepare → resolve（站② · 类加载）</text>
+</svg>

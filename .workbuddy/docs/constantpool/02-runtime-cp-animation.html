@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>02 · 常量池站②：#12 从名字变成真身</title>
+<style>
+  :root{
+    --blue:#3b82f6; --purple:#8b5cf6; --orange:#f59e0b; --green:#10b981;
+    --bg:#f6f7fb; --card:#FFFFFF; --ink:#1f2937; --sub:#6b7280; --line:#e5e7eb;
+    --shadow:0 2px 6px rgba(17,24,39,.05);
+    --blue-bg:#eff6ff; --blue-bd:#bfdbfe;
+    --purple-bg:#f5f3ff; --purple-bd:#ddd6fe;
+    --orange-bg:#fffbeb; --orange-bd:#fde68a;
+    --green-bg:#ecfdf5; --green-bd:#a7f3d0;
+    --red:#ef4444; --red-bg:#fef2f2; --red-bd:#fecaca;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{background:var(--bg); color:var(--ink); font-family:'Segoe UI','Microsoft YaHei',sans-serif; padding:18px;}
+  .wrap{max-width:1180px; margin:0 auto;}
+  header{text-align:center; margin-bottom:18px}
+  header h1{font-size:23px; letter-spacing:.5px}
+  header h1 .mono{font-family:Consolas,monospace; color:var(--blue)}
+  header .sub{color:var(--sub); font-size:13px; margin-top:6px}
+  .badges{margin-top:12px; display:flex; gap:8px; justify-content:center; flex-wrap:wrap}
+  header .badge{font-size:12px; padding:3px 12px; border-radius:999px; border:1px solid var(--blue-bd);
+    background:var(--blue-bg); color:var(--blue); font-family:Consolas,monospace}
+  header .badge.purple{border-color:var(--purple-bd); background:var(--purple-bg); color:var(--purple)}
+  header .badge.green{border-color:var(--green-bd); background:var(--green-bg); color:var(--green)}
+  header .badge.orange{border-color:var(--orange-bd); background:var(--orange-bg); color:var(--orange)}
+  .steps{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px; justify-content:center;}
+  .step-pill{font-size:11.5px; padding:5px 11px; border-radius:999px; cursor:pointer; border:1.5px solid var(--line); background:var(--card); color:var(--sub); display:flex; align-items:center; justify-content:center; transition:all .2s; user-select:none; white-space:nowrap; min-width:30px;}
+  .step-pill.active{border-color:var(--blue); background:var(--blue); color:#fff; box-shadow:0 4px 12px rgba(59,130,246,.35);}
+  .step-pill.done{border-color:var(--green); background:var(--green); color:#fff;}
+  .grid{display:grid; grid-template-columns:290px 1fr 320px; gap:12px; margin-bottom:12px;}
+  .panel{background:var(--card); border-radius:12px; padding:14px; box-shadow:var(--shadow);}
+  .panel h2{font-size:14px; margin-bottom:10px; padding-left:8px; border-left:4px solid var(--green);}
+  .panel.p2 h2{border-color:var(--orange);}
+  .panel.p3 h2{border-color:var(--blue);}
+  .face{display:flex; align-items:center; gap:8px; padding:10px 12px; border-radius:10px; margin-bottom:8px;
+        background:var(--blue-bg); cursor:pointer; transition:all .3s; border:1.5px solid transparent;}
+  .face .num{width:26px; height:26px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:bold; color:#fff; font-size:13px;}
+  .face .tt{font-size:13px; font-weight:bold;}
+  .face .ds{font-size:11px; color:var(--sub); margin-top:2px;}
+  .face.f1 .num{background:var(--orange);} .face.f2 .num{background:var(--blue);} .face.f3 .num{background:var(--purple);} .face.f4 .num{background:var(--green);}
+  .face.on{border-color:var(--orange); background:var(--orange-bg); box-shadow:var(--shadow);}
+  .face.f2.on{border-color:var(--blue); background:var(--blue-bg);}
+  .face.f3.on{border-color:var(--purple); background:var(--purple-bg);}
+  .face.f4.on{border-color:var(--green); background:var(--green-bg);}
+  .note{margin-top:10px; font-size:11.5px; color:var(--sub); background:#f3f4f6; border-radius:8px; padding:7px 9px;}
+  .stageBox{background:#111827; border-radius:10px; padding:10px 12px; font-family:Consolas,monospace; font-size:12px; line-height:1.75; color:#e5e7eb; min-height:230px; white-space:pre;}
+  .stageBox .hl{background:#4a3410; border-radius:3px; color:#fbbf24;}
+  .stageBox .dim{color:#64748b;}
+  .stageBox .grn{color:#a7f3d0;}
+  .stageBox .org{color:#fde68a;}
+  .stageBox .pur{color:#ddd6fe;}
+  .stageBox .blu{color:#bfdbfe;}
+  .stageBox .red{color:#fca5a5;}
+  .detail{margin-top:8px; font-size:12px; color:#4b5563; background:#f3f4f6; border-radius:8px; padding:7px 9px; min-height:34px;}
+  .src{background:#111827; border-radius:12px; padding:12px 14px; box-shadow:var(--shadow); margin-bottom:12px;}
+  .src h2{font-size:13px; color:#9ca3af; margin-bottom:8px;}
+  .src .code{font-family:Consolas,monospace; font-size:12px; line-height:1.7; white-space:pre; overflow-x:auto; color:#e5e7eb;}
+  .src .code .hl{background:#4a3410; border-radius:3px; color:#fbbf24;}
+  .src .code .dim{color:#64748b;}
+  .src .code .grn{color:#a7f3d0;}
+  .src .code .org{color:#fde68a;}
+  .src .code .pur{color:#ddd6fe;}
+  .src .code .blu{color:#bfdbfe;}
+  .scene{margin-top:8px; font-size:11px; color:#6b7280; background:#f3f4f6; border-radius:8px; padding:6px 8px;}
+  .ctl{display:flex; align-items:center; gap:10px; justify-content:center; padding:10px; background:var(--card); border-radius:12px; box-shadow:var(--shadow);}
+  .btn{width:44px; height:44px; border-radius:50%; border:none; background:var(--blue); color:#fff; font-size:16px; cursor:pointer; transition:all .15s; font-weight:bold;}
+  .btn:hover{transform:scale(1.08);}
+  .btn.green{background:var(--green);}
+  .btn.orange{background:var(--orange); width:52px; height:52px;}
+  .hint{font-size:12px; color:var(--sub);}
+  .stepDesc{font-size:14px; font-weight:normal; line-height:1.85; color:#334155; background:var(--blue-bg); border-radius:9px; padding:11px 16px; margin-bottom:12px; border-left:4px solid var(--blue);}
+  .stepDesc b{color:var(--blue); font-weight:600;}
+  .stepDesc code{color:#7c3aed; font-family:Consolas,monospace; background:rgba(139,92,246,.10); padding:0 5px; border-radius:4px; font-size:12.5px;}
+  .kbd{display:inline-block; border:1px solid var(--line); border-radius:4px; padding:0 6px; background:#fff; font-size:11px; color:#4b5563;}
+  @media(max-width:1000px){.grid{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1><span class="mono">Constant_Pool ②</span> · #12 从「名字」变成「真身」</h1>
+    <div class="sub">oops/constantPool.cpp · share/interpreter/interpreterRuntime.cpp · oops/cpCache.cpp · JDK 28 mainline</div>
+    <div class="badges">
+      <span class="badge orange">入口与快路径</span>
+      <span class="badge">慢路径解析</span>
+      <span class="badge purple">invoke 解析与缓存</span>
+      <span class="badge green">字符串与闭环</span>
+    </div>
+  </header>
+
+  <div class="steps" id="pills"></div>
+  <div class="stepDesc" id="stepDesc">点击 ▶ 开始播放，Space 播放/暂停，← → 步进，R 重置</div>
+
+  <div class="grid">
+    <div class="panel p1">
+      <h2>四关</h2>
+      <div class="face f1 on" id="face1">
+        <div class="num">1</div>
+        <div><div class="tt">入口与快路径</div><div class="ds">klass_at_impl 双路径入口</div></div>
+      </div>
+      <div class="face f2" id="face2">
+        <div class="num">2</div>
+        <div><div class="tt">慢路径解析</div><div class="ds">resolve_or_fail → 写回 → CAS tag</div></div>
+      </div>
+      <div class="face f3" id="face3">
+        <div class="num">3</div>
+        <div><div class="tt">invoke 解析与缓存</div><div class="ds">resolve_from_cache → cpCache</div></div>
+      </div>
+      <div class="face f4" id="face4">
+        <div class="num">4</div>
+        <div><div class="tt">字符串与闭环</div><div class="ds">StringTable::intern + 全链路</div></div>
+      </div>
+      <div class="note" id="fnote">当前：白话速览</div>
+    </div>
+
+    <div class="panel p2">
+      <h2>场景</h2>
+      <div class="stageBox" id="stage"></div>
+      <div class="detail" id="detail"></div>
+    </div>
+
+    <div class="panel p3">
+      <h2>源码</h2>
+      <div class="src">
+        <h2>constantPool.cpp · interpreterRuntime.cpp · cpCache.cpp</h2>
+        <div class="code" id="src"></div>
+      </div>
+      <div class="scene" id="scene"></div>
+    </div>
+  </div>
+
+  <div class="ctl">
+    <button class="btn" id="btnPrev" title="上一步 (←)">◀</button>
+    <button class="btn orange" id="btnPlay" title="播放/暂停 (Space)">▶</button>
+    <button class="btn" id="btnNext" title="下一步 (→)">▶</button>
+    <button class="btn green" id="btnReset" title="重置 (R)">↺</button>
+    <span class="hint"><span class="kbd">Space</span> 播放/暂停 · <span class="kbd">←</span> <span class="kbd">→</span> 步进 · <span class="kbd">R</span> 重置 · 点击步骤胶囊跳转</span>
+  </div>
+</div>
+
+<script>
+(() => {
+  const S = {
+    face1: document.getElementById('face1'),
+    face2: document.getElementById('face2'),
+    face3: document.getElementById('face3'),
+    face4: document.getElementById('face4'),
+    fnote: document.getElementById('fnote'),
+    stage: document.getElementById('stage'),
+    detail: document.getElementById('detail'),
+    src: document.getElementById('src'),
+    scene: document.getElementById('scene'),
+    desc: document.getElementById('stepDesc'),
+    pills: document.getElementById('pills'),
+  };
+  function faces(n){
+    ['face1','face2','face3','face4'].forEach((id,i)=>{
+      const el = S[id];
+      el.className = 'face f' + (i+1) + (i+1 === n ? ' on' : '');
+    });
+  }
+  function stage(html){ S.stage.innerHTML = html; }
+  function src(html){ S.src.innerHTML = html; }
+  function scene(txt){ S.scene.innerHTML = txt; }
+
+  const steps = [
+    // 0 白话速览
+    { d:`<span style="display:inline-block;background:#dbeafe;color:#1d4ed8;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">白话速览</span> 这一站在演什么：<b>把「名字」换成「真身」</b>。
+<b>比喻</b>：站①结束时，常量池 = 一张<b>名录簿</b>，#12 只写着「Dog.speak()V」（名字）。本站做一件事：<b>按名字找到真正的人</b>——找到 Dog 类的 Klass 对象、找到 speak 方法的 Method 对象，并把「人」直接写回名录簿（缓存）。
+<b>技术对照</b>：按名字找人 = 解析（resolve）；找类 = <code>klass_at_impl</code>（constantPool.cpp:631）；找方法 = <code>resolve_invoke</code>（interpreterRuntime.cpp:864）；写回名录簿 = 存进 <code>_resolved_klasses</code> / ConstantPoolCache。
+<b>记住一句</b>：解析只发生一次，之后就「直接读人、不再翻名字」。`,
+      fn:()=>{
+        faces(1); S.fnote.innerHTML='当前：白话速览<br>先讲人话';
+        stage(`<span class="blu">白话速览 · 名字 → 真身</span>
+<span class="dim">名录簿 #12  →  "Dog.speak()V"（名字）</span>
+<span class="org">解析 resolve → Dog(Klass*) + speak(Method*)</span>
+<span class="grn">写回缓存 → 下次直接读人</span>
+<span class="dim">┌──────────────────────────────┐</span>
+<span class="dim">│  #12 Methodref 名字           │</span>
+<span class="org">│  ↓ resolve（只发生一次）      │</span>
+<span class="grn">│  Method* 真身（缓存）        │</span>
+<span class="dim">└──────────────────────────────┘</span>
+<span class="org">类：klass_at_impl :631</span>
+<span class="org">方法：resolve_invoke :864</span>`);
+        S.detail.textContent='本站回答：invokevirtual #12 的 #12，如何从「名字」解析成真正的 Method* 并缓存。';
+        src(`<span class="dim">// 术语对照（人话 → 黑话）</span>
+<span class="blu">按名字找人</span>    → <span class="grn">解析 resolve</span>
+<span class="blu">找类</span>        → <span class="grn">klass_at_impl（constantPool.cpp:631）</span>
+<span class="blu">找方法</span>      → <span class="grn">resolve_invoke（interpreterRuntime.cpp:864）</span>
+<span class="blu">写回名录簿</span>  → <span class="grn">_resolved_klasses / ConstantPoolCache</span>
+<span class="blu">只发生一次</span>  → <span class="grn">之后走快路径</span>`);
+        scene('白话速览：<b>名字 → 真身</b>');
+      }},
+    // 1 关卡① 入口
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：所有「按 #index 找类」的操作，最终都汇到 <code>klass_at_impl</code> 这一个函数——它有两个出口：<b>快路径</b>（已解析，直接读）和<b>慢路径</b>（没解析，去加载）。
+<code>ConstantPool::klass_at_impl</code>（constantPool.cpp:631）是运行时常量池解析的<b>总入口</b>：字节码里的类引用（<code>ldc</code>、<code>new</code>、<code>checkcast</code>、invoke 的 class_index 等）都先取 tag 判断——tag 已是 <code>Klass</code> 说明解析过，走快路径；还是 <code>UnresolvedClass</code>(100) 就得走慢路径调 SystemDictionary。
+<b>为什么是这里</b>：站①结束时 Class 项只转成了 <code>UnresolvedClass</code>（内部 tag 100）+ 预留 <code>resolved_klass_index</code>——「名字确定了、位子占好了」，但 Klass 本体要等<b>第一次真正用到</b>才去加载。`,
+      fn:()=>{
+        faces(1); S.fnote.innerHTML='当前：关卡 ①<br>入口与快路径';
+        stage(`<span class="org">klass_at_impl（constantPool.cpp:631）总入口</span>
+<span class="dim">字节码类引用（ldc/new/checkcast/invoke…）</span>
+<span class="dim">        │</span>
+<span class="dim">        ▼</span>
+<span class="org">  取 tag：是 Klass？ ──是──► 快路径（:645）直接读人</span>
+<span class="dim">        │否</span>
+<span class="dim">        ▼</span>
+<span class="dim">  慢路径：SystemDictionary 解析（:674）</span>
+<span class="dim">        │</span>
+<span class="grn">  写回 _resolved_klasses（:713）+ CAS tag（:716）</span>
+<span class="dim">  下次再来 → 快路径</span>`);
+        S.detail.textContent='klass_at_impl（:631）= 运行期类解析总入口；双路径：快（:645-649）慢（:674）。';
+        src(`<span class="dim">// constantPool.cpp:631 klass_at_impl</span>
+<span class="org">Klass* ConstantPool::klass_at_impl(</span>
+<span class="org">    const constantPoolHandle& this_cp,</span>
+<span class="org">    int which, TRAPS) {</span>
+<span class="dim">  // :645-649 快路径：tag 已是 Klass</span>
+<span class="dim">  //   → resolved_klasses()->at(...)</span>
+<span class="dim">  // :674 慢路径：SystemDictionary::resolve_or_fail</span>
+<span class="grn">// 站①预留的 resolved_klass_index 在这里派上用场</span>`);
+        scene('场景1：<b>klass_at_impl 双路径总入口</b>');
+      }},
+    // 2 关卡① 快路径
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：第一次解析后，tag 从 100（UnresolvedClass）变成「Klass 真身」——以后再查这个 #index，<b>不用再解析，直接把人从数组里捞出来</b>。这就是「只发生一次」的底层机制。
+快路径在 klass_at_impl 开头（constantPool.cpp:645-649）：<code>if (tag.is_klass())</code> 为真 → 从 <code>resolved_klasses()->at(resolved_klass_index)</code> 直接取 Klass* 返回。这个 <code>_resolved_klasses</code> 数组（constantPool.hpp:97）就是站①第二遍 fixup 时预留槽位的那张表——<b>名字 → 真身 的映射就存这里</b>。
+<b>代价与收益</b>：每个 UnresolvedClass 项占一个数组槽，解析一次、终身直读；代价是空间（每个类项一个指针），收益是 O(1) 且无锁——数组下标直取，全程无同步。`,
+      fn:()=>{
+        faces(1); S.fnote.innerHTML='当前：关卡 ①<br>入口与快路径';
+        stage(`<span class="org">快路径：tag.is_klass() → 直接读（:645-649）</span>
+<span class="dim">_resolved_klasses[]（constantPool.hpp:97）</span>
+<span class="dim">┌──────┬──────┬──────┬──────┬──────┐</span>
+<span class="blu">│ [0]  │ [1]  │ [2]  │ [3]  │ ...  │</span>
+<span class="dim">│ null │ null │ Klass│ null │      │</span>
+<span class="dim">│      │      │ "Dog"│      │      │</span>
+<span class="dim">└──────┴──────┴──▲───┴──────┴──────┘</span>
+<span class="org">                │ resolved_klass_index=2</span>
+<span class="dim">#5 Class 项 ─────┘（站①预留的槽位）</span>
+<span class="grn">resolved_klasses()->at(2) → Klass*</span>
+<span class="dim">O(1) 直取，无锁无同步</span>`);
+        S.detail.textContent='快路径（:645-649）：tag.is_klass() → resolved_klasses()->at(resolved_klass_index) 直取。';
+        src(`<span class="dim">// constantPool.cpp:645-649 快路径</span>
+<span class="org">if (tag.is_klass()) {</span>
+<span class="org">  Klass* k = this_cp->resolved_klasses()</span>
+<span class="org">                    ->at(klass_slot.resolved_klass_index());</span>
+<span class="org">  return k;</span>
+<span class="org">}</span>
+<span class="grn">// 站① fixup 时分配的 resolved_klass_index 在此消费</span>`);
+        scene('场景2：<b>快路径：已解析直接读数组</b>');
+      }},
+    // 3 关卡② 慢路径
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：tag 还是「未解析类」时，说明这是<b>第一次</b>用到这个类——JVM 慢下来，交给 SystemDictionary 按名字去加载/查找这个类。
+慢路径（constantPool.cpp:674）：<code>SystemDictionary::resolve_or_fail(name, loader, ...)</code>——拿类名的 Symbol 去类字典（SystemDictionary）查：<b>已加载过就直接返回 Klass*；没加载过就触发加载</b>（加载链路是类加载系列的故事，这里只消费它的结果）。
+<b>关键点</b>：resolve_or_fail 名字里的 fail 是「解析失败就抛异常」——类不存在、加载失败，都会在这里抛出（NoClassDefFoundError 等）。解析是<b>有代价的慢操作</b>，所以 JVM 才拼命缓存结果。`,
+      fn:()=>{
+        faces(2); S.fnote.innerHTML='当前：关卡 ②<br>慢路径解析';
+        stage(`<span class="org">慢路径：SystemDictionary::resolve_or_fail（:674）</span>
+<span class="dim">#5 UnresolvedClass "Dog"</span>
+<span class="dim">        │  class_name = "Dog"（Symbol*）</span>
+<span class="dim">        ▼</span>
+<span class="org">SystemDictionary::resolve_or_fail(name, loader)</span>
+<span class="dim">        │</span>
+<span class="dim">        ├─ 已加载？──► 返回现有 Klass*</span>
+<span class="dim">        │</span>
+<span class="org">        └─ 未加载？──► 触发类加载（下一系列）</span>
+<span class="dim">        │</span>
+<span class="grn">失败 → 抛 NoClassDefFoundError 等</span>`);
+        S.detail.textContent='慢路径（:674）：SystemDictionary::resolve_or_fail(name, loader)——查字典或触发加载，失败即抛异常。';
+        src(`<span class="dim">// constantPool.cpp:674 慢路径</span>
+<span class="org">Klass* k = SystemDictionary::resolve_or_fail(</span>
+<span class="org">    sym, loader_data, class_loader, THREAD);</span>
+<span class="dim">// 已加载 → 直接返回；未加载 → 触发加载</span>
+<span class="grn">// 类加载链路（defineClass）是下一个系列的主题</span>`);
+        scene('场景3：<b>慢路径：SystemDictionary 兜底</b>');
+      }},
+    // 4 关卡② 失败路径
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：解析可能失败（类不存在、访问权限不够、类文件损坏）——JVM 在这里把异常<b>记录下来</b>，并给 tag 打上「坏类」标记，防止每次访问都重复失败。
+失败路径（constantPool.cpp:695）：<code>save_and_throw_exception(...)</code> 把异常挂到当前线程；同时 tag 被置为 <code>UnresolvedClassInError</code>(103)——这是站①见过的内部 tag 之一，含义是「这个类项解析<b>失败过</b>，别再试了」。
+<b>为什么标记 InError</b>：没有这个标记，每次执行到这条字节码都会重新尝试解析、再次失败、再次抛异常——性能灾难。标记之后 JVM 可以快速失败，也方便调试（异常信息保留在池里）。`,
+      fn:()=>{
+        faces(2); S.fnote.innerHTML='当前：关卡 ②<br>慢路径解析';
+        stage(`<span class="org">失败路径：save_and_throw_exception（:695）</span>
+<span class="dim">resolve_or_fail 抛异常</span>
+<span class="dim">        │</span>
+<span class="dim">        ▼</span>
+<span class="org">save_and_throw_exception(this_cp, which, ...)</span>
+<span class="dim">        │</span>
+<span class="org">  tag：UnresolvedClass(100) ──► UnresolvedClassInError(103)</span>
+<span class="dim">        │</span>
+<span class="grn">  异常挂到当前线程，下次快速失败</span>
+<span class="dim">  （类缺失 / 权限不足 / 文件损坏）</span>`);
+        S.detail.textContent='失败（:695）：save_and_throw_exception 记录异常 + tag 置 UnresolvedClassInError(103)，避免重复失败。';
+        src(`<span class="dim">// constantPool.cpp:695 失败路径</span>
+<span class="org">if (k == nullptr) {</span>
+<span class="org">  save_and_throw_exception(this_cp, which,</span>
+<span class="org">                           sym, THREAD);</span>
+<span class="org">  return nullptr;</span>
+<span class="org">}</span>
+<span class="grn">// tag 同时置为 UnresolvedClassInError = 103</span>
+<span class="dim">// constantTag.hpp:42 UnresolvedClassInError = 103</span>`);
+        scene('场景4：<b>解析失败 → 记录异常 + InError 标记</b>');
+      }},
+    // 5 关卡② 写回 + CAS
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：解析成功了！JVM 把 Klass* 写进 <code>_resolved_klasses</code> 数组（站①预留的槽位），再用 CAS 把 tag 从「未解析类」改成「真 Klass」——<b>发布</b>这次解析成果。
+写回两步（constantPool.cpp:713-718）：① <code>AtomicAccess::release_store(adr, k)</code> 把 Klass* 写进 <code>_resolved_klasses</code>（release 语义保证先写数据后改 tag）；② <code>Atomic::cmpxchg(...)</code> 把 tags 数组里该槽从 <code>JVM_CONSTANT_UnresolvedClass</code>(100) CAS 成 <code>JVM_CONSTANT_Class</code>。
+<b>为什么是 CAS</b>：多线程可能同时解析同一个 #index——CAS 保证只有<b>一个</b>线程能成功改 tag（赢家），输家看到 tag 已变，回头走快路径读取即可。这是「解析只发生一次」的并发保证。`,
+      fn:()=>{
+        faces(2); S.fnote.innerHTML='当前：关卡 ②<br>慢路径解析';
+        stage(`<span class="org">写回：release_store + CAS（:713-718）</span>
+<span class="dim">① release_store(adr, k) :713</span>
+<span class="dim">   _resolved_klasses[2] = Klass* "Dog"</span>
+<span class="dim">   （release 语义：先写人，后改标签）</span>
+<span class="dim">② Atomic::cmpxchg :716</span>
+<span class="org">   tags[#5]: UnresolvedClass(100)</span>
+<span class="org">   ────────────────► Class(Klass 真身)</span>
+<span class="grn">   并发安全：只有一个线程 CAS 成功</span>
+<span class="dim">   输家回快路径直接读数组</span>`);
+        S.detail.textContent='写回（:713-718）：release_store 存 Klass* + CAS 改 tag（100 → Klass），发布解析结果。';
+        src(`<span class="dim">// constantPool.cpp:713-718 写回发布</span>
+<span class="org">AtomicAccess::release_store(adr, k);   // :713</span>
+<span class="dim">// 数据先行可见（release），然后才改 tag</span>
+<span class="org">Atomic::cmpxchg(&tags()->at(which),   // :716</span>
+<span class="org">    JVM_CONSTANT_UnresolvedClass,</span>
+<span class="org">    JVM_CONSTANT_Class);</span>
+<span class="grn">// CAS 保证并发下解析只发生一次</span>`);
+        scene('场景5：<b>release_store 写人 + CAS 改 tag</b>');
+      }},
+    // 6 关卡② 并发复查
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：两个线程同时解析同一个类时，输家要确认赢家到底成功没——如果赢家也失败了（InError），输家不能傻等，要接着抛异常。
+竞态复查（constantPool.cpp:721-725）：CAS 失败说明 tag 已被别人改掉，重新读 tag——若已是 <code>Klass</code>（真身），走快路径返回；若变成 <code>UnresolvedClassInError</code>(103)，说明对方解析失败，自己也走 save_and_throw 抛异常。
+<b>双状态机的妙处</b>：tag 携带三态——100 未解析 / Klass 已解析 / 103 解析失败。一次 CAS 原子切换，天然解决「并发解析」与「并发失败」两个难题。`,
+      fn:()=>{
+        faces(2); S.fnote.innerHTML='当前：关卡 ②<br>慢路径解析';
+        stage(`<span class="org">竞态复查：CAS 失败的输家（:721-725）</span>
+<span class="dim">线程 A、B 同时解析 #5</span>
+<span class="dim">A  CAS 成功 ──► 写入 Klass*</span>
+<span class="org">B  CAS 失败 ──► 重新读 tag</span>
+<span class="dim">        │</span>
+<span class="dim">        ├─ tag = Klass      ──► 快路径读人</span>
+<span class="org">        └─ tag = InError(103)─► 也抛异常</span>
+<span class="grn">三态：100 未解析 / Klass 成功 / 103 失败</span>`);
+        S.detail.textContent='竞态（:721-725）：CAS 失败后重读 tag——Klass 则快路径，InError(103) 则抛异常。';
+        src(`<span class="dim">// constantPool.cpp:721-725 输家复查</span>
+<span class="org">if (!Atomic::cmpxchg(...)) {</span>
+<span class="org">  // CAS 失败：别人改了 tag，重读</span>
+<span class="org">  if (tags()->at(which).is_klass()) {</span>
+<span class="org">    return resolved_klasses()->at(...);</span>
+<span class="org">  }</span>
+<span class="org">  // InError → 对方失败，自己也抛</span>
+<span class="org">  save_and_throw_exception(...);</span>
+<span class="org">}</span>
+<span class="grn">// 一次 CAS 原子切换，解决并发解析+并发失败</span>`);
+        scene('场景6：<b>并发竞态：InError 复查</b>');
+      }},
+    // 7 关卡③ invoke 入口
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：切到方法调用场景——invokevirtual 第一次执行时，解释器模板先走 <code>resolve_from_cache</code>，按字节码类型分路，invoke 类统一转给 <code>resolve_invoke</code>。
+JDK 28 的模板入口（interpreterRuntime.cpp:1063）：<code>InterpreterRuntime::resolve_from_cache</code> 拿当前字节码（<code>getstatic</code>/<code>putstatic</code>/<code>invokevirtual</code>/<code>invokedynamic</code>…）做 switch 分路（:1064-1086），invoke 系列（virtual/special/static/interface）都调 <code>resolve_invoke</code>（:864）。
+<b>为什么先查缓存</b>：解释器每次执行 invoke 都进这里（除非已缓存）——先看 ConstantPoolCache 里有没有直接可用的 Method*，没有才真正解析。这正是 method-call 系列讲的「缓存热路径」入口。`,
+      fn:()=>{
+        faces(3); S.fnote.innerHTML='当前：关卡 ③<br>invoke 解析与缓存';
+        stage(`<span class="org">invoke 模板入口：resolve_from_cache（:1063）</span>
+<span class="dim">解释器执行 invokevirtual #12</span>
+<span class="dim">        │</span>
+<span class="dim">        ▼</span>
+<span class="org">resolve_from_cache(bytecode)  :1063</span>
+<span class="dim">        │ switch(bytecode) :1064-1086</span>
+<span class="dim">        ├─ get/putstatic  → 字段解析</span>
+<span class="org">        └─ invoke*        → resolve_invoke（:864）</span>
+<span class="dim">        │</span>
+<span class="grn">先查 ConstantPoolCache，没有才真解析</span>`);
+        S.detail.textContent='invoke 入口（interpreterRuntime.cpp:1063）：resolve_from_cache 按字节码分路，invoke 类转 resolve_invoke（:864）。';
+        src(`<span class="dim">// interpreterRuntime.cpp:1063-1086</span>
+<span class="org">IRT_ENTRY(void, InterpreterRuntime::</span>
+<span class="org">    resolve_from_cache(JavaThread* current,</span>
+<span class="org">                       Bytecodes::Code bytecode))</span>
+<span class="org">  switch (bytecode) {</span>
+<span class="dim">    case Bytecodes::_getstatic: ...</span>
+<span class="org">    case Bytecodes::_invokevirtual:</span>
+<span class="org">      resolve_invoke(current, bytecode, ...);</span>
+<span class="grn">// 所有 invoke* 汇到 resolve_invoke（:864）</span>`);
+        scene('场景7：<b>invoke 入口 resolve_from_cache</b>');
+      }},
+    // 8 关卡③ resolve_invoke
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：resolve_invoke 做两件事：让 LinkResolver 解析出<b>该调哪个方法</b>，再把结果写进 ConstantPoolCache——下次执行直接命中缓存。
+<code>resolve_invoke</code>（interpreterRuntime.cpp:864）：先 <code>LinkResolver::resolve_invoke(call_info, ...)</code>（:893）完成解析（虚方法查 vtable、接口查 itable、静态直接定位），拿到 <code>CallInfo</code> 后调 <code>update_invoke_cp_cache_entry</code>（:910）把结果写进缓存（内部 :956/:959/:962 分派到 set_direct/vtable/itable_call）。
+<b>和 klass_at_impl 的关系</b>：LinkResolver 解析时通过 <code>klass_ref_at</code>（constantPool.cpp:918）取接收者类 → 走 <code>klass_at</code> → <code>klass_at_impl</code>——所以方法的解析<b>天然复用</b>类的解析+缓存。`,
+      fn:()=>{
+        faces(3); S.fnote.innerHTML='当前：关卡 ③<br>invoke 解析与缓存';
+        stage(`<span class="org">resolve_invoke（interpreterRuntime.cpp:864）</span>
+<span class="dim">invokevirtual #12</span>
+<span class="dim">        │</span>
+<span class="dim">        ▼</span>
+<span class="org">LinkResolver::resolve_invoke  :893</span>
+<span class="dim">   → 虚方法查 vtable / 接口查 itable</span>
+<span class="dim">   → 取接收者类：klass_ref_at :918</span>
+<span class="dim">        │              → klass_at_impl :631</span>
+<span class="dim">        ▼</span>
+<span class="org">update_invoke_cp_cache_entry  :910</span>
+<span class="grn">   → 写 ConstantPoolCache（下次命中）</span>`);
+        S.detail.textContent='resolve_invoke（:864）：LinkResolver 解析（:893）+ 写缓存（:910）；取类走 klass_at_impl（:631）。';
+        src(`<span class="dim">// interpreterRuntime.cpp:864-913</span>
+<span class="org">IRT_ENTRY(void, InterpreterRuntime::</span>
+<span class="org">    resolve_invoke(JavaThread* current,</span>
+<span class="org">                   Bytecodes::Code bytecode,</span>
+<span class="org">                   uint32_t index))</span>
+<span class="org">  LinkResolver::resolve_invoke(          // :893</span>
+<span class="org">      call_info, ...);</span>
+<span class="org">  update_invoke_cp_cache_entry(          // :910</span>
+<span class="org">      ...);</span>
+<span class="grn">// 解析 + 缓存，一次完成</span>`);
+        scene('场景8：<b>resolve_invoke：解析 + 写缓存</b>');
+      }},
+    // 9 关卡③ LinkResolver
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：LinkResolver 是「语义裁决所」——按字节码语义决定这个 invoke 到底怎么调：虚分派 / 接口分派 / 静态直调 / 特化调用。
+<code>LinkResolver::resolve_invoke</code>（linkResolver.cpp:1715）：按字节码类型分路（:1717-1722）——<code>_invokevirtual</code> → <code>resolve_virtual_call</code>（查 vtable）、<code>_invokeinterface</code> → <code>resolve_interface_call</code>（查 itable）、<code>_invokestatic</code> → 直接定位、<code>_invokespecial</code> → 特化调用。构造 <code>LinkInfo</code>（:275-277）时调 <code>pool->klass_ref_at</code>（constantPool.cpp:918）取接收者类。
+<b>呼应 method-call 系列</b>：这就是五站动画里「linktime 解析：resolve_method 七步找字面上指向谁」的 HotSpot 实现点——最终落到 <code>resolve_method</code>（linkResolver.cpp:753）。`,
+      fn:()=>{
+        faces(3); S.fnote.innerHTML='当前：关卡 ③<br>invoke 解析与缓存';
+        stage(`<span class="org">LinkResolver::resolve_invoke（linkResolver.cpp:1715）</span>
+<span class="dim">        │ switch(bytecode)</span>
+<span class="org">_invokevirtual   → resolve_virtual_call  vtable</span>
+<span class="org">_invokeinterface → resolve_interface_call itable</span>
+<span class="org">_invokestatic    → 直接定位（静态方法）</span>
+<span class="org">_invokespecial   → 特化调用（super/private）</span>
+<span class="dim">        │</span>
+<span class="org">LinkInfo 构造 :275-277</span>
+<span class="org">  → pool->klass_ref_at :918（取类）</span>
+<span class="org">  → klass_at → klass_at_impl :631</span>
+<span class="grn">最终落点：resolve_method（linkResolver.cpp:753）</span>`);
+        S.detail.textContent='LinkResolver::resolve_invoke（:1715）：按字节码分路（vtable/itable/static/special）；取类经 klass_ref_at（:918）。';
+        src(`<span class="dim">// linkResolver.cpp:1715-1722 分路</span>
+<span class="org">void LinkResolver::resolve_invoke(</span>
+<span class="org">    CallInfo& result, ...) {</span>
+<span class="org">  switch (bytecode) {</span>
+<span class="org">    case Bytecodes::_invokevirtual:</span>
+<span class="org">      resolve_virtual_call(...);  break;</span>
+<span class="org">    case Bytecodes::_invokeinterface:</span>
+<span class="org">      resolve_interface_call(...); break;</span>
+<span class="org">    ...</span>
+<span class="grn">// 每类语义 → 各自解析策略</span>`);
+        scene('场景9：<b>LinkResolver 按语义分路解析</b>');
+      }},
+    // 10 关卡③ cpCache 结构
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：解析结果缓存进 <code>ConstantPoolCache</code>——JDK 28 里它是 <code>ResolvedMethodEntry</code> 数组，每格存<b>方法真身 + 分派信息 + 原始索引</b>，解释器下次执行直接命中。
+JDK 28 结构（cpCache.hpp:76）：<code>ResolvedMethodEntry* _resolved_method_entries</code>——一个按 cp index 对齐的数组。每格（resolvedMethodEntry.hpp:71-83）含：<code>_method</code>（Method* 真身）、union <code>_entry_specific</code>（vtable/itable 索引或目标方法）、<code>_cpool_index</code>（原始常量池索引）、<code>_flags</code>、<code>_bytecode1/_bytecode2</code>（校验用字节码）。
+<b>为什么叫 Cache 而不是直接存 Method*</b>：缓存里不只有方法指针，还有<b>分派方式</b>（direct/vtable/itable）和<b>原始字节码</b>（防止缓存被错误复用）——信息比单纯指针多。`,
+      fn:()=>{
+        faces(3); S.fnote.innerHTML='当前：关卡 ③<br>invoke 解析与缓存';
+        stage(`<span class="org">ConstantPoolCache（cpCache.hpp:76）</span>
+<span class="dim">_resolved_method_entries[]</span>
+<span class="dim">┌─────────────────────────────┐</span>
+<span class="org">│ Method* _method（真身）      │</span>
+<span class="org">│ union _entry_specific        │</span>
+<span class="dim">│   ├ vtable_index             │</span>
+<span class="dim">│   ├ itable_index             │</span>
+<span class="dim">│   └ target method（direct）  │</span>
+<span class="org">│ int _cpool_index（原始#12） │</span>
+<span class="org">│ flags + bytecode1/2 校验     │</span>
+<span class="dim">└─────────────────────────────┘</span>
+<span class="grn">resolvedMethodEntry.hpp:71-83</span>`);
+        S.detail.textContent='缓存结构（cpCache.hpp:76 + resolvedMethodEntry.hpp:71-83）：Method* + 分派方式 + 原始索引 + 字节码校验。';
+        src(`<span class="dim">// resolvedMethodEntry.hpp:71-83 字段</span>
+<span class="org">class ResolvedMethodEntry {</span>
+<span class="org">  Method* _method;              // 方法真身</span>
+<span class="org">  union {                       // 分派信息</span>
+<span class="dim">    int   _vtable_index;</span>
+<span class="dim">    int   _itable_index;</span>
+<span class="dim">    Method* _target;            // direct</span>
+<span class="org">  } _entry_specific;</span>
+<span class="org">  int _cpool_index;             // 原始 #12</span>
+<span class="org">  ...</span>
+<span class="grn">// cpCache.hpp:76 _resolved_method_entries</span>`);
+        scene('场景10：<b>ConstantPoolCache 每格 = 方法+分派+索引</b>');
+      }},
+    // 11 关卡③ 写缓存
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：把解析结果写进缓存的三条路：直调（static/private）、vtable 分派（virtual）、itable 分派（interface）——三种调用方式各自的信息写进对应字段。
+写缓存（cpCache.cpp:79）：<code>set_direct_or_vtable_call</code> 是核心入口，包装三个具体 setter——<code>set_direct_call</code>（:237，静态/私有/构造：存目标 Method*）、<code>set_vtable_call</code>（:244，虚方法：存 vtable 索引）、<code>set_itable_call</code>（:251，接口方法：存 itable 索引）。
+<b>与解释器执行的衔接</b>：下次解释器执行同一条 invokevirtual 时，直接读缓存条目——<code>_bytecode1</code> 校验字节码没变，<code>_entry_specific</code> 给出分派目标，不再进 resolve。这就是 method-call 五站里的「缓存热路径」。`,
+      fn:()=>{
+        faces(3); S.fnote.innerHTML='当前：关卡 ③<br>invoke 解析与缓存';
+        stage(`<span class="org">写缓存：set_direct_or_vtable_call（cpCache.cpp:79）</span>
+<span class="dim">解析结果 CallInfo</span>
+<span class="dim">        │</span>
+<span class="dim">        ▼</span>
+<span class="org">set_direct_or_vtable_call  :79</span>
+<span class="dim">  ├─ set_direct_call  :237  静态/私有/构造 → Method*</span>
+<span class="dim">  ├─ set_vtable_call  :244  虚方法 → vtable 索引</span>
+<span class="org">  └─ set_itable_call  :251  接口方法 → itable 索引</span>
+<span class="grn">下次执行 → 读缓存，不进解析</span>`);
+        S.detail.textContent='写缓存（cpCache.cpp:79）：set_direct（:237）/set_vtable（:244）/set_itable（:251）三路。';
+        src(`<span class="dim">// cpCache.cpp:79 set_direct_or_vtable_call</span>
+<span class="org">void ConstantPoolCacheEntry::</span>
+<span class="org">    set_direct_or_vtable_call(</span>
+<span class="org">        ..., methodHandle method, ...) {</span>
+<span class="dim">  // 按调用方式分派三个 setter</span>
+<span class="dim">  //   set_direct_call :237（存 Method*）</span>
+<span class="dim">  //   set_vtable_call :244（存 vtable idx）</span>
+<span class="dim">  //   set_itable_call :251（存 itable idx）</span>
+<span class="grn">// 结果：解释器下一次 O(1) 命中</span>`);
+        scene('场景11：<b>set_direct_or_vtable_call 三路写缓存</b>');
+      }},
+    // 12 关卡④ String 解析
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：字符串字面量（"hello"）也一样——第一次用到才 intern 成 Java String 对象，之后从缓存直读。
+<code>string_at_impl</code>（constantPool.cpp:1394）：先查 <code>resolved_reference</code> 缓存（:1396，已 intern 过直接返回）；没命中则取 Utf8 Symbol → <code>StringTable::intern(sym, ...)</code>（:1400）在全局字符串表里找/建 Java String → <code>string_at_put</code>（:1401）写回缓存。
+<b>和 Utf8 的区别</b>：站①的 Utf8 是 Symbol（JVM 内部符号），这里的 String 是 Java 层的 <code>java.lang.String</code> 对象——intern 进 StringTable 保证「内容相同 → 同一个对象」（字面量天然 intern，所以 <code>"a"=="a"</code> 为 true）。`,
+      fn:()=>{
+        faces(4); S.fnote.innerHTML='当前：关卡 ④<br>字符串与闭环';
+        stage(`<span class="org">String 解析：string_at_impl（constantPool.cpp:1394）</span>
+<span class="dim">ldc "hello"（#7 String 项）</span>
+<span class="dim">        │</span>
+<span class="dim">        ▼</span>
+<span class="org">resolved_reference 有？ :1396 ──是──► 直接返回</span>
+<span class="dim">        │否</span>
+<span class="dim">        ▼</span>
+<span class="org">取 Utf8 Symbol "hello"</span>
+<span class="org">StringTable::intern :1400（找/建 String 对象）</span>
+<span class="dim">        │</span>
+<span class="org">string_at_put 写缓存 :1401</span>
+<span class="grn">"a"=="a"：字面量 intern → 同一对象</span>`);
+        S.detail.textContent='String（:1394）：先查缓存（:1396）→ StringTable::intern（:1400）→ 写回（:1401）。';
+        src(`<span class="dim">// constantPool.cpp:1394-1401</span>
+<span class="org">oop ConstantPool::string_at_impl(</span>
+<span class="org">    const constantPoolHandle& this_cp,</span>
+<span class="org">    int which, TRAPS) {</span>
+<span class="dim">  // :1396 快路径：resolved_reference 已缓存</span>
+<span class="dim">  // ...</span>
+<span class="org">  oop str = StringTable::intern(sym,   // :1400</span>
+<span class="org">                                CHECK_(nullptr));</span>
+<span class="org">  string_at_put(this_cp, which, str);  // :1401</span>
+<span class="grn">// 字面量字符串对象，第一次使用才创建</span>`);
+        scene('场景12：<b>String 字面量 → StringTable::intern</b>');
+      }},
+    // 13 关卡④ JDK 28 变化
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：JDK 28 里老的 <code>method_at_impl</code> 已经没了——方法解析统一走 invoke 缓存，只剩一个「只查不解析」的 if_loaded 变体。
+JDK 28 变化（agent 实测）：<code>ConstantPool::method_at_impl</code> 已移除，只剩 <code>method_at_if_loaded</code>（constantPool.cpp:773）——只查已解析结果、不触发解析（用于 JVMTI 等只读场景）。正常执行路径全部走 <code>resolve_invoke</code> → LinkResolver → 写 ConstantPoolCache。
+<b>为什么能删</b>：方法引用不再「单独解析」，而是和 invoke 指令<b>绑定</b>解析——缓存条目里自带 <code>_cpool_index</code> 反查原始索引，Method* 直接进缓存，不需要独立的 method_at 入口。这印证了「常量池解析越来越向指令缓存收敛」的趋势。`,
+      fn:()=>{
+        faces(4); S.fnote.innerHTML='当前：关卡 ④<br>字符串与闭环';
+        stage(`<span class="org">JDK 28：method_at_impl 已移除</span>
+<span class="dim">老版本：method_at_impl → 独立解析方法</span>
+<span class="dim">        ▼</span>
+<span class="org">JDK 28 只剩 method_at_if_loaded（constantPool.cpp:773）</span>
+<span class="dim">  → 只查不解析（JVMTI 等只读场景）</span>
+<span class="dim">        │</span>
+<span class="org">正常执行路径：</span>
+<span class="org">  resolve_invoke（:864）→ LinkResolver</span>
+<span class="org">  → 写 ConstantPoolCache（自带 _cpool_index）</span>
+<span class="grn">方法解析与 invoke 指令绑定，收敛进缓存</span>`);
+        S.detail.textContent='JDK 28：method_at_impl 移除，仅剩 method_at_if_loaded（:773）；正常走 resolve_invoke → cpCache。';
+        src(`<span class="dim">// constantPool.cpp:773 method_at_if_loaded</span>
+<span class="org">Method* ConstantPool::method_at_if_loaded(</span>
+<span class="org">    const constantPoolHandle& this_cp,</span>
+<span class="org">    int which) {</span>
+<span class="dim">  // 只查已解析的，不触发解析</span>
+<span class="dim">  // method_at_impl 在 JDK 28 已删除</span>
+<span class="grn">// 正常调用链：resolve_invoke → cpCache</span>`);
+        scene('场景13：<b>JDK 28：method_at_impl 移除，收敛进缓存</b>');
+      }},
+    // 14 关卡④ 全链路
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：把本站整条链串一遍：#12 从名字 → 类解析 → 方法解析 → 缓存，一条龙。
+全链路（agent 实测行号）：① <code>resolve_from_cache</code>（interpreterRuntime.cpp:1063）分路；② <code>resolve_invoke</code>（:864）；③ <code>LinkResolver::resolve_invoke</code>（linkResolver.cpp:1715）→ <code>klass_ref_at</code>（constantPool.cpp:918）；④ <code>klass_at</code> → <code>klass_at_impl</code>（:631）——快路径直读 / 慢路径 <code>resolve_or_fail</code>（:674）+ 写回（:713）+ CAS（:716）；⑤ <code>update_invoke_cp_cache_entry</code>（:910）→ <code>set_direct_or_vtable_call</code>（cpCache.cpp:79）写缓存。
+<b>一句话总结</b>：类解析负责「名字→Klass」，方法解析负责「Klass+名字签名→Method*」，两者都「解析一次、缓存终身」。`,
+      fn:()=>{
+        faces(4); S.fnote.innerHTML='当前：关卡 ④<br>字符串与闭环';
+        stage(`<span class="org">全链路：invokevirtual #12 的一生（本站）</span>
+<span class="dim">① resolve_from_cache   :1063  分路</span>
+<span class="dim">② resolve_invoke       :864   解析方法</span>
+<span class="dim">③ LinkResolver         :1715  语义分路</span>
+<span class="org">   └─ klass_ref_at      :918   取接收者类</span>
+<span class="org">   └─ klass_at_impl     :631   类解析</span>
+<span class="dim">      ├ 快路径 :645（已解析直读）</span>
+<span class="dim">      └ 慢路径 :674 → 写回 :713 → CAS :716</span>
+<span class="org">④ update_invoke_cache  :910</span>
+<span class="org">   └─ set_direct_or_vtable_call（cpCache.cpp:79）</span>
+<span class="grn">类：名字→Klass；方法：→Method*；都只解析一次</span>`);
+        S.detail.textContent='全链路：resolve_from_cache（:1063）→ resolve_invoke（:864）→ LinkResolver（:1715）→ klass_at_impl（:631）→ cpCache（:79）。';
+        src(`<span class="dim">// 全流程行号速查</span>
+<span class="org">interpreterRuntime.cpp:1063  resolve_from_cache</span>
+<span class="org">interpreterRuntime.cpp:864   resolve_invoke</span>
+<span class="org">linkResolver.cpp:1715       resolve_invoke 分路</span>
+<span class="org">constantPool.cpp:918        klass_ref_at（取类）</span>
+<span class="org">constantPool.cpp:631        klass_at_impl（类解析）</span>
+<span class="org">  :674 resolve_or_fail · :713 写回 · :716 CAS</span>
+<span class="org">cpCache.cpp:79             set_direct_or_vtable_call</span>
+<span class="grn">// 常量池站②闭环</span>`);
+        scene('场景14：<b>站末闭环：全链路串讲</b>');
+      }},
+    // 15 关卡④ 下一站预告
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：本站的「慢路径」里藏着一个大问题：<code>resolve_or_fail</code> 说「没加载就去加载」——那「加载」到底怎么发生的？这就是下一个系列：类加载与双亲委派。
+下一站预告（类加载系列站①：加载与双亲委派）：<code>ClassLoader.loadClass</code>（ClassLoader.java:546）双亲委派——<code>findLoadedClass</code>（:551）→ <code>parent.loadClass</code>（:555）/ <code>findBootstrapClassOrNull</code>（:558）→ <code>findClass</code>（:569）；native 侧 <code>JVM_DefineClass</code>（jvm.cpp:1240）→ <code>SystemDictionary::resolve_from_stream</code>（systemDictionary.cpp:934）→ <code>ClassLoader::load_class</code>（classLoader.cpp:1100）→ <code>KlassFactory::create_from_stream</code>（klassFactory.cpp:172）。
+<b>衔接点</b>：常量池「按名字找人」，类加载「把人造出来」——两个系列在 resolve_or_fail 处握手。`,
+      fn:()=>{
+        faces(4); S.fnote.innerHTML='当前：关卡 ④<br>字符串与闭环';
+        stage(`<span class="org">下一站：类加载与双亲委派</span>
+<span class="dim">resolve_or_fail（constantPool.cpp:674）</span>
+<span class="dim">        │ 没加载？</span>
+<span class="dim">        ▼</span>
+<span class="org">ClassLoader.loadClass  :546（Java 层双亲委派）</span>
+<span class="dim">  findLoadedClass :551 → parent :555 / bootstrap :558</span>
+<span class="dim">        │</span>
+<span class="dim">        ▼</span>
+<span class="org">JVM_DefineClass（jvm.cpp:1240）</span>
+<span class="org">→ resolve_from_stream（systemDictionary.cpp:934）</span>
+<span class="org">→ load_class（classLoader.cpp:1100）</span>
+<span class="org">→ create_from_stream（klassFactory.cpp:172）</span>
+<span class="grn">「按名字找人」与「把人造出来」在此握手</span>`);
+        S.detail.textContent='预告（类加载站①）：ClassLoader.java:546 双亲委派 → jvm.cpp:1240 → systemDictionary.cpp:934 → klassFactory.cpp:172。';
+        src(`<span class="dim">// 下一站锚点速查（agent 实测）</span>
+<span class="org">ClassLoader.java:546   loadClass 双亲委派</span>
+<span class="org">ClassLoader.java:551   findLoadedClass</span>
+<span class="org">ClassLoader.java:555   parent.loadClass</span>
+<span class="org">ClassLoader.java:558   findBootstrapClassOrNull</span>
+<span class="org">jvm.cpp:1240          JVM_DefineClass</span>
+<span class="org">systemDictionary.cpp:934 resolve_from_stream</span>
+<span class="org">classLoader.cpp:1100  ClassLoader::load_class</span>
+<span class="org">klassFactory.cpp:172  create_from_stream</span>
+<span class="grn">// 常量池两站收官 → 类加载三站启动</span>`);
+        scene('场景15：<b>下一站：类加载与双亲委派</b>');
+      }},
+  ];
+
+  // ---------- 控件 ----------
+  let cur = 0, playing = false, timer = null;
+  const N = steps.length;
+  const pillEls = [];
+  steps.forEach((st, i) => {
+    const p = document.createElement('div');
+    p.className = 'step-pill';
+    p.textContent = String(i);
+    p.title = '第 ' + i + ' 步';
+    p.onclick = () => { go(i); };
+    S.pills.appendChild(p);
+    pillEls.push(p);
+  });
+
+  function go(i) {
+    cur = Math.max(0, Math.min(N - 1, i));
+    steps[cur].fn();
+    S.desc.innerHTML = steps[cur].d;
+    pillEls.forEach((p, j) => {
+      p.className = 'step-pill' + (j === cur ? ' active' : (j < cur ? ' done' : ''));
+    });
+    S.scene.innerHTML += ' <span style="opacity:.72;font-size:12.5px;margin-left:6px">第 ' + cur + ' / ' + (N - 1) + ' 步</span>';
+  }
+  function next() { go(cur + 1); }
+  function prev() { go(cur - 1); }
+  function reset() { go(0); }
+  function toggle() {
+    if (playing) { clearInterval(timer); playing = false; S.btnPlay.textContent = '▶'; }
+    else {
+      playing = true; S.btnPlay.textContent = '⏸';
+      timer = setInterval(() => { if (cur >= N - 1) { toggle(); } else { next(); } }, 2600);
+    }
+  }
+
+  S.btnPrev = document.getElementById('btnPrev');
+  S.btnPlay = document.getElementById('btnPlay');
+  S.btnNext = document.getElementById('btnNext');
+  S.btnReset = document.getElementById('btnReset');
+  S.btnPrev.onclick = prev;
+  S.btnPlay.onclick = toggle;
+  S.btnNext.onclick = next;
+  S.btnReset.onclick = reset;
+
+  S.face1.onclick = () => go(0);
+  S.face2.onclick = () => go(3);
+  S.face3.onclick = () => go(7);
+  S.face4.onclick = () => go(12);
+
+  document.addEventListener('keydown', (e) => {
+    if (e.code === 'Space') { e.preventDefault(); toggle(); }
+    else if (e.key === 'ArrowRight') { next(); }
+    else if (e.key === 'ArrowLeft') { prev(); }
+    else if (e.key.toLowerCase() === 'r') { reset(); }
+  });
+
+  go(0);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>类加载站③ · 初始化与卸载：触发 / 状态机 / 执行 clinit / 回收（交互动画）</title>
+<style>
+
+  :root{
+    --blue:#3b82f6; --purple:#8b5cf6; --orange:#f59e0b; --green:#10b981;
+    --bg:#f6f7fb; --card:#FFFFFF; --ink:#1f2937; --sub:#6b7280; --line:#e5e7eb;
+    --shadow:0 2px 6px rgba(17,24,39,.05);
+    --blue-bg:#eff6ff; --blue-bd:#bfdbfe;
+    --purple-bg:#f5f3ff; --purple-bd:#ddd6fe;
+    --orange-bg:#fffbeb; --orange-bd:#fde68a;
+    --green-bg:#ecfdf5; --green-bd:#a7f3d0;
+    --red:#ef4444; --red-bg:#fef2f2; --red-bd:#fecaca;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{background:var(--bg); color:var(--ink); font-family:'Segoe UI','Microsoft YaHei',sans-serif; padding:18px;}
+  .wrap{max-width:1180px; margin:0 auto;}
+  header{text-align:center; margin-bottom:18px}
+  header h1{font-size:23px; letter-spacing:.5px}
+  header h1 .mono{font-family:Consolas,monospace; color:var(--blue)}
+  header .sub{color:var(--sub); font-size:13px; margin-top:6px}
+  .badges{margin-top:12px; display:flex; gap:8px; justify-content:center; flex-wrap:wrap}
+  header .badge{font-size:12px; padding:3px 12px; border-radius:999px; border:1px solid var(--blue-bd);
+    background:var(--blue-bg); color:var(--blue); font-family:Consolas,monospace}
+  header .badge.purple{border-color:var(--purple-bd); background:var(--purple-bg); color:var(--purple)}
+  header .badge.green{border-color:var(--green-bd); background:var(--green-bg); color:var(--green)}
+  header .badge.orange{border-color:var(--orange-bd); background:var(--orange-bg); color:var(--orange)}
+  .steps{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px; justify-content:center;}
+  .step-pill{font-size:11.5px; padding:5px 11px; border-radius:999px; cursor:pointer; border:1.5px solid var(--line); background:var(--card); color:var(--sub); display:flex; align-items:center; justify-content:center; transition:all .2s; user-select:none; white-space:nowrap; min-width:30px;}
+  .step-pill.active{border-color:var(--blue); background:var(--blue); color:#fff; box-shadow:0 4px 12px rgba(59,130,246,.35);}
+  .step-pill.done{border-color:var(--green); background:var(--green); color:#fff;}
+  .grid{display:grid; grid-template-columns:290px 1fr 320px; gap:12px; margin-bottom:12px;}
+  .panel{background:var(--card); border-radius:12px; padding:14px; box-shadow:var(--shadow);}
+  .panel h2{font-size:14px; margin-bottom:10px; padding-left:8px; border-left:4px solid var(--green);}
+  .panel.p2 h2{border-color:var(--orange);}
+  .panel.p3 h2{border-color:var(--blue);}
+  .face{display:flex; align-items:center; gap:8px; padding:10px 12px; border-radius:10px; margin-bottom:8px;
+        background:var(--blue-bg); cursor:pointer; transition:all .3s; border:1.5px solid transparent;}
+  .face .num{width:26px; height:26px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:bold; color:#fff; font-size:13px;}
+  .face .tt{font-size:13px; font-weight:bold;}
+  .face .ds{font-size:11px; color:var(--sub); margin-top:2px;}
+  .face.f1 .num{background:var(--orange);} .face.f2 .num{background:var(--blue);} .face.f3 .num{background:var(--purple);} .face.f4 .num{background:var(--green);}
+  .face.on{border-color:var(--orange); background:var(--orange-bg); box-shadow:var(--shadow);}
+  .face.f2.on{border-color:var(--blue); background:var(--blue-bg);}
+  .face.f3.on{border-color:var(--purple); background:var(--purple-bg);}
+  .face.f4.on{border-color:var(--green); background:var(--green-bg);}
+  .note{margin-top:10px; font-size:11.5px; color:var(--sub); background:#f3f4f6; border-radius:8px; padding:7px 9px;}
+  .stageBox{background:#111827; border-radius:10px; padding:10px 12px; font-family:Consolas,monospace; font-size:12px; line-height:1.75; color:#e5e7eb; min-height:230px; white-space:pre;}
+  .stageBox .hl{background:#4a3410; border-radius:3px; color:#fbbf24;}
+  .stageBox .dim{color:#64748b;}
+  .stageBox .grn{color:#a7f3d0;}
+  .stageBox .org{color:#fde68a;}
+  .stageBox .pur{color:#ddd6fe;}
+  .stageBox .blu{color:#bfdbfe;}
+  .stageBox .red{color:#fca5a5;}
+  .detail{margin-top:8px; font-size:12px; color:#4b5563; background:#f3f4f6; border-radius:8px; padding:7px 9px; min-height:34px;}
+  .src{background:#111827; border-radius:12px; padding:12px 14px; box-shadow:var(--shadow); margin-bottom:12px;}
+  .src h2{font-size:13px; color:#9ca3af; margin-bottom:8px;}
+  .src .code{font-family:Consolas,monospace; font-size:12px; line-height:1.7; white-space:pre; overflow-x:auto; color:#e5e7eb;}
+  .src .code .hl{background:#4a3410; border-radius:3px; color:#fbbf24;}
+  .src .code .dim{color:#64748b;}
+  .src .code .grn{color:#a7f3d0;}
+  .src .code .org{color:#fde68a;}
+  .src .code .pur{color:#ddd6fe;}
+  .src .code .blu{color:#bfdbfe;}
+  .scene{margin-top:8px; font-size:11px; color:#6b7280; background:#f3f4f6; border-radius:8px; padding:6px 8px;}
+  .ctl{display:flex; align-items:center; gap:10px; justify-content:center; padding:10px; background:var(--card); border-radius:12px; box-shadow:var(--shadow);}
+  .btn{width:44px; height:44px; border-radius:50%; border:none; background:var(--blue); color:#fff; font-size:16px; cursor:pointer; transition:all .15s; font-weight:bold;}
+  .btn:hover{transform:scale(1.08);}
+  .btn.green{background:var(--green);}
+  .btn.orange{background:var(--orange); width:52px; height:52px;}
+  .hint{font-size:12px; color:var(--sub);}
+  .stepDesc{font-size:14px; font-weight:normal; line-height:1.85; color:#334155; background:var(--blue-bg); border-radius:9px; padding:11px 16px; margin-bottom:12px; border-left:4px solid var(--blue);}
+  .stepDesc b{color:var(--blue); font-weight:600;}
+  .stepDesc code{color:#7c3aed; font-family:Consolas,monospace; background:rgba(139,92,246,.10); padding:0 5px; border-radius:4px; font-size:12.5px;}
+  .kbd{display:inline-block; border:1px solid var(--line); border-radius:4px; padding:0 6px; background:#fff; font-size:11px; color:#4b5563;}
+  @media(max-width:1000px){.grid{grid-template-columns:1fr;}}
+
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>类加载站③ · <span class="mono">初始化与卸载</span>——触发 / 状态机 / 执行 &lt;clinit&gt; / 回收</h1>
+    <div class="sub">用到才触发 → 状态机只初始化一次 → 父类先行执行 &lt;clinit&gt; → 失败记错误表 · GC 整批卸载（JDK 28 · hotspot）</div>
+    <div class="badges">
+      <span class="badge">interpreterRuntime.cpp</span>
+      <span class="badge purple">instanceKlass.cpp</span>
+      <span class="badge orange">instanceKlass.hpp</span>
+      <span class="badge green">classLoaderDataGraph.cpp</span>
+    </div>
+  </header>
+
+  <div class="faces">
+    <div class="face f1" id="face1"><b>关①</b><span>触发</span></div>
+    <div class="face f2" id="face2"><b>关②</b><span>状态机</span></div>
+    <div class="face f3" id="face3"><b>关③</b><span>执行 clinit</span></div>
+    <div class="face f4" id="face4"><b>关④</b><span>失败与卸载</span></div>
+    <div class="fnote" id="fnote"></div>
+  </div>
+
+  <div class="steps" id="pills"></div>
+
+  <div class="grid">
+    <div class="panel p1">
+      <h2>讲解 <span class="tag" id="stepDesc"></span></h2>
+      <div class="desc" id="desc"></div>
+      <div class="note" id="note"></div>
+    </div>
+
+    <div class="panel p2">
+      <h2>场景</h2>
+      <div class="stageBox" id="stage"></div>
+      <div class="detail" id="detail"></div>
+    </div>
+
+    <div class="panel p3">
+      <h2>源码</h2>
+      <div class="src">
+        <h2>interpreterRuntime.cpp · instanceKlass.cpp · instanceKlass.hpp · classLoaderDataGraph.cpp</h2>
+        <div class="code" id="src"></div>
+      </div>
+      <div class="scene" id="scene"></div>
+    </div>
+  </div>
+
+  <div class="ctl">
+    <button class="btn" id="btnPrev" title="上一步 (←)">\u25C0</button>
+    <button class="btn orange" id="btnPlay" title="播放/暂停 (Space)">\u25B6</button>
+    <button class="btn" id="btnNext" title="下一步 (→)">\u25B6</button>
+    <button class="btn green" id="btnReset" title="重置 (R)">\u21BA</button>
+    <span class="hint"><span class="kbd">Space</span> 播放/暂停 · <span class="kbd">←</span> <span class="kbd">→</span> 步进 · <span class="kbd">R</span> 重置 · 点击步骤胶囊跳转</span>
+  </div>
+</div>
+
+<script>
+(() => {
+  const S = {
+    face1: document.getElementById('face1'),
+    face2: document.getElementById('face2'),
+    face3: document.getElementById('face3'),
+    face4: document.getElementById('face4'),
+    fnote: document.getElementById('fnote'),
+    stage: document.getElementById('stage'),
+    detail: document.getElementById('detail'),
+    src: document.getElementById('src'),
+    scene: document.getElementById('scene'),
+    desc: document.getElementById('stepDesc'),
+    pills: document.getElementById('pills'),
+  };
+  function faces(n){
+    ['face1','face2','face3','face4'].forEach((id,i)=>{
+      const el = S[id];
+      el.className = 'face f' + (i+1) + (i+1 === n ? ' on' : '');
+    });
+  }
+  function stage(html){ S.stage.innerHTML = html; }
+  function src(html){ S.src.innerHTML = html; }
+  function scene(txt){ S.scene.innerHTML = txt; }
+
+  const steps = [
+    // 0 白话速览：初始化与卸载
+    {"d": "<span style=\"display:inline-block;background:#dbeafe;color:#1d4ed8;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500\">白话速览</span> 这一站在演什么：<b>「上岗宣誓」——初始化与卸载</b>。\n<b>比喻</b>：站①招人（加载）、站②入职培训（链接），站③是「上岗宣誓」：<b>主动使用才触发</b>（new / 摸静态字段）→ <b>一把锁 + 状态机保证只宣誓一次</b>（别人等、自己递归放行）→ <b>念誓词 &lt;clinit&gt;</b>（父类先宣誓）→ 念砸了记黑账（错误表）。最后公司倒闭（加载器不可达）<b>整层楼一起清</b>（按 ClassLoaderData 批量卸载）。\n<b>技术对照</b>：触发 = <code>InterpreterRuntime::_new</code>（interpreterRuntime.cpp:223）；核心 = <code>initialize_impl</code>（instanceKlass.cpp:1417）；执行 = <code>call_class_initializer</code>（instanceKlass.cpp:2019）；卸载 = <code>ClassLoaderDataGraph::do_unloading</code>（classLoaderDataGraph.cpp:410）。\n<b>记住一句</b>：初始化不是「加载时自动完成」，而是<b>用到才触发 + 只初始化一次</b>；卸载不是单个类的事，是<b>跟着加载器整批走</b>。", "stage": "<span class=\"blu\">白话速览 · 初始化与卸载</span>\n<span class=\"dim\">InstanceKlass（站②已 linked）</span>\n<span class=\"blu\">① 触发：_new :223 · 静态字段 :741</span>\n<span class=\"pur\">② 状态机：initialize_impl :1417（互斥/等待/递归）</span>\n<span class=\"org\">③ 执行 &lt;clinit&gt;：call_class_initializer :2019</span>\n<span class=\"grn\">④ 失败错误表 :1341 · 卸载 do_unloading :410</span>\n<span class=\"dim\">「用到才宣誓 · 一次一人 · 加载器整批回收」</span>", "src": "<span class=\"dim\">// 术语对照（人话 → 黑话）</span>\n<span class=\"blu\">触发</span>      → <span class=\"grn\">InterpreterRuntime::_new（interpreterRuntime.cpp:223）</span>\n<span class=\"pur\">状态机</span>    → <span class=\"grn\">initialize_impl（instanceKlass.cpp:1417）</span>\n<span class=\"org\">念誓词</span>    → <span class=\"grn\">call_class_initializer（instanceKlass.cpp:2019）</span>\n<span class=\"blu\">记黑账</span>    → <span class=\"grn\">add_initialization_error（instanceKlass.cpp:1344）</span>\n<span class=\"blu\">整层清</span>    → <span class=\"grn\">do_unloading（classLoaderDataGraph.cpp:410）</span>", "scene": "白话速览：<b>初始化与卸载</b>", "detail": "本站回答：<clinit> 何时触发、并发如何只初始化一次、失败如何记录、类如何随加载器卸载。", "note": "当前：白话速览<br>先讲人话", "face": 1}
+,
+    // 1 场景1：new 触发初始化屏障
+    {"d": "<span style=\"display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500\">人话</span> <b>这一步在干嘛</b>：第一个触发源——<code>new</code> 字节码。解释器执行 <code>InterpreterRuntime::_new</code>：<b>解析类 → 拦抽象类 → 初始化屏障 → 分配对象</b>。<b>对象分配必须在初始化完成后</b>，否则可能拿到静态字段还是默认值的半成品。\n流程（interpreterRuntime.cpp:223）：<code>pool-&gt;klass_at(index, CHECK)</code>（:224 解析类）→ <code>check_valid_for_instantiation</code>（:228 抽象类/接口拦截）→ <code>initialize_preemptable</code>（:231 <b>初始化屏障</b>）→ <code>allocate_instance</code>（:233 分配对象）。\n<b>白话</b>：想进这家店买狗？先确认「狗类」上岗宣誓没，没宣就先去宣——宣完才给你分配狗对象。", "stage": "<span class=\"blu\">new 字节码 → InterpreterRuntime::_new（:223）</span>\n<span class=\"blu\">klass_at :224 解析类</span>\n<span class=\"dim\">抽象类/接口 → 拦截 :228</span>\n<span class=\"blu\">initialize_preemptable :231 初始化屏障！</span>\n<span class=\"blu\">allocate_instance :233 分配对象</span>\n<span class=\"dim\">先初始化，后分配</span>", "src": "<span class=\"dim\">// interpreterRuntime.cpp:223-233</span>\n<span class=\"blu\">JRT_ENTRY(void, InterpreterRuntime::_new(</span>\n<span class=\"blu\">    JavaThread* current, ConstantPool* pool, int index))</span>\n<span class=\"blu\">  Klass* k = pool-&gt;klass_at(index, CHECK);  // :224</span>\n<span class=\"blu\">  klass-&gt;check_valid_for_instantiation(true, CHECK);  // :228</span>\n<span class=\"blu\">  klass-&gt;initialize_preemptable(</span>\n<span class=\"blu\">      CHECK_AND_CLEAR_PREEMPTED);  // :231 屏障</span>\n<span class=\"blu\">  oop obj = klass-&gt;allocate_instance(CHECK);  // :233</span>", "scene": "场景1：new 触发初始化屏障", "detail": "InterpreterRuntime::_new（interpreterRuntime.cpp:223）：解析 :224 → 拦截 :228 → 屏障 :231 → 分配 :233。", "note": "当前：关卡 ①<br>触发：主动使用才宣誓", "face": 1}
+,
+    // 2 场景2：静态字段 / 反射 / 常量
+    {"d": "<span style=\"display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500\">人话</span> <b>这一步在干嘛</b>：其他触发源——<b>摸静态字段 / 调静态方法 / 反射</b>，同样带初始化屏障；<b>但编译期常量不触发</b>（值已在编译期内联）。\n静态字段访问（interpreterRuntime.cpp:741）：<code>bool uninitialized_static = is_static &amp;&amp; !klass-&gt;is_initialized();</code>——发现未初始化就先去 <code>initialize</code>。\n反射（Class.forName / newInstance / Method.invoke）：最终也走 <code>InstanceKlass::initialize</code>（instanceKlass.cpp:961）。\n<b>不触发</b>：通过子类访问父类静态字段（只初始化父类）、<code>new Dog[10]</code>（只初始化数组类型）、编译期常量（<code>static final</code> 编译期内联进常量池）。\n<b>白话</b>：门卫只拦「真用」的人——摸静态字段要拦，拿编译期写死的常量（白送）不拦。", "stage": "<span class=\"blu\">静态字段/方法访问</span>\n<span class=\"blu\">uninitialized_static 检查（:741）</span>\n<span class=\"dim\">is_static &amp;&amp; !is_initialized → 先 initialize</span>\n<span class=\"blu\">反射：forName / newInstance / invoke</span>\n<span class=\"dim\">最终也走 initialize :961</span>\n<span class=\"blu\">不触发：编译期常量（内联）</span>\n<span class=\"dim\">数组创建 / 子类访问父类静态字段</span>", "src": "<span class=\"dim\">// interpreterRuntime.cpp:741（静态字段解析路径）</span>\n<span class=\"blu\">bool uninitialized_static =</span>\n<span class=\"blu\">    is_static &amp;&amp; !klass-&gt;is_initialized();</span>\n<span class=\"dim\">// 反射入口最终走 instanceKlass.cpp:961</span>\n<span class=\"blu\">InstanceKlass::initialize(THREAD);</span>\n<span class=\"dim\">// 编译期常量：内联进常量池，无运行时屏障</span>", "scene": "场景2：静态字段 / 反射 / 常量", "detail": "静态访问 :741、反射走 initialize :961；编译期常量内联不触发。", "note": "当前：关卡 ①<br>触发：主动使用才宣誓", "face": 1}
+,
+    // 3 场景3：初始化总入口
+    {"d": "<span style=\"display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500\">人话</span> <b>这一步在干嘛</b>：所有触发路径最终汇聚到 <code>InstanceKlass::initialize</code>（instanceKlass.cpp:961）——<b>初始化总入口</b>。它先查 <code>should_be_initialized</code>（:962，未初始化 + 有 &lt;clinit&gt; 才需要），然后把活交给核心 <code>initialize_impl</code>（:1417）。\n<code>initialize_impl</code> 的第一件事：<code>link_class(CHECK)</code>（:1422）——<b>必须先链接才能初始化</b>（&lt;clinit&gt; 会调用本类方法，vtable 必须就绪，见站②）。\n<b>白话</b>：宣誓台管理员收到通知：有人要宣誓了。先检查这人入职培训（链接）办完没有——没办完先补办（link_class），再上台。", "stage": "<span class=\"pur\">initialize（instanceKlass.cpp:961）</span>\n<span class=\"pur\">should_be_initialized 检查 :962</span>\n<span class=\"dim\">未初始化 + 有 &lt;clinit&gt; → 继续</span>\n<span class=\"pur\">initialize_impl :1417</span>\n<span class=\"pur\">先 link_class :1422（链接前置）</span>\n<span class=\"dim\">vtable 必须就绪（站②产物）</span>", "src": "<span class=\"dim\">// instanceKlass.cpp:961-962</span>\n<span class=\"pur\">void InstanceKlass::initialize(TRAPS) {</span>\n<span class=\"pur\">  if (should_be_initialized()) {  // :962</span>\n<span class=\"pur\">    initialize_impl(THREAD);     // :1417 核心</span>\n<span class=\"dim\">// instanceKlass.cpp:1422</span>\n<span class=\"pur\">link_class(CHECK);  // 先链接再初始化</span>", "scene": "场景3：初始化总入口", "detail": "initialize（instanceKlass.cpp:961）→ should_be_initialized :962 → initialize_impl :1417 → link_class :1422。", "note": "当前：关卡 ②<br>状态机：一次只宣誓一次", "face": 2}
+,
+    // 4 场景4：互斥 + 等待
+    {"d": "<span style=\"display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500\">人话</span> <b>这一步在干嘛</b>：并发第一原则——<b>互斥 + 等待</b>。<code>initialize_impl</code> 拿 <code>init_lock</code>（:1434-1436）锁住状态机核心；发现<b>别人正在初始化</b>（being_initialized）就 <code>wait_uninterruptibly</code>（:1442-1451）——<b>排队等着，被叫醒再看结果</b>。\n关键代码：<code>ObjectLocker ol(h_init_lock, CHECK_PREEMPTABLE)</code>（:1436，lock 会自己解锁）→ <code>while (is_being_initialized() &amp;&amp; !is_reentrant_initialization(jt)) { ol.wait_uninterruptibly(...); }</code>（:1442-1450）。\n<b>白话</b>：宣誓台一次只站一个人。你来了发现有人正台上宣誓？门口等着（wait），他宣完（notify_all）你被叫醒。", "stage": "<span class=\"pur\">initialize_impl（instanceKlass.cpp:1417）</span>\n<span class=\"pur\">ObjectLocker 拿 init_lock :1436</span>\n<span class=\"dim\">同一时刻仅一个线程进核心</span>\n<span class=\"pur\">while (is_being_initialized() ...) :1442</span>\n<span class=\"pur\">ol.wait_uninterruptibly :1450</span>\n<span class=\"dim\">别人在宣誓 → 排队等</span>", "src": "<span class=\"dim\">// instanceKlass.cpp:1434-1451（Step 1-2）</span>\n<span class=\"pur\">ObjectLocker ol(h_init_lock, CHECK_PREEMPTABLE);  // :1436</span>\n<span class=\"pur\">while (is_being_initialized() &amp;&amp;</span>\n<span class=\"pur\">    !is_reentrant_initialization(jt)) {  // :1442</span>\n<span class=\"pur\">  ol.wait_uninterruptibly(CHECK_PREEMPTABLE);  // :1450</span>\n<span class=\"pur\">}</span>", "scene": "场景4：互斥 + 等待", "detail": "init_lock（:1436）互斥；别人初始化中则 wait_uninterruptibly（:1450）等待被唤醒。", "note": "当前：关卡 ②<br>状态机：一次只宣誓一次", "face": 2}
+,
+    // 5 场景5：递归 / 完成 / 失败三分支
+    {"d": "<span style=\"display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500\">人话</span> <b>这一步在干嘛</b>：排队被叫醒后分三种情况走：<b>① 自己递归</b>（&lt;clinit&gt; 里又 new 自己）→ 直接放行；<b>② 已完成</b> → 直接回；<b>③ 失败过</b> → 抛同一个 <code>NoClassDefFoundError</code>。\n① 递归（:1454-1462）：<code>is_reentrant_initialization(jt)</code>（instanceKlass.hpp:618，<code>thread == _init_thread</code>）→ <code>return</code>（:1461）——<b>同一线程再进不死锁</b>（如 <code>static Foo f = new Foo()</code>）。\n② 已完成（:1465-1473）：<code>is_initialized()</code> → return（:1472）。\n③ 失败过（:1476-1494）：<code>is_in_error_state()</code> → <code>get_initialization_error</code>（:1485 取回第一次的原始异常）→ <code>THROW_MSG_CAUSE(NoClassDefFoundError, ..., cause)</code>（:1492）——<b>后面来的都领同一个「这人不行」的结论</b>。", "stage": "<span class=\"pur\">醒来后三分支</span>\n<span class=\"pur\">① 自己递归 :1454-1462</span>\n<span class=\"dim\">is_reentrant :618 → return :1461</span>\n<span class=\"pur\">② 已完成 :1465-1473</span>\n<span class=\"dim\">is_initialized → return :1472</span>\n<span class=\"pur\">③ 失败过 :1476-1494</span>\n<span class=\"dim\">抛 NoClassDefFoundError :1492（带原始 cause）</span>", "src": "<span class=\"dim\">// instanceKlass.cpp:1454-1494（Step 3-5）</span>\n<span class=\"pur\">if (is_being_initialized() &amp;&amp;</span>\n<span class=\"pur\">    is_reentrant_initialization(jt)) { return; }  // :1461</span>\n<span class=\"pur\">if (is_initialized()) { return; }  // :1472</span>\n<span class=\"pur\">if (is_in_error_state()) {</span>\n<span class=\"pur\">  Handle cause(THREAD,</span>\n<span class=\"pur\">      get_initialization_error(THREAD));  // :1485</span>\n<span class=\"pur\">  THROW_MSG_CAUSE(</span>\n<span class=\"pur\">      java_lang_NoClassDefFoundError(), ..., cause);  // :1492</span>", "scene": "场景5：递归 / 完成 / 失败三分支", "detail": "递归放行 :1461、已完成 :1472、失败抛 NoClassDefFoundError :1492（cause 取回 :1485）。", "note": "当前：关卡 ②<br>状态机：一次只宣誓一次", "face": 2}
+,
+    // 6 场景6：置 being_initialized
+    {"d": "<span style=\"display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500\">人话</span> <b>这一步在干嘛</b>：轮到你了——<b>上台！</b>置 <code>being_initialized</code> 并记录 <code>_init_thread</code>（自己），从此状态机进入「有人正在宣誓」态。\n代码：<code>set_init_state(being_initialized)</code>（:1498）+ <code>set_init_thread(jt)</code>（:1499）。\n<b>状态机四态</b>（instanceKlass.hpp:614-618）：<code>uninitialized</code>（默认）→ <code>being_initialized</code>（:616 正在宣誓）→ <code>fully_initialized</code>（:614 完成）或 <code>initialization_error</code>（:617 念砸了）。<code>is_reentrant_initialization</code>（:618）用于递归判断。\n<b>白话</b>：管理员把台上牌子翻成「宣誓中」，并记下是谁——这样你宣誓中途又触发自己时，系统认得出「是自己人」，直接放行。", "stage": "<span class=\"pur\">上台！置 being_initialized</span>\n<span class=\"pur\">set_init_state(being_initialized) :1498</span>\n<span class=\"pur\">set_init_thread(jt) :1499</span>\n<span class=\"pur\">四态（instanceKlass.hpp:614-618）</span>\n<span class=\"dim\">uninitialized → being :616</span>\n<span class=\"dim\">→ fully :614 / error :617</span>\n<span class=\"dim\">is_reentrant :618（线程 == _init_thread）</span>", "src": "<span class=\"dim\">// instanceKlass.cpp:1498-1499（Step 6）</span>\n<span class=\"pur\">} else {</span>\n<span class=\"pur\">  set_init_state(being_initialized);  // :1498</span>\n<span class=\"pur\">  set_init_thread(jt);               // :1499</span>\n<span class=\"dim\">// instanceKlass.hpp:614-618 状态机四态</span>\n<span class=\"pur\">is_initialized / is_being_initialized</span>\n<span class=\"pur\">is_in_error_state / is_reentrant_initialization</span>", "scene": "场景6：置 being_initialized", "detail": "set_init_state(being_initialized) :1498 + set_init_thread :1499；四态定义 instanceKlass.hpp:614-618。", "note": "当前：关卡 ②<br>状态机：一次只宣誓一次", "face": 2}
+,
+    // 7 场景7：父类先行
+    {"d": "<span style=\"display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500\">人话</span> <b>这一步在干嘛</b>：正式开宣，第一条纪律：<b>父类先行</b>——先初始化父类（递归），再初始化含 default 方法的接口。<b>子类的静态字段可能依赖父类的静态字段</b>，所以爸妈先宣誓。\n代码（instanceKlass.cpp:1536-1546）：非接口时 <code>super_klass-&gt;initialize(THREAD)</code>（:1539 递归父类）→ <code>has_nonstatic_concrete_methods()</code> 时 <code>initialize_super_interfaces</code>（:1546）。\n父类失败（:1550-1562）：记错误 + 置 <code>initialization_error</code> + 抛——<b>子类跟着失败</b>。\n<b>白话</b>：先让爸妈宣誓完，自己才上台——不然你誓词里用到爸妈给的静态字段，还是默认值就尴尬了。", "stage": "<span class=\"org\">父类先行（instanceKlass.cpp:1536-1546）</span>\n<span class=\"org\">super_klass-&gt;initialize :1539（递归）</span>\n<span class=\"dim\">先初始化父类</span>\n<span class=\"org\">initialize_super_interfaces :1546</span>\n<span class=\"dim\">含 default 方法的接口</span>\n<span class=\"org\">父类失败 :1550-1562</span>\n<span class=\"dim\">子类跟着失败</span>", "src": "<span class=\"dim\">// instanceKlass.cpp:1536-1546</span>\n<span class=\"org\">if (!is_interface()) {</span>\n<span class=\"org\">  Klass* super_klass = super();</span>\n<span class=\"org\">  if (super_klass != nullptr &amp;&amp;</span>\n<span class=\"org\">      super_klass-&gt;should_be_initialized()) {</span>\n<span class=\"org\">    super_klass-&gt;initialize(THREAD);  // :1539</span>\n<span class=\"org\">  }</span>\n<span class=\"org\">  initialize_super_interfaces(THREAD);  // :1546</span>", "scene": "场景7：父类先行", "detail": "父类递归 :1539、super interfaces :1546；父类失败 :1550-1562 子类跟着失败。", "note": "当前：关卡 ③<br>执行 &lt;clinit&gt;：誓词上台", "face": 3}
+,
+    // 8 场景8：执行 <clinit>
+    {"d": "<span style=\"display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500\">人话</span> <b>这一步在干嘛</b>：轮到念誓词了——<b>执行 &lt;clinit&gt;</b>。先找誓词（<code>class_initializer</code> 从方法表找 <code>&lt;clinit&gt;()V</code>），再通过 <code>JavaCalls::call</code> 以普通静态方法形式调起。<b>&lt;clinit&gt; 就是个被 JVM 特殊调用的方法</b>。\n调用点（instanceKlass.cpp:1569-1585）：<code>class_initializer() != nullptr</code> 判断（:1571）→ <code>call_class_initializer(THREAD)</code>（:1578）。\n查找（:2010）：<code>find_method</code>（:2011）找 <code>&lt;clinit&gt;()V</code>，<code>is_class_initializer</code>（:2013）确认静态无参。\n执行（:2019 定义 / :2057 核心）：<code>JavaCalls::call(&amp;result, h_method, &amp;args, CHECK)</code>——HotSpot 执行 Java 方法的统一入口（解释器或 JIT 入口，见方法调用站⑤）。", "stage": "<span class=\"org\">执行 &lt;clinit&gt;（instanceKlass.cpp:1569-1585）</span>\n<span class=\"org\">class_initializer() 判断 :1571</span>\n<span class=\"org\">call_class_initializer :1578</span>\n<span class=\"org\">class_initializer 定义 :2010</span>\n<span class=\"dim\">find_method :2011 · is_class_initializer :2013</span>\n<span class=\"org\">JavaCalls::call :2057</span>", "src": "<span class=\"dim\">// instanceKlass.cpp:1578 / :2010 / :2019</span>\n<span class=\"org\">call_class_initializer(THREAD);  // :1578</span>\n<span class=\"dim\">// class_initializer（:2010）：找 &lt;clinit&gt;()V</span>\n<span class=\"org\">Method* m = find_method(</span>\n<span class=\"org\">    vmSymbols::object_initializer_name(), ...);  // :2011</span>\n<span class=\"dim\">// call_class_initializer 核心（:2057）</span>\n<span class=\"org\">JavaCalls::call(&amp;result, h_method, &amp;args, CHECK);</span>", "scene": "场景8：执行 <clinit>", "detail": "class_initializer :2010 找方法（:2011）；call_class_initializer :2019 → JavaCalls::call :2057。", "note": "当前：关卡 ③<br>执行 &lt;clinit&gt;：誓词上台", "face": 3}
+,
+    // 9 场景9：成功收尾
+    {"d": "<span style=\"display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500\">人话</span> <b>这一步在干嘛</b>：誓词念完没异常——<b>拍板成功</b>！置 <code>fully_initialized</code>，<code>notify_all</code> 唤醒所有排队等的人。<b>状态机收尾。</b>\n成功路径（instanceKlass.cpp:1618-1620）：<code>if (!HAS_PENDING_EXCEPTION) { set_initialization_state_and_notify(fully_initialized, CHECK); }</code>（:1620）。\n<code>set_initialization_state_and_notify</code>（:1654-1662）：先清 <code>_init_thread</code>（:1658）再 <code>notify_all</code>（:1661）——排队线程全部醒来，看到 <code>is_initialized()</code> 直接 return（:1472）。\n<b>白话</b>：台上宣布「成了」，管理员把牌子翻成「已宣誓」，摇铃喊醒所有排队的人——大家一看完事了，各自散去干活。", "stage": "<span class=\"org\">成功：fully_initialized</span>\n<span class=\"org\">!HAS_PENDING_EXCEPTION :1618</span>\n<span class=\"org\">set_initialization_state_and_notify(</span>\n<span class=\"org\">    fully_initialized) :1620</span>\n<span class=\"org\">清 _init_thread :1658</span>\n<span class=\"org\">notify_all :1661</span>\n<span class=\"dim\">排队线程醒来 → is_initialized return :1472</span>", "src": "<span class=\"dim\">// instanceKlass.cpp:1618-1620</span>\n<span class=\"org\">if (!HAS_PENDING_EXCEPTION) {</span>\n<span class=\"org\">  set_initialization_state_and_notify(</span>\n<span class=\"org\">      fully_initialized, CHECK);  // :1620 成功！</span>\n<span class=\"dim\">// :1654-1662 set_initialization_state_and_notify</span>\n<span class=\"org\">_init_thread = nullptr;  // :1658</span>\n<span class=\"org\">ol.notify_all(THREAD);   // :1661 唤醒所有人</span>", "scene": "场景9：成功收尾", "detail": "成功 :1620 置 fully_initialized；notify_all :1661 唤醒等待线程（先清 _init_thread :1658）。", "note": "当前：关卡 ③<br>执行 &lt;clinit&gt;：誓词上台", "face": 3}
+,
+    // 10 场景10：失败处理
+    {"d": "<span style=\"display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500\">人话</span> <b>这一步在干嘛</b>：誓词念砸了——<b>记黑账 + 包一层抛</b>。&lt;clinit&gt; 抛的原始异常记入错误表，状态置 <code>initialization_error</code>，然后<b>包一层 <code>ExceptionInInitializerError</code></b> 抛给当前线程（原始异常是 cause）。\n失败路径（instanceKlass.cpp:1633-1645）：<code>add_initialization_error(THREAD, e)</code>（:1633 记错误）→ <code>set_initialization_state_and_notify(initialization_error, THREAD)</code>（:1634 置 error + 唤醒）→ <code>THROW_ARG(ExceptionInInitializerError(), ...)</code>（:1645 包一层抛）。\n<b>白话</b>：台上念砸了，管理员记下「这人不行」（错误表 + error 状态），摇铃让所有人知道；当前这位领到一张「ExceptionInInitializerError」罚单（原始异常贴在背面）。", "stage": "<span class=\"grn\">失败：initialization_error</span>\n<span class=\"grn\">add_initialization_error :1633</span>\n<span class=\"dim\">原始异常记入错误表</span>\n<span class=\"grn\">set ... (initialization_error) :1634</span>\n<span class=\"dim\">状态置 error + 唤醒</span>\n<span class=\"grn\">THROW ExceptionInInitializerError :1645</span>\n<span class=\"dim\">原始异常作为 cause</span>", "src": "<span class=\"dim\">// instanceKlass.cpp:1633-1645</span>\n<span class=\"grn\">} else {</span>\n<span class=\"grn\">  Handle e(THREAD, PENDING_EXCEPTION);</span>\n<span class=\"grn\">  add_initialization_error(THREAD, e);  // :1633</span>\n<span class=\"grn\">  set_initialization_state_and_notify(</span>\n<span class=\"grn\">      initialization_error, THREAD);  // :1634</span>\n<span class=\"grn\">  THROW_ARG(ExceptionInInitializerError(),</span>\n<span class=\"grn\">      ..., e());  // :1645 包一层抛</span>", "scene": "场景10：失败处理", "detail": "失败 :1633 记错误、:1634 置 error、:1645 抛 ExceptionInInitializerError（原始异常为 cause）。", "note": "当前：关卡 ④<br>失败与卸载", "face": 4}
+,
+    // 11 场景11：错误表
+    {"d": "<span style=\"display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500\">人话</span> <b>这一步在干嘛</b>：黑账本 = <b>初始化错误表</b>。它记录「类 → 第一次初始化抛的异常」，保证<b>后续所有线程拿到的 cause 是同一个原始异常</b>，且不会重复执行 &lt;clinit&gt;。\n错误表（instanceKlass.cpp:1341）：<code>using InitializationErrorTable = HashTable&lt;const InstanceKlass*, OopHandle, ...&gt;;</code>——静态哈希表，类 → 异常句柄。\n写入（:1344）：<code>add_initialization_error(current, exception)</code>——把原始异常存进去（只记第一次）。\n读取（:1377）：<code>get_initialization_error(current)</code>——后续线程触发时取回，作为 <code>NoClassDefFoundError</code> 的 cause（:1485/:1492）。\n<b>白话</b>：黑账本上写着「Dog 类：失败原因 NullPointerException（第一次念砸时的）」。以后谁再碰 Dog，管理员直接翻账本，原话转告：「这人不行，原因看这里」——不用再让他重新宣誓。", "stage": "<span class=\"grn\">初始化错误表（黑账本）</span>\n<span class=\"grn\">InitializationErrorTable :1341</span>\n<span class=\"dim\">HashTable：类 → OopHandle 异常</span>\n<span class=\"grn\">add_initialization_error :1344 写</span>\n<span class=\"grn\">get_initialization_error :1377 读</span>\n<span class=\"dim\">后续线程：同一 cause · 不重跑 &lt;clinit&gt;</span>", "src": "<span class=\"dim\">// instanceKlass.cpp:1341-1384</span>\n<span class=\"grn\">using InitializationErrorTable =</span>\n<span class=\"grn\">    HashTable&lt;const InstanceKlass*, OopHandle, ...&gt;;</span>\n<span class=\"grn\">static InitializationErrorTable*</span>\n<span class=\"grn\">    _initialization_error_table;  // :1341</span>\n<span class=\"grn\">add_initialization_error(...);   // :1344 记</span>\n<span class=\"grn\">get_initialization_error(...);   // :1377 取</span>", "scene": "场景11：错误表", "detail": "错误表 :1341；写入 :1344、读取 :1377；后续线程拿同一 cause（:1485/:1492）。", "note": "当前：关卡 ④<br>失败与卸载", "face": 4}
+,
+    // 12 场景12：卸载入口
+    {"d": "<span style=\"display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500\">人话</span> <b>这一步在干嘛</b>：类卸载的入口是 GC 的 <code>ClassLoaderDataGraph::do_unloading</code>（classLoaderDataGraph.cpp:410）——GC 发现某个加载器不再存活时，<b>整批卸载该加载器加载的所有类</b>。<b>卸载不是单个类的事，是跟着加载器整批走。</b>\n卸载时机：GC 判定 <code>ClassLoaderData::is_alive</code>（classLoaderData.cpp:693）为 false——<b>加载器对象 + 其所有类都不可达</b>。\n为什么按加载器批：同一个加载器的类共享常量池、依赖关系、JIT 代码——拆开单个卸载会留下悬空引用。\n<b>白话</b>：公司倒闭（加载器不可达）整层楼一起清，不是单个工位清。老板（加载器）都消失了，员工（类）自然跟着消失。", "stage": "<span class=\"grn\">GC 卸载入口（classLoaderDataGraph.cpp:410）</span>\n<span class=\"grn\">ClassLoaderDataGraph::do_unloading()</span>\n<span class=\"grn\">is_alive 判断（classLoaderData.cpp:693）</span>\n<span class=\"dim\">加载器 + 所有类都不可达</span>\n<span class=\"grn\">按加载器整批卸载</span>\n<span class=\"dim\">共享常量池/依赖/JIT 代码 → 不能拆单个</span>", "src": "<span class=\"dim\">// classLoaderDataGraph.cpp:410（GC 时调用）</span>\n<span class=\"grn\">bool ClassLoaderDataGraph::do_unloading() {</span>\n<span class=\"grn\">  ...</span>\n<span class=\"dim\">// classLoaderData.cpp:693 存活判断</span>\n<span class=\"grn\">bool ClassLoaderData::is_alive() const {</span>\n<span class=\"grn\">  // 加载器对象 + 类都不可达 → 不存活</span>", "scene": "场景12：卸载入口", "detail": "do_unloading（classLoaderDataGraph.cpp:410）由 GC 调用；is_alive（classLoaderData.cpp:693）判存活。", "note": "当前：关卡 ④<br>失败与卸载", "face": 4}
+,
+    // 13 场景13：卸载实现
+    {"d": "<span style=\"display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500\">人话</span> <b>这一步在干嘛</b>：整批卸载的实现——<code>ClassLoaderData::unload</code>（classLoaderData.cpp:604）——清理类、方法、常量池等 Metaspace 元数据，触发 JVMTI <code>ClassUnload</code> 事件。<b>JVM 规范不保证类一定被卸载</b>，是否卸载取决于 GC 与加载器生命周期。\n清理内容：类的 Metaspace 元数据（InstanceKlass、方法、常量池、JIT 代码依赖）随 ClassLoaderData 一起释放。\n附加动作：<code>SystemDictionaryShared::handle_class_unloading</code>（classLoaderData.cpp:947）——清理共享类字典；JVMTI <code>ClassUnload</code> 事件通知代理。\n<b>白话</b>：整层清空（ClassLoaderData 释放），顺便通知物业（JVMTI）「这层空了」。这也解释了「类卸载不可靠」——<code>System.gc</code> 后老代码仍可能继续用类，因为加载器还活着。", "stage": "<span class=\"grn\">ClassLoaderData::unload（classLoaderData.cpp:604）</span>\n<span class=\"grn\">清理 Metaspace 元数据</span>\n<span class=\"dim\">InstanceKlass / 方法 / 常量池</span>\n<span class=\"grn\">JVMTI ClassUnload 事件</span>\n<span class=\"grn\">handle_class_unloading :947</span>\n<span class=\"dim\">规范不保证卸载 · 取决于加载器生命周期</span>", "src": "<span class=\"dim\">// classLoaderData.cpp:604</span>\n<span class=\"grn\">void ClassLoaderData::unload() {</span>\n<span class=\"grn\">  // 释放 Metaspace 元数据（类/方法/常量池）</span>\n<span class=\"grn\">  SystemDictionaryShared::handle_class_unloading(</span>\n<span class=\"grn\">      this);  // :947</span>\n<span class=\"dim\">// JVMTI ClassUnload 事件通知代理</span>", "scene": "场景13：卸载实现", "detail": "ClassLoaderData::unload（classLoaderData.cpp:604）清理元数据，handle_class_unloading :947；规范不保证卸载。", "note": "当前：关卡 ④<br>失败与卸载", "face": 4}
+,
+    // 14 场景14：三站收官闭环
+    {"d": "<span style=\"display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500\">人话</span> <b>这一步在干嘛</b>：把<b>类加载三站</b>串一遍——站① 加载（招人）→ 站② 链接（入职培训）→ 站③ 初始化（上岗宣誓）→ 卸载（公司倒闭整层清）。<b>一个类的完整生命周期到此闭环。</b>\n全链路：① 触发 <code>_new</code>（interpreterRuntime.cpp:223，屏障 :231）→ ② 入口 <code>initialize</code>（instanceKlass.cpp:961）→ ③ 核心 <code>initialize_impl</code>（:1417，link_class :1422 → init_lock :1436 → wait/递归/error :1442-1494 → being_initialized :1498）→ ④ 父类先行（:1539）→ ⑤ 执行 <code>call_class_initializer</code>（:2019，JavaCalls::call :2057）→ ⑥ 成功 <code>fully_initialized</code>（:1620）/ 失败错误表（:1341 + ExceptionInInitializerError :1645）→ ⑦ 卸载 <code>do_unloading</code>（classLoaderDataGraph.cpp:410）。\n<b>一句话总结</b>：<b>「用到才触发、一把锁保证只宣一次、失败记黑账、加载器整批回收」</b>——JLS 只管「何时初始化」，HotSpot 用状态机 + 错误表 + GC 生命周期把它落成可并发、可失败的工程实现。", "stage": "<span class=\"org\">类加载三站收官</span>\n<span class=\"blu\">站① 加载：双亲委派 + KlassFactory</span>\n<span class=\"blu\">站② 链接：parse → verify → link → 懒解析</span>\n<span class=\"org\">站③ 初始化：触发 → 状态机 → &lt;clinit&gt;</span>\n<span class=\"grn\">卸载：do_unloading :410 整批回收</span>\n<span class=\"dim\">「一条 invokevirtual 的一生」地基铺完</span>", "src": "<span class=\"dim\">// 三站行号速查</span>\n<span class=\"org\">interpreterRuntime.cpp:223 _new（触发）· :231 屏障</span>\n<span class=\"org\">instanceKlass.cpp:961 initialize · :1417 initialize_impl</span>\n<span class=\"org\">instanceKlass.cpp:1539 父类先行 · :2019 call_class_initializer</span>\n<span class=\"org\">instanceKlass.cpp:1620 fully_initialized · :1645 失败</span>\n<span class=\"grn\">instanceKlass.cpp:1341 错误表 · classLoaderDataGraph.cpp:410 卸载</span>\n<span class=\"grn\">// 站① 01-load-parent-delegation.md</span>\n<span class=\"grn\">// 站② 02-link-verify.md · 站③ 03-init-unload.md</span>", "scene": "场景14：三站收官闭环", "detail": "全链路：触发 :223 → initialize :961 → initialize_impl :1417 → 父类 :1539 → clinit :2019 → 成功 :1620 / 失败 :1645 → 卸载 :410。", "note": "当前：收官<br>类加载三站闭环", "face": 4}
+
+  ];
+
+  // 通用 fn：由数据驱动（JSON 序列化方案，杜绝转义问题）
+  steps.forEach((st, i) => {
+    st.fn = () => {
+      faces(st.face);
+      S.fnote.innerHTML = st.note;
+      stage(st.stage);
+      S.detail.textContent = st.detail;
+      src(st.src);
+      scene(st.scene);
+    };
+  });
+
+  const N = steps.length;
+  let cur = 0;
+
+  function go(n) {
+    cur = Math.max(0, Math.min(N - 1, n));
+    steps[cur].fn();
+    S.desc.innerHTML = steps[cur].d;
+    S.scene.innerHTML += ' 第 ' + cur + ' / ' + (N - 1) + ' 步';
+    [...S.pills.children].forEach((p, i) => {
+      p.className = 'step-pill' + (i === cur ? ' active' : (i < cur ? ' done' : ''));
+    });
+  }
+
+  function next() { go(cur + 1); }
+  function prev() { go(cur - 1); }
+  function reset() { go(0); }
+
+  S.pills.innerHTML = steps.map((s, i) =>
+    '<span class="step-pill" data-i="' + i + '">' + i + '</span>'
+  ).join('');
+  [...S.pills.children].forEach(p =>
+    p.addEventListener('click', () => go(+p.dataset.i))
+  );
+  document.getElementById('btnNext').addEventListener('click', next);
+  document.getElementById('btnPrev').addEventListener('click', prev);
+  document.getElementById('btnReset').addEventListener('click', reset);
+  let timer = null;
+  document.getElementById('btnPlay').addEventListener('click', () => {
+    if (timer) { clearInterval(timer); timer = null; return; }
+    timer = setInterval(() => { if (cur >= N - 1) { clearInterval(timer); timer = null; } else next(); }, 2600);
+  });
+  window.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight') next();
+    else if (e.key === 'ArrowLeft') prev();
+    else if (e.key === ' ') { e.preventDefault(); document.getElementById('btnPlay').click(); }
+    else if (e.key.toLowerCase() === 'r') reset();
+  });
+
+  go(0);
+})();
+</script>
+</body>
+</html>

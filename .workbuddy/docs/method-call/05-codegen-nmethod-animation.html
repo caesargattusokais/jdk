@@ -1,0 +1,1010 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>05 · 方法调用全链路：代码生成与 nmethod 落地交互动画</title>
+<style>
+  :root{
+    --blue:#3b82f6; --purple:#8b5cf6; --orange:#f59e0b; --green:#10b981;
+    --bg:#f6f7fb; --card:#FFFFFF; --ink:#1f2937; --sub:#6b7280; --line:#e5e7eb;
+    --shadow:0 2px 6px rgba(17,24,39,.05);
+
+    --blue-bg:#eff6ff; --blue-bd:#bfdbfe;
+    --purple-bg:#f5f3ff; --purple-bd:#ddd6fe;
+    --orange-bg:#fffbeb; --orange-bd:#fde68a;
+    --green-bg:#ecfdf5; --green-bd:#a7f3d0;
+    --red:#ef4444; --red-bg:#fef2f2; --red-bd:#fecaca;
+    --ink-2:#6b7280; --ink-3:#9ca3af;
+    --code-bg:#111827; --code-ink:#e5e7eb;
+  }
+  header{text-align:center;margin-bottom:18px}
+  header h1{font-size:25px;letter-spacing:.5px}
+  header h1 .mono{font-family:Consolas,monospace;color:var(--blue)}
+  header .sub{color:var(--ink-2);font-size:13.5px;margin-top:6px}
+  .badges{margin-top:12px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+  header .badge{font-size:12px;padding:3px 12px;border-radius:999px;border:1px solid var(--blue-bd);
+    background:var(--blue-bg);color:var(--blue);font-family:Consolas,monospace}
+  header .badge.purple{border-color:var(--purple-bd);background:var(--purple-bg);color:var(--purple)}
+  header .badge.green{border-color:var(--green-bd);background:var(--green-bg);color:var(--green)}
+  header .badge.orange{border-color:var(--orange-bd);background:var(--orange-bg);color:var(--orange)}
+  header .badge.red{border-color:var(--red-bd);background:var(--red-bg);color:var(--red)}
+
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{background:var(--bg); color:var(--ink); font-family:'Segoe UI','Microsoft YaHei',sans-serif; padding:18px;}
+  .wrap{max-width:1180px; margin:0 auto;}
+
+  h1{font-size:22px; margin-bottom:4px;}
+  .sub{font-size:13px; color:var(--sub); margin-bottom:14px;}
+  .steps{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:16px; justify-content:center;}
+  .step-pill{font-size:11.5px; padding:5px 11px; border-radius:999px; cursor:pointer; border:1.5px solid var(--line); background:var(--card); color:var(--sub); display:flex; align-items:center; justify-content:center; transition:all .2s; user-select:none; white-space:nowrap; min-width:30px;}
+  .step-pill.active{border-color:var(--blue); background:var(--blue); color:#fff; box-shadow:0 4px 12px rgba(59,130,246,.35);}
+  .step-pill.done{border-color:var(--green); background:var(--green); color:#fff;}
+
+  .grid{display:grid; grid-template-columns:300px 1fr 310px; gap:12px; margin-bottom:12px;}
+  .panel{background:var(--card); border-radius:12px; padding:14px; box-shadow:var(--shadow);}
+  .panel h2{font-size:14px; margin-bottom:10px; padding-left:8px; border-left:4px solid var(--green);}
+  .panel.p2 h2{border-color:var(--orange);}
+  .panel.p3 h2{border-color:var(--blue);}
+
+  .face{display:flex; align-items:center; gap:8px; padding:10px 12px; border-radius:10px; margin-bottom:8px;
+        background:#eff6ff; cursor:pointer; transition:all .3s; border:1.5px solid transparent;}
+  .face .num{width:26px; height:26px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:bold; color:#fff; font-size:13px;}
+  .face .tt{font-size:13px; font-weight:bold;}
+  .face .ds{font-size:11px; color:var(--sub); margin-top:2px;}
+  .face.f1 .num{background:var(--orange);} .face.f2 .num{background:var(--blue);} .face.f3 .num{background:var(--purple);} .face.f4 .num{background:var(--green);}
+  .face.on{border-color:var(--orange); background:#fffbeb; box-shadow:var(--shadow);}
+  .face.f1.on{border-color:var(--orange);}
+  .face.f2.on{border-color:var(--blue);}
+  .face.f3.on{border-color:var(--purple); background:#f5f3ff;}
+  .face.f4.on{border-color:var(--green); background:#ecfdf5;}
+  .note{margin-top:10px; font-size:11.5px; color:var(--sub); background:#f3f4f6; border-radius:8px; padding:7px 9px;}
+
+  .stageBox{background:#111827; border-radius:10px; padding:10px 12px; font-family:Consolas,monospace; font-size:12px; line-height:1.75; color:#e5e7eb; min-height:220px; white-space:pre;}
+  .stageBox .hl{background:#4a3410; border-radius:3px; color:#fbbf24;}
+  .stageBox .dim{color:#64748b;}
+  .stageBox .grn{color:#a7f3d0;}
+  .stageBox .org{color:#fde68a;}
+  .stageBox .pur{color:#ddd6fe;}
+  .stageBox .blu{color:#bfdbfe;}
+  .stageBox .red{color:#fca5a5;}
+  .vrow{display:flex; align-items:center; gap:6px; padding:2px 0; font-size:11.5px; font-family:Consolas,monospace;}
+  .vslot{display:inline-block; min-width:64px; text-align:center; border-radius:6px; padding:2px 8px; font-size:11px; background:#1f2937; color:#d1d5db;}
+  .vslot.hot{background:#4a3410; color:#fbbf24;}
+  .vslot.empty{background:#374151; color:#6b7280; border:1px dashed #4b5563;}
+  .detail{margin-top:8px; font-size:12px; color:#4b5563; background:#f3f4f6; border-radius:8px; padding:7px 9px; min-height:34px;}
+
+  .src{background:#111827; border-radius:12px; padding:12px 14px; box-shadow:var(--shadow); margin-bottom:12px;}
+  .src h2{font-size:13px; color:#9ca3af; margin-bottom:8px;}
+  .src .code{font-family:Consolas,monospace; font-size:12px; line-height:1.7; white-space:pre; overflow-x:auto; color:#e5e7eb;}
+  .src .code .hl{background:#4a3410; border-radius:3px; color:#fbbf24;}
+  .src .code .dim{color:#64748b;}
+  .src .code .grn{color:#a7f3d0;}
+  .src .code .org{color:#fde68a;}
+  .src .code .pur{color:#ddd6fe;}
+  .src .code .blu{color:#bfdbfe;}
+  .scene{margin-top:8px; font-size:11px; color:#6b7280; background:#f3f4f6; border-radius:8px; padding:6px 8px;}
+
+  .ctl{display:flex; align-items:center; gap:10px; justify-content:center; padding:10px; background:var(--card); border-radius:12px; box-shadow:var(--shadow);}
+  .btn{width:44px; height:44px; border-radius:50%; border:none; background:var(--blue); color:#fff; font-size:16px; cursor:pointer; transition:all .15s; font-weight:bold;}
+  .btn:hover{transform:scale(1.08);}
+  .btn.green{background:var(--green);}
+  .btn.orange{background:var(--orange); width:52px; height:52px;}
+  .hint{font-size:12px; color:var(--sub);}
+  .stepDesc{font-size:14px; font-weight:normal; line-height:1.85; color:#334155; background:#eff6ff; border-radius:9px; padding:11px 16px; margin-bottom:12px; border-left:4px solid var(--blue);}
+  .stepDesc b{color:var(--blue); font-weight:600;}
+  .stepDesc code{color:#7c3aed; font-family:Consolas,monospace; background:rgba(139,92,246,.10); padding:0 5px; border-radius:4px; font-size:12.5px;}
+  .kbd{display:inline-block; border:1px solid var(--line); border-radius:4px; padding:0 6px; background:#fff; font-size:11px; color:#4b5563;}
+
+  @media(max-width:1000px){.grid{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1><span class="mono">Code_Gen</span> · 方法调用全链路第五站：从 Ideal 图到 nmethod</h1>
+    <div class="sub">opto/compile.cpp · matcher.cpp · chaitin.cpp · output.cpp · ciEnv.cpp · nmethod.cpp · JDK 28</div>
+    <div class="badges">
+      <span class="badge orange">指令选择</span>
+      <span class="badge">CFG 调度</span>
+      <span class="badge purple">寄存器分配</span>
+      <span class="badge green">机器码生成</span>
+      <span class="badge red">落地与失效</span>
+    </div>
+  </header>
+
+  <div class="steps" id="pills"></div>
+  <div class="stepDesc" id="stepDesc">点击 ▶ 开始播放，Space 播放/暂停，← → 步进，R 重置</div>
+
+  <div class="grid">
+    <!-- 左：四关卡导航 -->
+    <div class="panel p1">
+      <h2>四关卡导航</h2>
+      <div class="face f1" id="face1"><span class="num">1</span><div><div class="tt">指令选择与调度</div><div class="ds">Matcher::match :216 · PhaseCFG :3827</div></div></div>
+      <div class="face f2" id="face2"><span class="num">2</span><div><div class="tt">寄存器分配</div><div class="ds">PhaseChaitin :356</div></div></div>
+      <div class="face f3" id="face3"><span class="num">3</span><div><div class="tt">机器码生成与安装</div><div class="ds">Output :253 · register_method :977</div></div></div>
+      <div class="face f4" id="face4"><span class="num">4</span><div><div class="tt">nmethod 落地与失效</div><div class="ds">new_nmethod :1090 · make_not_entrant :2215</div></div></div>
+      <div class="note" id="fnote">当前：关卡 ①<br>指令选择与调度</div>
+    </div>
+
+    <!-- 中：舞台 -->
+    <div class="panel p2">
+      <h2>机制舞台</h2>
+      <div class="stageBox" id="stage">// 当前关卡机制</div>
+      <div class="detail" id="detail">—</div>
+    </div>
+
+    <!-- 右：源码 -->
+    <div class="panel p3">
+      <h2>源码证据</h2>
+      <div class="src">
+        <div class="code" id="src">// 源码面板</div>
+      </div>
+      <div class="scene" id="scene">—</div>
+    </div>
+  </div>
+
+  <!-- 控制 -->
+  <div class="ctl">
+    <button class="btn" id="btnPrev" title="上一步">◀</button>
+    <button class="btn orange" id="btnPlay" title="播放/暂停 (Space)">▶</button>
+    <button class="btn" id="btnNext" title="下一步">▶</button>
+    <button class="btn green" id="btnReset" title="重置 (R)">↺</button>
+    <span class="hint"><span class="kbd">Space</span> 播放/暂停 · <span class="kbd">←</span> <span class="kbd">→</span> 步进 · <span class="kbd">R</span> 重置 · 点击步骤胶囊跳转</span>
+  </div>
+
+</div>
+
+<script>
+(() => {
+  const S = {
+    face1: document.getElementById('face1'),
+    face2: document.getElementById('face2'),
+    face3: document.getElementById('face3'),
+    face4: document.getElementById('face4'),
+    fnote: document.getElementById('fnote'),
+    stage: document.getElementById('stage'),
+    detail: document.getElementById('detail'),
+    src: document.getElementById('src'),
+    scene: document.getElementById('scene'),
+    desc: document.getElementById('stepDesc'),
+    pills: document.getElementById('pills'),
+  };
+  const COL = { blue:'#3b82f6', purple:'#8b5cf6', orange:'#f59e0b', green:'#10b981' };
+
+  function faces(n){
+    S.face1.className='face f1'+(n===1?' on':'');
+    S.face2.className='face f2'+(n===2?' on':'');
+    S.face3.className='face f3'+(n===3?' on':'');
+    S.face4.className='face f4'+(n===4?' on':'');
+  }
+  function stage(html){ S.stage.innerHTML = html; }
+  function src(html){ S.src.innerHTML = html; }
+  function scene(txt){ S.scene.innerHTML = txt; }
+
+  const steps = [
+    // 0 白话速览（先讲人话，再上源码）
+    { d:`<span style="display:inline-block;background:#dbeafe;color:#1d4ed8;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">白话速览</span> 这一站在演什么：<b>速算卡的生产车间 + 仓库 + 回收站</b>。
+<b>比喻</b>：C2 决定配卡后，得把「算账」做成一张真卡：<b>选指令 → 排寄存器 → 写机器码</b>，放进<b>抽屉</b>（CodeCache），卡上写死假设「会计=老王」。哪天老王调走，自动<b>贴停用条</b>，没人用再扔。
+<b>技术对照</b>：选指令 = Matcher；排寄存器 = PhaseChaitin；写机器码 = PhaseOutput；卡 = <code>nmethod</code>；撕卡 = make_not_entrant。
+<b>记住一句</b>：卡上写假设，假设破了自动撕卡重学——全自动无感。
+下面每一步都会用术语讲同一件事，忘了就把比喻拉回来。`,
+      fn:()=>{
+        faces(1); S.fnote.innerHTML='当前：白话速览<br>先讲人话';
+        stage(`<span class="blu">白话速览 · 速算卡一条龙</span>\n<span class="dim">比喻：选指令 → 排寄存器 → 写机器码 → 入抽屉</span>\n<span class="dim">技术：Matcher → Chaitin → Output → nmethod</span>\n<span class="dim">四关：①指令选择调度 ②寄存器分配</span>\n<span class="dim">      ③机器码生成安装 ④落地与失效</span>\n<span class="grn">一句话：赌输了撕卡重学，全自动</span>`);
+        S.detail.textContent='这一站是速算卡的「生产车间 + 仓库 + 回收站」一条龙。';
+        src(`<span class="dim">// 术语对照（人话 → 黑话）</span>\n<span class="blu">选指令</span>      → <span class="grn">Matcher 指令选择</span>\n<span class="blu">排寄存器</span>    → <span class="grn">PhaseChaitin 分配</span>\n<span class="blu">写机器码</span>    → <span class="grn">PhaseOutput</span>\n<span class="blu">卡 / 抽屉</span>   → <span class="grn">nmethod / CodeCache</span>\n<span class="blu">贴停用条</span>    → <span class="grn">make_not_entrant</span>`);
+        scene('白话速览：<b>速算卡一条龙</b>');
+      }},
+    // 0 初始
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：这一站是速算卡「生产车间 + 仓库 + 回收站」一条龙：Ideal 图怎么变机器码、怎么安装上岗、失效了怎么安全回收。
+04 站结束时，调用点已经被"抹平"成三种 IR 形态（内联 / 静态绑 / 多态保留）——但那时还只是 <b>Ideal 图</b>。这一站：Ideal 图怎么变成 <b>机器码</b>，机器码怎么<b>落地成 nmethod</b>，失效了又怎么<b>安全撤回</b>。
+<b>① 指令选择与调度</b>：Matcher + PhaseCFG（compile.cpp:3805 / :3827）
+<b>② 寄存器分配</b>：PhaseChaitin 图着色（chaitin.cpp:356）
+<b>③ 机器码生成与安装</b>：PhaseOutput + 六道门禁（output.cpp:253 / ciEnv.cpp:977）
+<b>④ nmethod 落地与失效</b>：new_nmethod ↔ make_not_entrant（nmethod.cpp）
+核心问题：Ideal 图是"抽象语义"，机器只懂"寄存器 + 指令"——<code>Code_Gen</code> 就是两者之间那座桥`,
+      fn:()=>{
+        faces(1); S.fnote.innerHTML='当前：关卡 ①<br>指令选择与调度';
+        stage(`<span class="org">关卡 ① 总览：Code_Gen（opto/compile.cpp）</span>
+<span class="dim">┌──────────────────────────────────────────────┐</span>
+<span class="blu">│ Ideal 图（Optimize 产物，:887）              │</span>
+<span class="blu">│   ↓ Matcher 指令选择（:3809）                │</span>
+<span class="blu">│   ↓ PhaseCFG 基本块（:3827）+ 调度（:3834）  │</span>
+<span class="pur">│   ↓ PhaseChaitin 寄存器分配（chaitin:356）   │</span>
+<span class="org">│   ↓ PhaseOutput 机器码生成（output:253）     │</span>
+<span class="grn">│   ↓ register_method 六道门禁 → nmethod       │</span>
+<span class="dim">└──────────────────────────────────────────────┘</span>
+<span class="grn">从"抽象"到"具体"：每一站都在丢掉信息、换取速度</span>`);
+        S.detail.textContent='Ideal 图 → 指令选择 → 寄存器分配 → 机器码 → 六道门禁 → nmethod：Code_Gen 全链路总览。';
+        src(`<span class="dim">// 第五站全景（compile.cpp + matcher.cpp + chaitin.cpp + output.cpp + ciEnv.cpp + nmethod.cpp）</span>
+<span class="org">① Compile::Code_Gen(:3790)</span>
+<span class="org">   ├─ Matcher::match 指令选择（:3809）</span>
+<span class="org">   ├─ PhaseCFG 基本块（:3827）</span>
+<span class="org">   └─ do_global_code_motion 调度（:3834）</span>
+<span class="pur">② PhaseChaitin::Register_Allocate（chaitin.cpp:356）</span>
+<span class="org">③ PhaseOutput::Output（output.cpp:253）</span>
+<span class="grn">④ ciEnv::register_method（ciEnv.cpp:977）</span>
+<span class="grn">   └─ nmethod::new_nmethod（nmethod.cpp:1090）</span>
+<span class="red">⑤ 失效：make_not_entrant（nmethod.cpp:2215）→ unlink → purge</span>`);
+        scene('场景 0：<b>四关卡总览</b>');
+      }},
+    // 1 编译驱动 + 降级
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：C2 编译入口是个 while 重试循环：激进优化失败就关掉再试（先关 SubsumeLoads，再关 EscapeAnalysis），越退越保守。
+入口：<b>C2Compiler::compile_method</b>（c2compiler.cpp:125）——一个 <code>while (!env->failing())</code> 重试循环。
+<b>① 每次迭代</b>：构造一个 <code>Compile</code>（compile.cpp:659），内部先 <code>Optimize()</code>（:887，04 站全程）再 <code>Code_Gen()</code>（:946，本站全程）
+<b>② 失败就退</b>：编译中途某步崩了，记下 failure_reason
+<b>③ 降级重试</b>：<code>retry_no_subsuming_loads</code>（:153）→ 关掉 <code>SubsumeLoads</code>；<code>retry_no_escape_analysis</code>（:159）→ 关掉 <code>DoEscapeAnalysis</code>
+<b>④ 越退越保守</b>：一路把激进优化关掉再试，直到成功或彻底放弃
+<b>⑤ 哲学</b>：JIT 编译<b>允许失败</b>——失败只是"这次不编译"，解释器还在兜底`,
+      fn:()=>{
+        faces(1);
+        stage(`<span class="org">编译驱动：while 重试循环（c2compiler.cpp:125）</span>
+<span class="blu">while (!env->failing()) {</span>
+<span class="blu">    Compile C(env, target, entry_bci, options, directive);</span>
+<span class="dim">    // 构造 Compile → Optimize() :887 → Code_Gen() :946</span>
+<span class="red">    if (C.failure_reason() != nullptr) {</span>
+<span class="red">        // 降级重试</span>
+<span class="org">        关 SubsumeLoads（:153）→ retry_no_subsuming_loads</span>
+<span class="org">        关 DoEscapeAnalysis（:159）→ retry_no_escape_analysis</span>
+<span class="red">        continue;   // 再试一次（更保守）</span>
+<span class="red">    }</span>
+<span class="blu">}</span>
+<span class="grn">失败≠完蛋：解释器兜底，下次热了再编译</span>`);
+        S.detail.textContent='C2 编译入口是一个重试循环：激进优化失败就关掉再试，越退越保守。';
+        src(`<span class="dim">// opto/c2compiler.cpp:125-149（原文截取）</span>
+<span class="grn">void C2Compiler::compile_method(ciEnv* env, ciMethod* target, int entry_bci, ...) {</span>
+  <span class="grn">bool subsume_loads = SubsumeLoads;</span>
+  <span class="grn">bool do_escape_analysis = DoEscapeAnalysis;</span>
+  <span class="dim">// ...</span>
+  <span class="grn">while (!env->failing()) {</span>
+    <span class="grn">Options options(subsume_loads, do_escape_analysis, ...);</span>
+    <span class="grn">Compile C(env, target, entry_bci, options, directive);</span>
+
+<span class="dim">// c2compiler.cpp:152-164（降级重试）</span>
+    <span class="org">if (C.failure_reason_is(retry_no_subsuming_loads())) {</span>
+      <span class="org">subsume_loads = false;</span>
+      <span class="org">continue;  // retry</span>
+    <span class="org">}</span>
+    <span class="org">if (C.failure_reason_is(retry_no_escape_analysis())) {</span>
+      <span class="org">do_escape_analysis = false;</span>
+      <span class="org">continue;  // retry</span>
+    <span class="org">}</span>`);
+        scene('场景 1：<b>编译驱动 + 降级</b>');
+      }},
+    // 2 Matcher 指令选择
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：把「语义树」（Ideal 图）翻译成「x86 指令」（MachNode）——自底向上，一棵小树折叠成一条指令（Load+Op 压成单指令）。
+<b>指令选择</b>：Ideal 节点是"语义"，CPU 只懂"指令"——<code>Matcher::match</code>（matcher.cpp:216）负责把 Ideal 树翻译成 <b>MachNode</b>（x86 模板）。
+<b>① 输入</b>：Ideal 图（AddI、LoadP、CallJava…）
+<b>② 输出</b>：Mach 图（x86 的 addl/movq/call 等具体指令模板）
+<b>③ 匹配方式</b>：自底向上，把一棵小树折叠成一条指令——如 <code>LoadI + AddI</code> 折叠成带内存操作数的单指令
+<b>④ 为什么能折叠</b>：x86 支持"内存操作数"——匹配器利用这一点把多节点压成单指令
+<b>⑤ 启动时机</b>：compile.cpp:3805 <code>Matcher matcher; matcher.match();</code>——<b>Ideal 图的第一次具体化</b>`,
+      fn:()=>{
+        faces(1);
+        stage(`<span class="org">Matcher::match：Ideal → Mach（matcher.cpp:216）</span>
+<span class="dim">    Ideal 图（语义）                 Mach 图（x86 指令）</span>
+<span class="blu">    LoadI   ─┐</span>
+<span class="blu">    AddI    ─┴─►  matcher.match()  ──►  movl r, [mem]</span>
+<span class="blu">    StoreI  ────────────────►  addl r, imm</span>
+<span class="blu">    CallJava────────────────►  call  [target]</span>
+<span class="dim">自底向上折叠：一棵小树 = 一条指令</span>
+<span class="grn">x86 内存操作数 → Load+Op 压成单指令（SubsumeLoads）</span>
+<span class="org">04 站"抹平调用"之后，这里是第一次具体化</span>`);
+        S.detail.textContent='Matcher 把 Ideal 语义树折叠成 x86 指令模板（MachNode）——自底向上，一棵小树一条指令。';
+        src(`<span class="dim">// opto/matcher.cpp:215-236（原文截取）</span>
+<span class="grn">void Matcher::match( ) {</span>
+  <span class="grn">init_spill_mask( C->root()->in(1) );</span>
+  <span class="dim">// ... 初始化返回寄存器掩码等 ...</span>
+  <span class="grn">_return_values_mask = return_values_mask(C->tf());</span>
+
+<span class="dim">// opto/compile.cpp:3805-3813（调用处）</span>
+  <span class="grn">Matcher matcher;</span>
+  <span class="grn">_matcher = &matcher;</span>
+  <span class="org">{ TracePhase tp(_t_matcher);</span>
+    <span class="org">matcher.match();</span>
+    <span class="org">if (failing()) return;</span>
+  <span class="org">}</span>`);
+        scene('场景 2：<b>Matcher 指令选择</b>');
+      }},
+    // 3 PhaseCFG + 调度
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：指令排成基本块（CFG），再在块内重排指令顺序——拉长无依赖链，躲 x86 流水线停顿，但不能破坏数据依赖。
+指令选好了，但还是一盘散沙——<b>PhaseCFG</b>（compile.cpp:3827）把它们排成<b>基本块</b>（CFG）。
+<b>① 基本块</b>：单入口单出口的指令序列——控制流图的顶点
+<b>② 调度</b>：<code>do_global_code_motion</code>（:3834）在基本块内重排指令顺序
+<b>③ 为什么重排</b>：x86 乱序执行 + 流水线——把无依赖的指令拉开，减少停顿
+<b>④ 依赖约束</b>：调度不能破坏 read-after-write 等数据依赖
+<b>⑤ 产出</b>：一个排好序、带控制流的 Mach 图——给寄存器分配当输入`,
+      fn:()=>{
+        faces(1);
+        stage(`<span class="org">PhaseCFG + 全局调度（compile.cpp:3827/:3834）</span>
+<span class="blu">PhaseCFG cfg(node_arena(), root(), matcher);</span>
+<span class="blu">bool success = cfg.do_global_code_motion();</span>
+<span class="dim">┌─ B0 ─┐      ┌─ B2 ─┐</span>
+<span class="dim">│ ...  │──►  │ ...  │</span>
+<span class="dim">└──────┘      └──┬───┘</span>
+<span class="dim">    │            │</span>
+<span class="dim">    ▼            ▼</span>
+<span class="dim">┌─ B1 ─┐      ┌─ B3 ─┐</span>
+<span class="blu">基本块 = 单入口单出口指令序列</span>
+<span class="org">调度 = 块内重排：拉长无依赖链，躲流水线停顿</span>
+<span class="grn">不破坏数据依赖（RAW/WAR/WAW）是底线</span>`);
+        S.detail.textContent='PhaseCFG 排基本块 + do_global_code_motion 全局调度：重排指令躲流水线停顿。';
+        src(`<span class="dim">// opto/compile.cpp:3824-3845（原文截取）</span>
+  <span class="grn">print_method(PHASE_MATCHING, 2);</span>
+
+  <span class="dim">// Build a proper-looking CFG</span>
+  <span class="grn">PhaseCFG cfg(node_arena(), root(), matcher);</span>
+  <span class="grn">_cfg = &cfg;</span>
+  <span class="org">{ TracePhase tp(_t_scheduler);</span>
+    <span class="grn">bool success = cfg.do_global_code_motion();</span>
+    <span class="org">if (!success) return;</span>
+    <span class="org">cfg.verify();</span>
+    <span class="org">if (failing()) return;</span>
+  <span class="org">}</span>`);
+        scene('场景 3：<b>CFG 基本块 + 调度</b>');
+      }},
+    // 4 Matcher 不回收 + 小结
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：一个反直觉细节：Matcher 不能提前回收——寄存器分配溢出时生成 spill 代码还要查它的模板信息。
+一个反直觉的细节：<b>Matcher 不能提前回收</b>（compile.cpp:3795-3799 注释）。
+<b>① 直觉</b>：匹配完指令选择就完事了，内存可以还
+<b>② 实际</b>：<b>生成 spill 代码还要用它</b>——寄存器分配溢出时，需要 Matcher 的模板信息
+<b>③ 风险</b>：提前回收 → VectorSet 在已回收内存上置位 → 内存踩踏
+<b>④ 关卡①小结</b>：Ideal 图 → Mach 图（指令选择）→ CFG 基本块 → 调度——<b>图已经"可执行"了，但寄存器还是虚拟的</b>
+<b>⑤ 下一关</b>：把虚拟寄存器落实成物理寄存器——PhaseChaitin`,
+      fn:()=>{
+        faces(1);
+        stage(`<span class="org">为什么 Matcher 不能回收（compile.cpp:3795-3799）</span>
+<span class="dim">// You might think we could reclaim Matcher memory PDQ,</span>
+<span class="dim">// but actually the Matcher is used in generating spill code.</span>
+<span class="blu">Matcher 保留 ──► spill 代码生成时查模板</span>
+<span class="red">提前回收 ──► VectorSet 踩到已回收内存</span>
+<span class="org">关卡① 小结</span>
+<span class="grn">  Ideal 图 → Mach 图（指令选择）</span>
+<span class="grn">           → CFG 基本块（控制流）</span>
+<span class="grn">           → 调度（指令重排）</span>
+<span class="dim">  还剩：虚拟寄存器 → 物理寄存器（下一关）</span>`);
+        S.detail.textContent='Matcher 因为生成 spill 代码还要用而不能回收；关卡①结束，虚拟寄存器待落实。';
+        src(`<span class="dim">// opto/compile.cpp:3795-3799（原文注释）</span>
+<span class="grn">  // Perform instruction selection.  You might think we could reclaim Matcher</span>
+<span class="grn">  // memory PDQ, but actually the Matcher is used in generating spill code.</span>
+<span class="grn">  // Internals of the Matcher (including some VectorSets) must remain live</span>
+<span class="grn">  // for awhile - thus I cannot reclaim Matcher memory lest a VectorSet usage</span>
+<span class="grn">  // set a bit in reclaimed memory.</span>
+
+<span class="dim">// 关卡① 四件套行号</span>
+<span class="org">Matcher::match         matcher.cpp:216</span>
+<span class="org">PhaseCFG              compile.cpp:3827</span>
+<span class="org">do_global_code_motion  compile.cpp:3834</span>
+<span class="org">Matcher 不回收注释     compile.cpp:3795</span>`);
+        scene('场景 4：<b>关卡①小结</b>');
+      }},
+    // 5 PhaseChaitin + PhaseLive
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：寄存器分配第一步：活性分析——每个程序点哪些值还「活着」（以后还要用），活区间不重叠的两个值才能共用一个寄存器。
+关卡② 寄存器分配：<b>PhaseChaitin::Register_Allocate</b>（chaitin.cpp:356）——图着色算法把虚拟寄存器落实成物理寄存器（rax/rbx/...）。
+<b>① 第一步</b>：<code>PhaseLive</code> 活性分析（chaitin.cpp:380）——每个程序点，哪些值还"活着"（以后还要用）
+<b>② 活区间</b>（live range）：一个值从定义到最后一次使用的区间
+<b>③ 为什么关键</b>：活区间不重叠的两个值 → 可以共用一个寄存器
+<b>④ 帧布局</b>（:358-365 注释）：arg_slots（入参区，偏置 frame_size）+ frame_slots（出参 + spill 区，偏置 0）
+<b>⑤ 入口</b>：compile.cpp:3847 <code>PhaseChaitin regalloc(unique(), cfg, matcher, false);</code>`,
+      fn:()=>{
+        faces(2); S.fnote.innerHTML='当前：关卡 ②<br>寄存器分配';
+        stage(`<span class="org">PhaseChaitin::Register_Allocate（chaitin.cpp:356）</span>
+<span class="blu">PhaseLive live(_cfg, _lrg_map.names(), &live_arena, false);</span>
+<span class="dim">    值 v1 定义 ──────────► 最后使用   （活区间）</span>
+<span class="dim">    值 v2      定义 ────────► 最后使用 （活区间）</span>
+<span class="grn">    v1 与 v2 活区间不重叠 → 共用一个寄存器！</span>
+<span class="dim">帧布局（:358-365）：</span>
+<span class="dim">  arg_slots（入参，偏置 frame_size）</span>
+<span class="dim">  frame_slots（出参 + spill 区，偏置 0）</span>
+<span class="org">活性分析是干涉图的前提——不知道谁活着，就没法判断冲突</span>`);
+        S.detail.textContent='Register_Allocate 第一步：PhaseLive 活性分析——不重叠的活区间可共用寄存器。';
+        src(`<span class="dim">// opto/chaitin.cpp:356-380（原文截取）</span>
+<span class="grn">void PhaseChaitin::Register_Allocate() {</span>
+  <span class="dim">// Above the OLD FP ... are the incoming arguments ("arg_slots").</span>
+  <span class="dim">// Above the NEW FP ... is the outgoing argument area ("frame_slots").</span>
+  <span class="grn">_trip_cnt = 0;</span>
+  <span class="grn">_matcher._allocation_started = true;</span>
+
+  <span class="dim">// Need live-ness for the IFG; need the IFG for coalescing.</span>
+  <span class="grn">PhaseLive live(_cfg, _lrg_map.names(), &live_arena, false);</span>`);
+        scene('场景 5：<b>活性分析</b>');
+      }},
+    // 6 IFG + de_ssa
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：建「干涉图」（谁和谁抢寄存器）+ 出 SSA（Phi 节点要么合并活区间、要么插拷贝）——为着色做准备。
+活性分析之后：<b>PhaseIFG 干涉图</b>（chaitin.cpp:383）+ <b>de_ssa 出 SSA</b>（:393）。
+<b>① 干涉图</b>：顶点 = 活区间，边 = 两个活区间重叠（不能共用寄存器）
+<b>② 着色问题</b>：给顶点涂"寄存器颜色"，相邻顶点不能同色——经典图着色
+<b>③ 为什么用图</b>：寄存器数量 = 颜色数量（x86-64 可用整数寄存器有限）
+<b>④ de_ssa</b>（:386-392 注释）：从 SSA 世界回到 Named 世界——Phi 节点要么合并活区间（coalesce）要么插拷贝
+<b>⑤ 虚拟拷贝</b>：先假装有拷贝（virtual copies），能合并就合并——减少真正的 mov 指令`,
+      fn:()=>{
+        faces(2);
+        stage(`<span class="org">干涉图 + de_ssa（chaitin.cpp:383/:393）</span>
+<span class="dim">    v1 ───── v2 （重叠 → 不能同寄存器）</span>
+<span class="dim">    v1 ───── v3 （重叠 → 不能同寄存器）</span>
+<span class="dim">    v2     v3   （不重叠 → 可共用）</span>
+<span class="grn">着色：颜色 = 物理寄存器，相邻异色</span>
+<span class="blu">de_ssa()：SSA → Named</span>
+<span class="dim">  Phi 节点 ──► 合并活区间（coalesce）或插拷贝</span>
+<span class="dim">  先假装有拷贝（virtual copies）→ 能合并就省掉 mov</span>
+<span class="org">x86-64 可用整数寄存器有限 → 颜色不够就溢出（下步）</span>`);
+        S.detail.textContent='PhaseIFG 建干涉图（重叠=边）+ de_ssa 出 SSA（Phi 合并或插拷贝）。';
+        src(`<span class="dim">// opto/chaitin.cpp:382-393（原文截取）</span>
+  <span class="dim">// Need IFG for coalescing and coloring</span>
+  <span class="grn">PhaseIFG ifg(&live_arena);</span>
+  <span class="grn">_ifg = &ifg;</span>
+
+  <span class="dim">// Come out of SSA world to the Named world.  Assign (virtual)</span>
+  <span class="dim">// registers to Nodes.  Use the same register for all inputs and</span>
+  <span class="dim">// the output of PhiNodes - effectively ending SSA form.</span>
+  <span class="grn">de_ssa();</span>`);
+        scene('场景 6：<b>干涉图 + de_ssa</b>');
+      }},
+    // 7 图着色 + 溢出
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：着色博弈：颜色（寄存器）不够就把部分值溢出到栈——定义处插 store、使用处插 load，这里用上 Matcher 模板（第 5 步伏笔）。
+<b>图着色 + 溢出</b>——寄存器分配的核心博弈。
+<b>① 着色</b>：K 种颜色（寄存器），相邻顶点异色——贪心 + 启发式
+<b>② 溢出（spill）</b>：颜色不够 → 把某些活区间<b>溢出到栈</b>（frame_slots）
+<b>③ spill 代码</b>：在定义/使用处插入 load/store——<b>这里就用上 Matcher 模板</b>（Step 4 的伏笔！）
+<b>④ 收益权衡</b>：溢出越多，内存访问越多——但总比"寄存器用不了"强
+<b>⑤ 迭代</b>：溢出后活区间变短（分割），重新着色——多轮直到收敛`,
+      fn:()=>{
+        faces(2);
+        stage(`<span class="org">图着色 + 溢出（spill）</span>
+<span class="dim">    可用颜色（寄存器）：rax rbx rcx rdx rsi rdi r8-r15 …</span>
+<span class="grn">    着得下 ──► 全在寄存器里（快）</span>
+<span class="red">    着不下 ──► 溢出到栈 frame_slots（慢）</span>
+<span class="red">              │</span>
+<span class="red">              ▼ 定义处插 store，使用处插 load</span>
+<span class="org">              └─ 生成 spill 代码 = 用 Matcher 模板（:3796）</span>
+<span class="dim">溢出后活区间变短 → 重新着色 → 迭代直到收敛</span>
+<span class="grn">代价：溢出值每次访问都要过内存——能少溢就少溢</span>`);
+        S.detail.textContent='颜色不够就 spill 到栈，生成 spill 代码时用到 Matcher 模板——Step 4 的伏笔。';
+        src(`<span class="dim">// 溢出与 spill code（chaitin.cpp 后半段）</span>
+<span class="dim">// Matcher 因此不能回收（compile.cpp:3796 注释）</span>
+<span class="grn">  // ... actually the Matcher is used in generating spill code.</span>
+<span class="grn">  // Internals of the Matcher (including some VectorSets) must</span>
+<span class="grn">  // remain live for awhile ...</span>
+
+<span class="dim">// compile.cpp:3847-3854（分配入口）</span>
+  <span class="grn">PhaseChaitin regalloc(unique(), cfg, matcher, false);</span>
+  <span class="grn">_regalloc = &regalloc;</span>
+  <span class="org">{ TracePhase tp(_t_registerAllocation);</span>
+    <span class="org">_regalloc->Register_Allocate();</span>
+    <span class="org">if (failing()) return;</span>
+  <span class="org">}</span>`);
+        scene('场景 7：<b>图着色 + 溢出</b>');
+      }},
+    // 8 use-def 失效 + 收尾
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：分配后副作用：use-def 链失效，但 Node→LRG→寄存器映射仍准；删空块、按频率重排基本块、窥孔优化、晚期展开收尾。
+分配完成的<b>关键副作用</b>：use-def 链失效（compile.cpp:3851-3852）——spill 代码插入后引用被重写。
+<b>① 失效原因</b>："After Chaitin, use-def chains are no longer accurate (at spill code)"
+<b>② 仍然有效</b>：Node→LRG→reg 映射仍然准确——机器码生成靠它
+<b>③ 空块清理</b>：<code>remove_empty_blocks</code>（:3870）——分配前留的"spill 备胎"空块现在可以删了
+<b>④ 块布局</b>：<code>PhaseBlockLayout</code>（:3872）按执行频率重排基本块；<code>PhasePeephole</code>（:3883）窥孔优化
+<b>⑤ 晚期展开</b>：<code>postalloc_expand</code>（:3891）——CPU 特有指令（如 x86 的某些寻址模式）最后展开`,
+      fn:()=>{
+        faces(2);
+        stage(`<span class="org">分配后收尾流水线（compile.cpp:3851-3895）</span>
+<span class="red">use-def 链失效！</span>
+<span class="dim">  // After Chaitin, use-def chains are no longer accurate</span>
+<span class="dim">  // (at spill code) and so must be ignored.</span>
+<span class="grn">  Node→LRG→reg 映射仍准确 ✓（机器码生成靠它）</span>
+<span class="blu">remove_empty_blocks  :3870  删空块</span>
+<span class="blu">PhaseBlockLayout    :3872  按频率重排</span>
+<span class="blu">PhasePeephole       :3883  窥孔优化</span>
+<span class="blu">postalloc_expand    :3891  CPU 特有指令晚期展开</span>
+<span class="org">关卡② 小结：虚拟寄存器 → 物理寄存器/栈，图终于可发射</span>`);
+        S.detail.textContent='分配后 use-def 失效但 Node→LRG→reg 仍准；空块清理/频率重排/窥孔/postalloc 收尾。';
+        src(`<span class="dim">// opto/compile.cpp:3847-3895（原文截取）</span>
+  <span class="grn">PhaseChaitin regalloc(unique(), cfg, matcher, false);</span>
+  <span class="org">{ TracePhase tp(_t_registerAllocation);</span>
+    <span class="dim">// Perform register allocation.  After Chaitin, use-def chains are</span>
+    <span class="dim">// no longer accurate (at spill code) and so must be ignored.</span>
+    <span class="dim">// Node->LRG->reg mappings are still accurate.</span>
+    <span class="org">_regalloc->Register_Allocate();</span>
+    <span class="org">if (failing()) return;</span>
+  <span class="org">}</span>
+  <span class="blu">cfg.remove_empty_blocks();</span>
+  <span class="blu">if (do_freq_based_layout()) { PhaseBlockLayout layout(cfg); }</span>
+  <span class="blu">if (OptoPeephole) { PhasePeephole peep(_regalloc, cfg); peep.do_transform(); }</span>
+  <span class="blu">if (Matcher::require_postalloc_expand) { cfg.postalloc_expand(_regalloc); }</span>`);
+        scene('场景 8：<b>收尾流水线</b>');
+      }},
+    // 9 Output + Prolog
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：机器码生成：先把「开场白」Prolog 焊进方法头——建栈帧（sub rsp, frame_size）、保存调用者帧，verified_entry 标签锚定入口。
+关卡③ 机器码生成：<b>PhaseOutput::Output</b>（output.cpp:253）——把 Mach 图"焊"成机器码缓冲区。
+<b>① 第一步</b>：<b>用 Prolog 替换 StartNode</b>（:270-275）——<code>MachPrologNode</code> 生成栈帧分配代码（sub rsp, frame_size 等）
+<b>② 为什么需要</b>：每个方法进来都要建栈帧、保存被调用者保存寄存器
+<b>③ 入口 Label</b>：prolog 带 <code>verified_entry</code> 标签——后面定入口偏移用
+<b>④ 缓冲区</b>：CodeBuffer 先 estimate_buffer_size（:328）再逐块发射
+<b>⑤ 顺序</b>：Output() 里先搭入口/出口骨架，再填指令`,
+      fn:()=>{
+        faces(3); S.fnote.innerHTML='当前：关卡 ③<br>机器码生成与安装';
+        stage(`<span class="org">PhaseOutput::Output（output.cpp:253）</span>
+<span class="dim">// Replace StartNode with prolog（:270-275）</span>
+<span class="blu">Label verified_entry;</span>
+<span class="blu">MachPrologNode* prolog = new MachPrologNode(&verified_entry);</span>
+<span class="blu">entry->map_node(prolog, 0);</span>
+<span class="dim">┌─ 方法体 ────────────────────────┐</span>
+<span class="org">│ [prolog]  sub rsp, frame_size  │ ← 栈帧分配</span>
+<span class="org">│           push rbp ...         │ ← 保存调用者帧</span>
+<span class="blu">│  ...指令...                    │</span>
+<span class="org">│ [epilog]  ...                  │</span>
+<span class="dim">└────────────────────────────────┘</span>
+<span class="grn">verified_entry Label = 之后定入口偏移的锚点</span>`);
+        S.detail.textContent='Output() 用 MachPrologNode 替换 StartNode：栈帧分配代码，verified_entry 标签锚定入口。';
+        src(`<span class="dim">// opto/output.cpp:252-275（原文截取）</span>
+<span class="grn">// Convert Nodes to instruction bits and pass off to the VM</span>
+<span class="grn">void PhaseOutput::Output() {</span>
+  <span class="dim">// Make sure I can find the Start Node</span>
+  <span class="grn">Block *entry = C->cfg()->get_block(1);</span>
+  <span class="grn">const StartNode *start = entry->head()->as_Start();</span>
+
+  <span class="dim">// Replace StartNode with prolog</span>
+  <span class="grn">Label verified_entry;</span>
+  <span class="grn">MachPrologNode* prolog = new MachPrologNode(&verified_entry);</span>
+  <span class="grn">entry->map_node(prolog, 0);</span>
+  <span class="grn">C->cfg()->map_node_to_block(prolog, entry);</span>
+  <span class="grn">C->cfg()->unmap_node_from_block(start);</span>`);
+        scene('场景 9：<b>Prolog 建栈帧</b>');
+      }},
+    // 10 UEP + Epilog
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：再焊「双入口 + 出口」：UEP 未验证入口（receiver 检查，虚调用兜底用）+ 每个 return 块前的 epilog（恢复栈帧 + ret）。
+入口/出口骨架补齐：<b>UEP 未验证入口</b> + <b>Epilog 每个 return 前</b>。
+<b>① UEP</b>（output.cpp:294-297）：非静态方法在 root 块头插 <code>MachUEPNode</code>——未验证入口点，做 receiver 类型检查（虚调用去优化要用它）
+<b>② 为什么叫"未验证"</b>：调用方可能绕过类型检查（如内联缓存 miss 直接跳这里）
+<b>③ 双入口布局</b>：verified 入口（检查过的）在前，UEP 在后面
+<b>④ Epilog</b>（:311-322）：每个程序出口（return 块）前插 <code>MachEpilogNode</code>——恢复栈帧 / 弹出返回地址 / ret
+<b>⑤ 条件</b>（:314）：只有真正到达 root 的出口块才插——连接块不插`,
+      fn:()=>{
+        faces(3);
+        stage(`<span class="org">UEP + Epilog（output.cpp:294-297/:311-322）</span>
+<span class="dim">// Insert unvalidated entry point（:294-297）</span>
+<span class="blu">} else if (!C->method()->is_static()) {</span>
+<span class="blu">    C->cfg()->insert(broot, 0, new MachUEPNode());</span>
+<span class="blu">}</span>
+<span class="dim">┌─ broot ────────────────┐</span>
+<span class="org">│ [UEP] receiver 检查    │ ← 未验证入口（虚调用兜底）</span>
+<span class="grn">│ [prolog] 建栈帧        │ ← verified 入口（:271）</span>
+<span class="dim">└────────────────────────┘</span>
+<span class="dim">// Insert epilogs before every return（:311-322）</span>
+<span class="org">┌─ return 块 ─┐</span>
+<span class="org">│ [epilog]    │ ← 恢复栈帧 + ret</span>
+<span class="dim">└─────────────┘</span>
+<span class="grn">出口块判定：后继直达 root（:314）</span>`);
+        S.detail.textContent='UEP 未验证入口（receiver 检查）+ 每个 return 前插 epilog——双入口、出口骨架补齐。';
+        src(`<span class="dim">// opto/output.cpp:294-297（UEP）</span>
+  <span class="grn">} else if (!C->method()->is_static()) {</span>
+    <span class="dim">// Insert unvalidated entry point</span>
+    <span class="grn">C->cfg()->insert(broot, 0, new MachUEPNode());</span>
+  <span class="grn">}</span>
+
+<span class="dim">// output.cpp:311-319（epilog）</span>
+  <span class="dim">// Insert epilogs before every return</span>
+  <span class="grn">for (uint i = 0; i &lt; C->cfg()->number_of_blocks(); i++) {</span>
+    <span class="grn">Block* block = C->cfg()->get_block(i);</span>
+    <span class="org">if (!block->is_connector() &&</span>
+<span class="org">        block->non_connector_successor(0) == C->cfg()->get_root_block()) {</span>
+      <span class="grn">MachEpilogNode* epilog = new MachEpilogNode(...);</span>
+      <span class="grn">block->add_inst(epilog);</span>
+    <span class="org">}</span>
+  <span class="grn">}</span>`);
+        scene('场景 10：<b>UEP + Epilog</b>');
+      }},
+    // 11 install 定入口
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：计算每个入口在代码缓冲区的位置——普通编译 verified 入口在方法体偏移处，OSR 编译两者对调（OSR 直接在循环体处进）。
+<b>入口偏移定址</b>：PhaseOutput::install（output.cpp:3302）→ install_code 计算每个入口点在代码缓冲区的偏移。
+<b>① 两种编译模式</b>（:3331-3346）：普通编译 vs OSR 编译——入口偏移<b>正好相反</b>
+<b>② 普通编译</b>：<code>Verified_Entry = _first_block_size</code>——verified 入口在方法体偏移处（前面是 UEP/breakpoint）
+<b>③ OSR 编译</b>：<code>OSR_Entry = _first_block_size</code>、<code>Verified_Entry = 0</code>——OSR 版本不用 verified 入口，直接在循环体处进
+<b>④ 其他入口</b>：Inline_Entry、Entry 等默认都指向 <code>_first_block_size</code>（:3336-3344）
+<b>⑤ 意义</b>：nmethod 里 <code>_verified_entry_offset</code> 就来自这里（nmethod.hpp:685）`,
+      fn:()=>{
+        faces(3);
+        stage(`<span class="org">入口偏移定址（output.cpp:3331-3346）</span>
+<span class="dim">普通编译（非 OSR）：</span>
+<span class="blu">  _code_offsets.set_value(Verified_Entry, _first_block_size);</span>
+<span class="blu">  _code_offsets.set_value(OSR_Entry, 0);</span>
+<span class="dim">OSR 编译：</span>
+<span class="org">  _code_offsets.set_value(Verified_Entry, 0);</span>
+<span class="org">  _code_offsets.set_value(OSR_Entry, _first_block_size);</span>
+<span class="dim">┌─ nmethod 代码 ───────────────────┐</span>
+<span class="org">│ [UEP]             ← 未验证入口   │</span>
+<span class="grn">│ [prolog]          ← verified 入口│</span>
+<span class="blu">│  方法体...        ← OSR 入口     │</span>
+<span class="dim">└──────────────────────────────────┘</span>
+<span class="grn">nmethod::verified_entry_point() = code_begin() + _verified_entry_offset</span>`);
+        S.detail.textContent='install 定入口偏移：普通编译 Verified_Entry=_first_block_size；OSR 编译两者对调。';
+        src(`<span class="dim">// opto/output.cpp:3302-3314（install 入口）</span>
+<span class="grn">void PhaseOutput::install() {</span>
+  <span class="grn">if (!C->should_install_code()) return;</span>
+  <span class="grn">else if (C->stub_function() != nullptr) install_stub(C->stub_name());</span>
+  <span class="grn">else install_code(C->method(), C->entry_bci(), CompileBroker::compiler2(), ...);</span>
+<span class="grn">}</span>
+
+<span class="dim">// output.cpp:3331-3346（入口偏移，原文截取）</span>
+  <span class="org">if (C->is_osr_compilation()) {</span>
+    <span class="org">_code_offsets.set_value(CodeOffsets::Verified_Entry, 0);</span>
+    <span class="org">_code_offsets.set_value(CodeOffsets::OSR_Entry, _first_block_size);</span>
+  <span class="org">} else {</span>
+    <span class="grn">_code_offsets.set_value(CodeOffsets::Verified_Entry, _first_block_size);</span>
+    <span class="grn">_code_offsets.set_value(CodeOffsets::OSR_Entry, 0);</span>
+  <span class="org">}</span>`);
+        scene('场景 11：<b>入口偏移定址</b>');
+      }},
+    // 12 六道门禁总览
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：安装前最后一道关：六道检查全过才允许落地——方法计数器、CodeCache 空间、双锁、Jvmti/DTrace、依赖编码验证。
+安装前最后一道关：<b>register_method 六道门禁</b>（ciEnv.cpp:977）——全过才允许 nmethod 落地。
+<b>① 方法计数器</b>（:998）：<code>get_method_counters</code> 失败 → 不装
+<b>② CodeCache 空间</b>（:1008）：<code>CodeCache::gc_on_allocation</code>——先给新代码腾地方
+<b>③ 双锁</b>（:1011-1016）：<code>MethodCompileQueue_lock</code> + <code>Compile_lock</code> + <code>NoSafepointVerifier</code>——锁内无 safepoint，类层次不会变
+<b>④ Jvmti/DTrace</b>（:1020-1034）：状态变了 → 依赖作废
+<b>⑤ 依赖验证</b>（:1043/:1046）：<code>encode_content_bytes</code> + <code>validate_compile_task_dependencies</code>——CHA 假设逐条核对
+<b>⑥ 全过</b>（:1070）：才调 <code>nmethod::new_nmethod</code> 真正分配`,
+      fn:()=>{
+        faces(3);
+        stage(`<span class="org">register_method 六道门禁（ciEnv.cpp:977）</span>
+<span class="grn">① method counters（:998）</span>
+<span class="grn">② CodeCache::gc_on_allocation（:1008）</span>
+<span class="pur">③ 双锁 + NoSafepointVerifier（:1011-1016）</span>
+<span class="pur">   MethodCompileQueue_lock + Compile_lock</span>
+<span class="org">④ Jvmti / DTrace 状态（:1020-1034）</span>
+<span class="blu">⑤ 依赖编码 + 验证（:1043/:1046）</span>
+<span class="red">   encode_content_bytes → validate_compile_task_dependencies</span>
+<span class="grn">⑥ 全过 → nmethod::new_nmethod（:1070）</span>
+<span class="dim">任何一关失败 → 释放 CodeBuffer，本次编译作废（解释器继续）</span>`);
+        S.detail.textContent='六道门禁：counters → CodeCache 空间 → 双锁 → Jvmti/DTrace → 依赖验证 → new_nmethod。';
+        src(`<span class="dim">// ci/ciEnv.cpp:977-1046（register_method 门禁总览）</span>
+<span class="grn">void ciEnv::register_method(ciMethod* target, int entry_bci, CodeOffsets* offsets, ...) {</span>
+  <span class="dim">// ① method counters（:998）</span>
+  <span class="grn">if (method->get_method_counters(THREAD) == nullptr) { record_failure(...); return; }</span>
+  <span class="dim">// ② CodeCache 空间（:1008）</span>
+  <span class="grn">CodeCache::gc_on_allocation();</span>
+  <span class="dim">// ③ 双锁 + 无 safepoint（:1011-1017）</span>
+  <span class="pur">MutexLocker locker(THREAD, MethodCompileQueue_lock);</span>
+  <span class="pur">MutexLocker ml(Compile_lock);</span>
+  <span class="pur">NoSafepointVerifier nsv;</span>
+  <span class="dim">// ④ Jvmti/DTrace（:1020-1034）</span>
+  <span class="org">if (jvmti_state_changed()) record_failure("Jvmti state change...");</span>
+  <span class="dim">// ⑤ 依赖验证（:1043-1046）</span>
+  <span class="blu">dependencies()->encode_content_bytes();</span>
+  <span class="blu">validate_compile_task_dependencies(target);</span>
+  <span class="dim">// ⑥ 全过 → 落地（:1070）</span>
+  <span class="grn">nm = nmethod::new_nmethod(method, compile_id(), entry_bci, offsets, ...);</span>`);
+        scene('场景 12：<b>六道门禁</b>');
+      }},
+    // 13 门禁细节
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：最妙的两个机制：双锁冻结类层次（防将来）+ 依赖验证核对现状（防过去）——防的是同一件事：世界变了。
+门禁里最妙的两个机制：<b>双锁</b> 和 <b>依赖验证</b>。
+<b>① 为什么双锁</b>（:1013-1016 注释）：<code>InstanceKlass::add_to_hierarchy</code> 被禁——类加载/类重定义会改类层次，破坏 CHA 假设
+<b>② NoSafepointVerifier</b>：锁内不允许 safepoint → 期间不会有类加载 → 依赖验证结果可信
+<b>③ Jvmti 检查</b>（:1020）：jvmti 状态变了（如类重定义）→ 直接 record_failure
+<b>④ DTrace 检查</b>（:1025-1028）：方法探针开关变了 → 依赖作废
+<b>⑤ 依赖验证</b>（:1046）：把编译期快照的类层次假设，与当前真实类层次逐条核对——<b>乐观的底气就在这里</b>`,
+      fn:()=>{
+        faces(3);
+        stage(`<span class="org">门禁细节：双锁 + 依赖验证（ciEnv.cpp:1010-1046）</span>
+<span class="dim">// Prevent InstanceKlass::add_to_hierarchy from running</span>
+<span class="dim">// and invalidating our dependencies until we install this method.</span>
+<span class="pur">MutexLocker locker(THREAD, MethodCompileQueue_lock);  // 编译队列</span>
+<span class="pur">MutexLocker ml(Compile_lock);                          // 类层次</span>
+<span class="pur">NoSafepointVerifier nsv;                               // 无 safepoint</span>
+<span class="red">锁内不可能发生：类加载 / 类重定义 → 类层次冻结</span>
+<span class="blu">dependencies()->encode_content_bytes();</span>
+<span class="blu">validate_compile_task_dependencies(target);</span>
+<span class="grn">编译期快照假设 vs 当前真实层次 —— 逐条核对</span>
+<span class="org">乐观优化的底气：敢赌，因为装之前会再验一遍</span>`);
+        S.detail.textContent='双锁冻结类层次（防将来）+ 依赖验证核对现状（防过去）——乐观的全部底气。';
+        src(`<span class="dim">// ci/ciEnv.cpp:1010-1046（原文截取）</span>
+    <span class="dim">// Prevent InstanceKlass::add_to_hierarchy from running</span>
+    <span class="dim">// and invalidating our dependencies until we install this method.</span>
+    <span class="dim">// No safepoints are allowed. Otherwise, class redefinition can occur in between.</span>
+    <span class="pur">MutexLocker ml(Compile_lock);</span>
+    <span class="pur">NoSafepointVerifier nsv;</span>
+
+    <span class="dim">// Change in Jvmti state may invalidate compilation.</span>
+    <span class="org">if (!failing() &amp;&amp; jvmti_state_changed()) {</span>
+      <span class="org">record_failure("Jvmti state change invalidated dependencies");</span>
+    <span class="org">}</span>
+
+    <span class="dim">// Encode the dependencies now, so we can check them right away.</span>
+    <span class="blu">dependencies()->encode_content_bytes();</span>
+    <span class="dim">// Check for {class loads, evolution, breakpoints, ...} during compilation</span>
+    <span class="blu">validate_compile_task_dependencies(target);</span>`);
+        scene('场景 13：<b>门禁细节</b>');
+      }},
+    // 14 关卡③小结
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：门禁哲学小结：装之前验（防过去）、装之后盯（防将来）——JIT 的乐观全部建立在这扇门够硬。
+关卡③ 小结：为什么叫"门禁"？
+<b>① 安装是一瞬间</b>：从分配 nmethod 到 Method 指针指向它，时间极短
+<b>② 但这瞬间必须安全</b>：所有乐观优化（CHA 唯一实现、类型精确、内联守卫）都押在"编译期假设仍成立"上
+<b>③ 两道防线</b>：双锁冻结类层次（防将来）→ 依赖验证核对现状（防过去）——<b>防的是同一件事：世界变了</b>
+<b>④ 装完才解锁</b>：锁释放后新类加载会走"依赖失效"机制（关卡④）——不是装了就不管
+<b>⑤ 一句话</b>：<b>JIT 的乐观，全部建立在这扇门够硬</b>`,
+      fn:()=>{
+        faces(3);
+        stage(`<span class="org">关卡③ 小结：门禁哲学</span>
+<span class="dim">    装之前                        装之后</span>
+<span class="blu"> 双锁冻结类层次            依赖失效机制（关卡④）</span>
+<span class="blu"> 依赖验证核对现状          make_not_entrant 撤回</span>
+<span class="dim">    │                            │</span>
+<span class="dim">    └──── 同一件事：世界变了 ────┘</span>
+<span class="grn">防过去：编译期快照 vs 当前真实层次</span>
+<span class="grn">防将来：新类加载 → 登记在案的依赖被命中 → 撤销</span>
+<span class="org">乐观优化 = 敢赌 + 装前验 + 装后盯</span>`);
+        S.detail.textContent='门禁哲学：防过去（依赖验证）+ 防将来（装后失效机制）——乐观 = 敢赌 + 装前验 + 装后盯。';
+        src(`<span class="dim">// 关卡③ 行号速查</span>
+<span class="org">PhaseOutput::Output      output.cpp:253</span>
+<span class="org">Prolog 替换 Start        output.cpp:270-275</span>
+<span class="org">UEP（未验证入口）        output.cpp:294-297</span>
+<span class="org">Epilog（每个 return）    output.cpp:311-322</span>
+<span class="org">install 定入口偏移       output.cpp:3302/:3331-3346</span>
+<span class="grn">register_method 门禁     ciEnv.cpp:977</span>
+<span class="grn">双锁 + NoSafepoint       ciEnv.cpp:1011-1017</span>
+<span class="grn">依赖编码/验证            ciEnv.cpp:1043/:1046</span>
+<span class="grn">new_nmethod 调用点       ciEnv.cpp:1070</span>`);
+        scene('场景 14：<b>关卡③小结</b>');
+      }},
+    // 15 new_nmethod 空间账本
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：真正分配：nmethod 主体放 CodeCache（placement new），只读数据（PC 描述/依赖/异常表）放 C heap；初始状态「未上岗」。
+关卡④ nmethod 落地：<b>new_nmethod</b>（nmethod.cpp:1090）——分配三块独立空间。
+<b>① nmethod 主体</b>（:1109）：<code>CodeBlob::allocation_size</code> → <b>CodeCache</b> 里 placement new（:1134）——代码 + 元数据
+<b>② immutable_data</b>（:1111-1127）：PC 描述表 + 依赖表 + 异常表 + 调试数据——<b>C heap 分配</b>（os::malloc，mtCode），只读不重定位
+<b>③ mutable_data</b>（:1129）：含重定位信息——可变
+<b>④ post_init</b>（:1211-1228）：<code>finalize_relocations</code> → <code>ICache::invalidate_range</code>（刷指令缓存）→ <code>register_nmethod</code>（GC 登记）→ <code>CodeCache::commit</code>
+<b>⑤ 初始状态</b>：<code>_state = not_installed</code>（nmethod.cpp:1186）——还没上岗`,
+      fn:()=>{
+        faces(4); S.fnote.innerHTML='当前：关卡 ④<br>nmethod 落地与失效';
+        stage(`<span class="org">new_nmethod 空间账本（nmethod.cpp:1090）</span>
+<span class="dim">┌─ CodeCache（placement new :1134）─┐</span>
+<span class="blu">│ nmethod 主体 + 机器码             │</span>
+<span class="dim">├─ C heap（os::malloc :1122）───────┤</span>
+<span class="org">│ immutable_data：PC 描述/依赖表/  │</span>
+<span class="org">│  异常表/调试数据（只读不重定位） │</span>
+<span class="dim">├─ mutable_data ────────────────────┤</span>
+<span class="pur">│ 重定位信息（可变）               │</span>
+<span class="dim">└───────────────────────────────────┘</span>
+<span class="grn">post_init：finalize_relocations → ICache 刷 → GC 登记 → commit</span>
+<span class="red">初始 _state = not_installed（nmethod.cpp:1186）</span>`);
+        S.detail.textContent='new_nmethod 三块空间：主体在 CodeCache（placement new），immutable 在 C heap，post_init 收尾。';
+        src(`<span class="dim">// code/nmethod.cpp:1109-1138（原文截取）</span>
+  <span class="grn">int nmethod_size = CodeBlob::allocation_size(code_buffer, sizeof(nmethod));</span>
+  <span class="grn">int immutable_data_size = adjust_pcs_size(debug_info->pcs_size())</span>
+<span class="grn">      + align_up((int)dependencies->size_in_bytes(), oopSize)</span>
+<span class="grn">      + align_up(handler_table->size_in_bytes(), oopSize)</span>
+<span class="grn">      + align_up(debug_info->data_size(), oopSize);</span>
+  <span class="dim">// First, allocate space for immutable data in C heap.</span>
+  <span class="org">immutable_data = (address)os::malloc(immutable_data_size, mtCode);</span>
+  <span class="org">{ MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);</span>
+    <span class="grn">nm = new (nmethod_size, comp_level) nmethod(method(), ...);</span>
+  <span class="org">}</span>`);
+        scene('场景 15：<b>空间账本</b>');
+      }},
+    // 16 依赖登记
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：把卡挂到它依赖的类上（头插+CAS）——类加载时只查相关类的依赖表，检查从 O(方法数) 变成常数。
+<b>依赖登记</b>（nmethod.cpp:1149-1160）——把 nmethod 挂到它依赖的类上，让类加载时"只查相关"。
+<b>① 为什么</b>（:1141-1148 注释）：依赖检查要走"类层次上方"——如果查所有 nmethod 是 O(方法数)，太慢
+<b>② 两种挂法</b>：CallSite 依赖 → 挂到 <code>CallSite</code> 实例（MethodHandles::add_dependent_nmethod，:1153）；类依赖 → 挂到 <code>InstanceKlass</code>（ik->add_dependent_nmethod，:1160）
+<b>③ 数据结构</b>：<code>DependencyContext::add_dependent_nmethod</code>（dependencyContext.cpp:92）——<b>头插 + CAS</b>
+<b>④ 不变量</b>（:100-103 注释）：新 nmethod 要么不在链表、要么已在表头——<b>免扫描</b>
+<b>⑤ 效果</b>：类加载时沿继承链只查相关类的依赖表 → 检查从线性变成常数`,
+      fn:()=>{
+        faces(4);
+        stage(`<span class="org">依赖登记（nmethod.cpp:1149-1160）</span>
+<span class="dim">for (Dependencies::DepStream deps(nm); deps.next(); ) {</span>
+<span class="blu">  if (deps.type() == call_site_target_value) {</span>
+<span class="blu">    MethodHandles::add_dependent_nmethod(call_site, nm);</span>
+<span class="blu">  } else {</span>
+<span class="org">    InstanceKlass* ik = deps.context_type();</span>
+<span class="org">    ik->add_dependent_nmethod(nm);</span>
+<span class="blu">  }</span>
+<span class="dim">}</span>
+<span class="dim">InstanceKlass ──► [nmethod A] ──► [nmethod B]  头插链表</span>
+<span class="grn">不变量：新 nmethod 要么不在链、要么在表头 → 免扫描</span>
+<span class="org">类加载时沿继承链查相关类的表 → 线性变常数</span>`);
+        S.detail.textContent='依赖登记：CallSite 挂实例、类依赖挂 InstanceKlass——头插+CAS 免扫描，检查变常数。';
+        src(`<span class="dim">// code/nmethod.cpp:1141-1160（原文截取）</span>
+  <span class="dim">// To make dependency checking during class loading fast, record</span>
+  <span class="dim">// the nmethod dependencies in the classes it is dependent on.</span>
+  <span class="dim">// ... The slow way is to check every nmethod for dependencies</span>
+  <span class="dim">// which makes it linear in the number of methods compiled.</span>
+  <span class="grn">for (Dependencies::DepStream deps(nm); deps.next(); ) {</span>
+    <span class="org">if (deps.type() == Dependencies::call_site_target_value) {</span>
+      <span class="org">MethodHandles::add_dependent_nmethod(call_site, nm);</span>
+    <span class="org">} else {</span>
+      <span class="blu">InstanceKlass* ik = deps.context_type();</span>
+      <span class="blu">ik->add_dependent_nmethod(nm);</span>
+    <span class="org">}</span>
+  <span class="grn">}</span>
+
+<span class="dim">// code/dependencyContext.cpp:92-110（头插 + CAS）</span>
+<span class="grn">void DependencyContext::add_dependent_nmethod(nmethod* nm) {</span>
+  <span class="dim">// ... two states: 1. not in list, add to head. 2. in list, at head.</span>
+  <span class="grn">nmethodBucket* head = AtomicAccess::load(_dependency_context_addr);</span>
+  <span class="grn">if (head != nullptr &amp;&amp; nm == head->get_nmethod()) return;</span>
+  <span class="grn">nmethodBucket* new_head = new nmethodBucket(nm, nullptr);</span>
+  <span class="grn">for (;;) {</span>
+    <span class="grn">new_head->set_next(head);</span>
+    <span class="grn">if (AtomicAccess::cmpxchg(_dependency_context_addr, head, new_head) == head) break;</span>
+  <span class="grn">}</span>`);
+        scene('场景 16：<b>依赖登记</b>');
+      }},
+    // 17 set_code 挂牌
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：挂牌上岗（set_code）：先写 _code → 内存屏障 → 最后写 _from_compiled_entry——顺序错了解释器会跳到没准备好的代码。
+<b>挂牌上岗</b>：Method::set_code（method.cpp:1441-1464）——三步写顺序，一条注释点破全局。
+<b>① 先写 _code</b>（:1451）：<code>mh->_code = code;</code>——让编译代码"存在"
+<b>② 再 storestore</b>（:1460）：<code>OrderAccess::storestore()</code>——保证 _code 可见先于入口指针
+<b>③ 最后写 _from_compiled_entry</b>（:1461）：指向 <code>verified_entry_point()</code>——解释器从这里进编译代码
+<b>④ 为什么这个顺序</b>（:1448-1450 注释）：解释器直接跳 from_interpreted_entry → i2c adapter → <code>_from_compiled_entry</code>
+<b>⑤ 衔接 03 站</b>：jump_from_interpreted 查到的"编译目标"就是这个字段——<b>挂牌的那一刻，方法开始走快车道</b>`,
+      fn:()=>{
+        faces(4);
+        stage(`<span class="org">Method::set_code 挂牌（method.cpp:1441-1464）</span>
+<span class="dim">// These writes must happen in this order, because the interpreter</span>
+<span class="dim">// will directly jump to from_interpreted_entry which jumps to an</span>
+<span class="dim">// i2c adapter which jumps to _from_compiled_entry.</span>
+<span class="blu">① mh->_code = code;                    // :1451 先存在</span>
+<span class="org">② OrderAccess::storestore();          // :1460 屏障</span>
+<span class="grn">③ mh->_from_compiled_entry =          // :1461 再指路</span>
+<span class="grn">     code->verified_entry_point();</span>
+<span class="dim">解释器 → from_interpreted_entry → i2c → _from_compiled_entry → nmethod</span>
+<span class="org">挂牌那一刻：方法从解释执行切换为编译执行</span>`);
+        S.detail.textContent='set_code 三步：_code → storestore → _from_compiled_entry——解释器跳转安全的写顺序。';
+        src(`<span class="dim">// oops/method.cpp:1440-1464（原文截取）</span>
+<span class="grn">// Install compiled code.  Instantly it can execute.</span>
+<span class="grn">void Method::set_code(const methodHandle& mh, nmethod *code) {</span>
+  <span class="grn">guarantee(mh->adapter() != nullptr, "Adapter blob must already exist!");</span>
+  <span class="dim">// These writes must happen in this order, because the interpreter will</span>
+  <span class="dim">// directly jump to from_interpreted_entry which jumps to an i2c adapter</span>
+  <span class="dim">// which jumps to _from_compiled_entry.</span>
+  <span class="grn">mh->_code = code;   // Assign before allowing compiled code to exec</span>
+  <span class="grn">OrderAccess::storestore();</span>
+  <span class="grn">mh->_from_compiled_entry = code->verified_entry_point();</span>
+  <span class="grn">mh->_from_compiled_inline_entry = code->verified_inline_entry_point();</span>
+  <span class="grn">OrderAccess::storestore();</span>
+<span class="grn">}</span>`);
+        scene('场景 17：<b>挂牌上岗</b>');
+      }},
+    // 18 状态机 + make_not_entrant
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：赌输了怎么办：状态机三态（构造中→可执行→去优化标记）+ make_not_entrant 六动作——幂等检查、入口失效、计数、摘除。
+<b>赌输了怎么办</b>：nmethod 状态机（nmethod.hpp:690-694）+ <code>make_not_entrant</code>（nmethod.cpp:2215）。
+<b>① 状态机</b>：<code>not_installed=-1</code>（构造中）→ <code>in_use=0</code>（可执行）→ <code>not_entrant=1</code>（已标记去优化，但栈上激活可能还在）
+<b>② 幂等</b>（:2225-2231）：已是 not_entrant → 直接返回——端态不可逆，无需加锁
+<b>③ 入口失效</b>：OSR 方法走 <code>invalidate_osr_method</code>（:2249）；普通方法走 <code>BarrierSetNMethod::make_not_entrant</code>（:2253）patch 入口
+<b>④ 计数</b>（:2258）：<code>inc_decompile_count</code>——正是 04 站 too_many_traps_or_recompiles 读的计数器！
+<b>⑤ 善后</b>（:2270-2277）：<code>try_transition(not_entrant)</code> 状态翻转 → <code>unlink_from_method</code> 从 Method 摘除`,
+      fn:()=>{
+        faces(4);
+        stage(`<span class="org">状态机 + make_not_entrant（nmethod.hpp:690 / nmethod.cpp:2215）</span>
+<span class="blu">not_installed(-1) ──► in_use(0) ──► not_entrant(1)</span>
+<span class="dim">  构造中              可执行         去优化标记（端态）</span>
+<span class="dim">┌─────────────────────────────────────┐</span>
+<span class="org">│ 幂等：已是 not_entrant → 直接 return │ :2225</span>
+<span class="org">│ OSR  → invalidate_osr_method        │ :2249</span>
+<span class="org">│ 常规 → BarrierSetNMethod 入口 patch │ :2253</span>
+<span class="org">│ inc_decompile_count                 │ :2258</span>
+<span class="org">│ try_transition(not_entrant)         │ :2270</span>
+<span class="org">│ unlink_from_method                  │ :2277</span>
+<span class="dim">└─────────────────────────────────────┘</span>
+<span class="red">decompile_count ↑ = 04 站 too_many_traps 的输入！</span>`);
+        S.detail.textContent='状态机三态 + make_not_entrant 六动作：幂等检查/入口失效/计数/翻转/摘除。';
+        src(`<span class="dim">// code/nmethod.hpp:690-694（状态机原文）</span>
+<span class="grn">  enum : signed char { not_installed = -1, // in construction, only the owner doing the construction is</span>
+<span class="grn">                                           // allowed to advance state</span>
+<span class="grn">                       in_use        = 0,  // executable nmethod</span>
+<span class="grn">                       not_entrant   = 1   // marked for deoptimization but activations may still exist</span>
+<span class="grn">  };</span>
+
+<span class="dim">// code/nmethod.cpp:2225-2277（make_not_entrant 原文截取）</span>
+  <span class="org">if (AtomicAccess::load(&amp;_state) == not_entrant) return false;  // 幂等</span>
+  <span class="org">if (is_osr_method()) {</span>
+    <span class="org">invalidate_osr_method();</span>
+  <span class="org">} else {</span>
+    <span class="org">BarrierSet::barrier_set()->barrier_set_nmethod()->make_not_entrant(this);</span>
+  <span class="org">}</span>
+  <span class="org">if (update_recompile_counts()) { inc_decompile_count(); }</span>
+  <span class="blu">bool success = try_transition(not_entrant);</span>
+  <span class="blu">unlink_from_method();</span>`);
+        scene('场景 18：<b>状态机 + 去优化</b>');
+      }},
+    // 19 回收 + 五站闭环
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：最后一环：unlink 清依赖 → purge 物理释放；五站闭环——一条 invokevirtual 从解释器查表到编译落地再到撤回，全自动无感。
+最后一环：<b>unlink → purge 物理回收</b> + 五站闭环总结。
+<b>① unlink</b>（nmethod.cpp:2293）：<code>flush_dependencies</code>（:2299，把依赖表清掉）→ unlink_from_method → OSR 失效 → 登记等 GC 安全点
+<b>② purge</b>（:2320）：<code>CodeCache_lock</code> 下<b>完全释放</b>（"flushing nmethod"）
+<b>③ 失效原因</b>（nmethod.hpp:549-556）：UNCOMMON_TRAP / ZOMBIE / RELOCATED / 类加载……
+<b>④ 五站闭环</b>：01 解析写缓存 → 02 建表 → 03 热路径查表 → 04 C2 抹平调用 → 05（本站）编译落地 + 失效回收
+<b>⑤ 一条 invokevirtual 的一生</b>：冷时解释器查表 → 热时 C2 编译成内联/直接调用 → 依赖破坏时撤回重编译——<b>全自动，无感</b>`,
+      fn:()=>{
+        faces(4);
+        stage(`<span class="org">回收 + 五站闭环</span>
+<span class="dim">make_not_entrant ──► unlink（:2293）</span>
+<span class="dim">                    ├─ flush_dependencies（:2299）</span>
+<span class="dim">                    └─ 登记等安全点 ──► purge（:2320 物理释放）</span>
+<span class="grn">五站闭环：一条 invokevirtual 的一生</span>
+<span class="blu">01 解析写缓存 → 02 建表 → 03 热路径查表+写档案</span>
+<span class="pur">→ 04 C2 读档案+CHA 抹平调用</span>
+<span class="org">→ 05 编译落地（本三件套）→ 依赖破坏 → 撤回重编译</span>
+<span class="red">解释器兜底 ── 永远有一条退路 ── 全自动无感</span>`);
+        S.detail.textContent='unlink 清依赖→purge 物理释放；五站闭环：一条 invokevirtual 从解释器查表到编译落地再到撤回。';
+        src(`<span class="dim">// code/nmethod.cpp:2293-2326（原文截取）</span>
+<span class="grn">// For concurrent GCs, there must be a handshake between unlink and flush</span>
+<span class="grn">void nmethod::unlink() {</span>
+  <span class="grn">if (is_unlinked()) return;</span>
+  <span class="grn">flush_dependencies();</span>
+  <span class="grn">unlink_from_method();</span>
+  <span class="grn">if (is_osr_method()) { invalidate_osr_method(); }</span>
+  <span class="grn">post_compiled_method_unload();</span>
+  <span class="grn">ClassUnloadingContext::context()->register_unlinked_nmethod(this);</span>
+<span class="grn">}</span>
+
+<span class="grn">void nmethod::purge(bool unregister_nmethod) {</span>
+  <span class="org">MutexLocker ml(CodeCache_lock, Mutex::_no_safepoint_check_flag);</span>
+  <span class="dim">// completely deallocate this method</span>
+  <span class="org">Events::log_nmethod_flush(...);</span>
+<span class="org">}</span>`);
+        scene('场景 19：<b>回收 + 五站闭环</b>');
+      }},
+  ];
+
+  const N = steps.length;
+  let cur = 0;
+  let timer = null;
+  let playing = false;
+
+  const pillEls = [];
+  steps.forEach((st, i) => {
+    const p = document.createElement('div');
+    p.className = 'step-pill';
+    p.textContent = (i === 0 ? '▶ ' : '') + i;
+    p.title = '跳到第 ' + i + ' 步';
+    p.onclick = () => { go(i); };
+    S.pills.appendChild(p);
+    pillEls.push(p);
+  });
+
+  function go(i) {
+    cur = Math.max(0, Math.min(N - 1, i));
+    steps[cur].fn();
+    S.desc.innerHTML = steps[cur].d;
+    pillEls.forEach((p, j) => {
+      p.className = 'step-pill' + (j === cur ? ' active' : (j < cur ? ' done' : ''));
+    });
+    // 步数计数器追加到场景文案后（不覆盖 fn() 里 scene() 的描述）
+    S.scene.innerHTML += ' <span style="opacity:.72;font-size:12.5px;margin-left:6px">第 ' + cur + ' / ' + (N - 1) + ' 步</span>';
+  }
+  function next() { go(cur + 1); }
+  function prev() { go(cur - 1); }
+  function reset() { go(0); }
+  function toggle() {
+    if (playing) { clearInterval(timer); playing = false; S.btnPlay.textContent = '▶'; }
+    else {
+      playing = true; S.btnPlay.textContent = '⏸';
+      timer = setInterval(() => { if (cur >= N - 1) { toggle(); } else { next(); } }, 2600);
+    }
+  }
+
+  S.btnPrev = document.getElementById('btnPrev');
+  S.btnPlay = document.getElementById('btnPlay');
+  S.btnNext = document.getElementById('btnNext');
+  S.btnReset = document.getElementById('btnReset');
+  S.btnPrev.onclick = prev;
+  S.btnPlay.onclick = toggle;
+  S.btnNext.onclick = next;
+  S.btnReset.onclick = reset;
+
+  document.addEventListener('keydown', (e) => {
+    if (e.code === 'Space') { e.preventDefault(); toggle(); }
+    else if (e.key === 'ArrowRight') { next(); }
+    else if (e.key === 'ArrowLeft') { prev(); }
+    else if (e.key.toLowerCase() === 'r') { reset(); }
+  });
+
+  go(0);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,179 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 900" font-family="Segoe UI, Microsoft YaHei, sans-serif">
+  <defs>
+    <pattern id="dots" width="24" height="24" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#e7e5e4"/>
+    </pattern>
+  </defs>
+
+  <!-- 背景 -->
+  <rect x="0" y="0" width="760" height="900" fill="#fafaf9"/>
+  <rect x="0" y="0" width="760" height="900" fill="url(#dots)"/>
+
+  <!-- 标题块 -->
+  <rect x="30" y="16" width="700" height="58" rx="12" fill="#1e3a8a"/>
+  <text x="380" y="42" text-anchor="middle" font-size="19" font-weight="bold" fill="#ffffff">JDK 28 synchronized 锁升级状态机</text>
+  <text x="380" y="62" text-anchor="middle" font-size="11.5" fill="#bfdbfe">无偏向锁时代 · 两级跳变 + 自旋缓冲 · 蓝=轻量锁路径 紫=膨胀路径 绿=释放/缩容 橙=自旋</text>
+
+  <!-- ============ 状态机主区：三状态横排 ============ -->
+
+  <!-- 状态卡 1：unlocked -->
+  <rect x="36" y="104" width="204" height="150" rx="10" fill="#ffffff" stroke="#10b981" stroke-width="1.8"/>
+  <rect x="36" y="104" width="8" height="150" rx="4" fill="#10b981"/>
+  <circle cx="52" cy="118" r="3" fill="#10b981"/>
+  <circle cx="224" cy="118" r="3" fill="#10b981"/>
+  <text x="62" y="132" font-size="16" font-weight="bold" fill="#047857">unlocked · 01</text>
+  <text x="62" y="152" font-size="11.5" fill="#78716c">无锁 · 初始状态</text>
+  <text x="62" y="180" font-size="11" fill="#065f46">• mark word 低位 = 01</text>
+  <text x="62" y="200" font-size="11" fill="#065f46">• hash / age 可写</text>
+  <text x="62" y="220" font-size="11" fill="#065f46">• 可被任意线程 CAS</text>
+  <text x="62" y="240" font-size="11" fill="#065f46">• markWord.hpp:56</text>
+
+  <!-- 状态卡 2：fast-locked -->
+  <rect x="278" y="104" width="204" height="150" rx="10" fill="#ffffff" stroke="#3b82f6" stroke-width="1.8"/>
+  <rect x="278" y="104" width="8" height="150" rx="4" fill="#3b82f6"/>
+  <circle cx="294" cy="118" r="3" fill="#3b82f6"/>
+  <circle cx="466" cy="118" r="3" fill="#3b82f6"/>
+  <text x="304" y="132" font-size="16" font-weight="bold" fill="#1d4ed8">fast-locked · 00</text>
+  <text x="304" y="152" font-size="11.5" fill="#78716c">轻量锁 · JDK 28 新形态</text>
+  <text x="304" y="180" font-size="11" fill="#1e40af">• mark word 锁位 01→00</text>
+  <text x="304" y="200" font-size="11" fill="#1e40af">• 不存指针！LockStack 记账</text>
+  <text x="304" y="220" font-size="11" fill="#1e40af">• 递归 = 栈顶比较 O(1)</text>
+  <text x="304" y="240" font-size="11" fill="#1e40af">• macroAsm_x86:10626-10645</text>
+
+  <!-- 状态卡 3：monitor -->
+  <rect x="520" y="104" width="204" height="150" rx="10" fill="#ffffff" stroke="#8b5cf6" stroke-width="1.8"/>
+  <rect x="520" y="104" width="8" height="150" rx="4" fill="#8b5cf6"/>
+  <circle cx="536" cy="118" r="3" fill="#8b5cf6"/>
+  <circle cx="708" cy="118" r="3" fill="#8b5cf6"/>
+  <text x="546" y="132" font-size="16" font-weight="bold" fill="#6d28d9">monitor · 10</text>
+  <text x="546" y="152" font-size="11.5" fill="#78716c">重量锁 · ObjectMonitor</text>
+  <text x="546" y="180" font-size="11" fill="#5b21b6">• mark word 指向 monitor</text>
+  <text x="546" y="200" font-size="11" fill="#5b21b6">• Owner / 队列竞争</text>
+  <text x="546" y="220" font-size="11" fill="#5b21b6">• wait() 强制到此态</text>
+  <text x="546" y="240" font-size="11" fill="#5b21b6">• objectMonitor.hpp:172</text>
+
+  <!-- 卡间箭头 -->
+  <path d="M 244 168 Q 258 158 272 164" fill="none" stroke="#3b82f6" stroke-width="2.2" marker-end="url(#arrowBlue)"/>
+  <text x="258" y="150" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#1d4ed8">monitorenter</text>
+  <text x="258" y="134" text-anchor="middle" font-size="10" fill="#3b82f6">CAS 01→00</text>
+
+  <path d="M 486 168 Q 500 158 514 164" fill="none" stroke="#8b5cf6" stroke-width="2.2" marker-end="url(#arrowPurple)"/>
+  <text x="500" y="150" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#6d28d9">inflate</text>
+  <text x="500" y="134" text-anchor="middle" font-size="10" fill="#8b5cf6">自旋无果 → 膨胀</text>
+
+  <!-- 状态卡下方回环箭头（释放/缩容） -->
+  <path d="M 380 258 C 380 300 96 300 92 262" fill="none" stroke="#10b981" stroke-width="1.8" stroke-dasharray="5 4" marker-end="url(#arrowGreen)"/>
+  <text x="150" y="292" font-size="10.5" font-weight="bold" fill="#047857">exit：CAS 00→01 + LockStack pop</text>
+  <path d="M 622 258 C 622 322 320 322 200 312" fill="none" stroke="#10b981" stroke-width="1.8" stroke-dasharray="5 4" marker-end="url(#arrowGreen)"/>
+  <text x="560" y="308" font-size="10.5" font-weight="bold" fill="#047857">async deflate 缩容 → 回无锁</text>
+
+  <!-- ============ 四段式 enter 步骤带 ============ -->
+  <text x="40" y="352" font-size="14" font-weight="bold" fill="#1c1917">ObjectSynchronizer::enter 的四段尝试（synchronizer.cpp:1725）</text>
+
+  <rect x="40" y="366" width="150" height="56" rx="9" fill="#3b82f6" fill-opacity="0.10" stroke="#3b82f6" stroke-width="1.4"/>
+  <text x="115" y="386" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#1d4ed8">① 递归重入</text>
+  <text x="115" y="404" text-anchor="middle" font-size="9.5" fill="#1e40af">try_recursive_enter</text>
+  <text x="115" y="417" text-anchor="middle" font-size="9.5" fill="#1e40af">LockStack 栈顶 O(1)</text>
+
+  <rect x="210" y="366" width="150" height="56" rx="9" fill="#3b82f6" fill-opacity="0.10" stroke="#3b82f6" stroke-width="1.4"/>
+  <text x="285" y="386" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#1d4ed8">② 快速加锁</text>
+  <text x="285" y="404" text-anchor="middle" font-size="9.5" fill="#1e40af">fast_lock_try_enter</text>
+  <text x="285" y="417" text-anchor="middle" font-size="9.5" fill="#1e40af">无锁态 CAS 抢锁</text>
+
+  <rect x="380" y="366" width="150" height="56" rx="9" fill="#f59e0b" fill-opacity="0.12" stroke="#f59e0b" stroke-width="1.4"/>
+  <text x="455" y="386" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#b45309">③ 自旋等待</text>
+  <text x="455" y="404" text-anchor="middle" font-size="9.5" fill="#92400e">fast_lock_spin_enter</text>
+  <text x="455" y="417" text-anchor="middle" font-size="9.5" fill="#92400e">短临界区不膨胀</text>
+
+  <rect x="550" y="366" width="170" height="56" rx="9" fill="#8b5cf6" fill-opacity="0.10" stroke="#8b5cf6" stroke-width="1.4"/>
+  <text x="635" y="386" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#6d28d9">④ 膨胀兜底</text>
+  <text x="635" y="404" text-anchor="middle" font-size="9.5" fill="#5b21b6">inflate_and_enter</text>
+  <text x="635" y="417" text-anchor="middle" font-size="9.5" fill="#5b21b6">先 FastHashCode 装 hash</text>
+
+  <path d="M 190 394 L 204 394" fill="none" stroke="#94a3b8" stroke-width="1.6" marker-end="url(#arrowGray)"/>
+  <path d="M 360 394 L 374 394" fill="none" stroke="#94a3b8" stroke-width="1.6" marker-end="url(#arrowGray)"/>
+  <path d="M 530 394 L 544 394" fill="none" stroke="#94a3b8" stroke-width="1.6" marker-end="url(#arrowGray)"/>
+
+  <!-- ============ ObjectMonitor 结构区 ============ -->
+  <rect x="40" y="446" width="680" height="400" rx="12" fill="#ffffff" stroke="#e7e5e4" stroke-width="1.5"/>
+  <rect x="40" y="446" width="8" height="400" rx="4" fill="#8b5cf6"/>
+  <text x="64" y="474" font-size="14.5" font-weight="bold" fill="#5b21b6">膨胀后的世界：ObjectMonitor（objectMonitor.hpp:172-200）</text>
+
+  <!-- 字段小块 -->
+  <rect x="60" y="492" width="150" height="52" rx="8" fill="#f5f3ff" stroke="#c4b5fd" stroke-width="1.2"/>
+  <text x="135" y="512" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#6d28d9">_owner : int64</text>
+  <text x="135" y="530" text-anchor="middle" font-size="9.5" fill="#6d28d9">owner_id（不再是指针！）</text>
+
+  <rect x="222" y="492" width="120" height="52" rx="8" fill="#f5f3ff" stroke="#c4b5fd" stroke-width="1.2"/>
+  <text x="282" y="512" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#6d28d9">_recursions</text>
+  <text x="282" y="530" text-anchor="middle" font-size="9.5" fill="#6d28d9">重入计数</text>
+
+  <rect x="354" y="492" width="150" height="52" rx="8" fill="#f5f3ff" stroke="#c4b5fd" stroke-width="1.2"/>
+  <text x="429" y="512" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#6d28d9">_entry_list</text>
+  <text x="429" y="530" text-anchor="middle" font-size="9.5" fill="#6d28d9">等锁队列（双向+tail）</text>
+
+  <rect x="516" y="492" width="120" height="52" rx="8" fill="#f5f3ff" stroke="#c4b5fd" stroke-width="1.2"/>
+  <text x="576" y="512" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#6d28d9">_wait_set</text>
+  <text x="576" y="530" text-anchor="middle" font-size="9.5" fill="#6d28d9">wait() 等待队列</text>
+
+  <rect x="648" y="492" width="56" height="52" rx="8" fill="#f5f3ff" stroke="#c4b5fd" stroke-width="1.2"/>
+  <text x="676" y="512" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#6d28d9">_succ</text>
+  <text x="676" y="530" text-anchor="middle" font-size="9.5" fill="#6d28d9">继承者</text>
+
+  <!-- 队列可视化 -->
+  <text x="60" y="576" font-size="12" font-weight="bold" fill="#1c1917">运行时快照（T1 持锁，T2/T3 等锁，T4 wait）</text>
+
+  <!-- Owner -->
+  <rect x="60" y="592" width="130" height="62" rx="9" fill="#8b5cf6" fill-opacity="0.14" stroke="#8b5cf6" stroke-width="1.6"/>
+  <text x="125" y="616" text-anchor="middle" font-size="13" font-weight="bold" fill="#5b21b6">T1 持锁</text>
+  <text x="125" y="636" text-anchor="middle" font-size="9.5" fill="#6d28d9">_owner = T1</text>
+
+  <!-- EntryList 队列 -->
+  <path d="M 190 623 L 208 623" fill="none" stroke="#8b5cf6" stroke-width="1.8" marker-end="url(#arrowPurple)"/>
+  <rect x="210" y="592" width="92" height="62" rx="9" fill="#3b82f6" fill-opacity="0.12" stroke="#3b82f6" stroke-width="1.4"/>
+  <text x="256" y="616" text-anchor="middle" font-size="12" font-weight="bold" fill="#1d4ed8">T2</text>
+  <text x="256" y="634" text-anchor="middle" font-size="9.5" fill="#1e40af">entry_list</text>
+  <path d="M 302 623 L 320 623" fill="none" stroke="#3b82f6" stroke-width="1.6" marker-end="url(#arrowBlue)"/>
+  <rect x="322" y="592" width="92" height="62" rx="9" fill="#3b82f6" fill-opacity="0.12" stroke="#3b82f6" stroke-width="1.4"/>
+  <text x="368" y="616" text-anchor="middle" font-size="12" font-weight="bold" fill="#1d4ed8">T3</text>
+  <text x="368" y="634" text-anchor="middle" font-size="9.5" fill="#1e40af">park 挂起</text>
+  <path d="M 414 623 L 432 623" fill="none" stroke="#3b82f6" stroke-width="1.6" marker-end="url(#arrowBlue)"/>
+  <rect x="434" y="592" width="92" height="62" rx="9" fill="#3b82f6" fill-opacity="0.12" stroke="#3b82f6" stroke-width="1.4"/>
+  <text x="480" y="616" text-anchor="middle" font-size="12" font-weight="bold" fill="#1d4ed8">T4</text>
+  <text x="480" y="634" text-anchor="middle" font-size="9.5" fill="#1e40af">ObjectWaiter</text>
+
+  <!-- WaitSet 队列 -->
+  <rect x="60" y="676" width="130" height="62" rx="9" fill="#f59e0b" fill-opacity="0.13" stroke="#f59e0b" stroke-width="1.5"/>
+  <text x="125" y="700" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#b45309">wait 队列</text>
+  <text x="125" y="718" text-anchor="middle" font-size="9.5" fill="#92400e">_wait_set</text>
+
+  <path d="M 190 707 L 208 707" fill="none" stroke="#f59e0b" stroke-width="1.8" marker-end="url(#arrowOrange)"/>
+  <rect x="210" y="676" width="120" height="62" rx="9" fill="#f59e0b" fill-opacity="0.13" stroke="#f59e0b" stroke-width="1.4"/>
+  <text x="270" y="700" text-anchor="middle" font-size="12" font-weight="bold" fill="#b45309">T5（wait 中）</text>
+  <text x="270" y="718" text-anchor="middle" font-size="9.5" fill="#92400e">notify 后转 entry_list</text>
+
+  <!-- 底部注释 -->
+  <rect x="60" y="762" width="640" height="64" rx="9" fill="#f0fdf4" stroke="#86efac" stroke-width="1.2"/>
+  <text x="76" y="784" font-size="11" fill="#065f46">• wait() 强制膨胀（synchronizer.cpp:545）—— 所以 _wait_set 只存在于 monitor 态，Object 06 篇的衔接点</text>
+  <text x="76" y="802" font-size="11" fill="#065f46">• notify() 把 waiter 从 _wait_set 摘到 _entry_list 重新竞争（objectMonitor.cpp:2032）</text>
+  <text x="76" y="820" font-size="11" fill="#065f46">• 释放只唤醒一个继承者（_succ），避免惊群（exit_epilog, objectMonitor.cpp:1519）</text>
+
+  <!-- 箭头定义 -->
+  <defs>
+    <marker id="arrowBlue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#3b82f6"/>
+    </marker>
+    <marker id="arrowPurple" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#8b5cf6"/>
+    </marker>
+    <marker id="arrowGreen" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#10b981"/>
+    </marker>
+    <marker id="arrowOrange" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#f59e0b"/>
+    </marker>
+    <marker id="arrowGray" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#94a3b8"/>
+    </marker>
+  </defs>
+</svg>

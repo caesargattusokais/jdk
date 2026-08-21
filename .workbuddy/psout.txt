@@ -1,0 +1,4 @@
+     UID     PID    PPID  TTY        STIME COMMAND
+     EDY     963       1 ?        16:22:31 /usr/bin/bash -c __codebuddy_payload=$1; shift; __codebuddy_script=$(<"$__codebuddy_payload") || exit 125; unset __codebuddy_payload; eval "$__codebuddy_script" C:\Users\EDY\.workbuddy\binaries\PortableGit\versions\1.2.0\bin\bash.exe /c/Users/EDY/AppData/Local/Temp/codebuddy-shell-payload-6312-k9N7TF/script.sh 
+     EDY     964     963 ?        16:22:31 C:\cygwin64\bin\bash.exe -c "ps -ef > /cygdrive/d/project/jdk/.workbuddy/psout.txt 2>&1; wc -l /cygdrive/d/project/jdk/.workbuddy/psout.txt" __codebuddy— 
+     EDY     965       1 ?        16:22:32 /usr/bin/ps -ef 

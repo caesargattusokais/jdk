@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>synchronized 锁升级全链路 · 交互动画 — JDK 28 源码跟读</title>
+<style>
+  :root {
+    --blue: #3b82f6;   --blue-bg: #eff6ff;   --blue-bd: #bfdbfe;
+    --purple: #8b5cf6; --purple-bg: #f5f3ff; --purple-bd: #ddd6fe;
+    --orange: #f59e0b; --orange-bg: #fffbeb; --orange-bd: #fde68a;
+    --green: #10b981;  --green-bg: #ecfdf5;  --green-bd: #a7f3d0;
+    --red: #ef4444;    --red-bg: #fef2f2;
+    --ink: #1f2937;    --ink-2: #6b7280;     --ink-3: #9ca3af;
+    --line: #e5e7eb;   --card: #ffffff;      --bg: #f6f7fb;
+    --code-bg: #111827; --code-ink: #e5e7eb;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Segoe UI", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
+    background: linear-gradient(180deg, var(--bg), #eef1f7);
+    color: var(--ink); padding: 24px 16px 48px; line-height: 1.6;
+  }
+  .wrap { max-width: 1120px; margin: 0 auto; }
+
+  header { text-align: center; margin-bottom: 22px; }
+  header h1 { font-size: 25px; letter-spacing: .5px; }
+  header h1 .mono { font-family: Consolas, monospace; color: var(--blue); }
+  header .sub { color: var(--ink-2); font-size: 14px; margin-top: 6px; }
+  .badges { margin-top: 12px; display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+  .badge {
+    font-size: 12px; padding: 3px 12px; border-radius: 999px;
+    border: 1px solid var(--blue-bd); background: var(--blue-bg); color: var(--blue);
+    font-family: Consolas, monospace;
+  }
+  .badge.purple { border-color: var(--purple-bd); background: var(--purple-bg); color: var(--purple); }
+  .badge.green  { border-color: var(--green-bd);  background: var(--green-bg);  color: var(--green); }
+  .badge.orange { border-color: var(--orange-bd); background: var(--orange-bg); color: var(--orange); }
+
+  .steps { display: flex; justify-content: center; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
+  .step-pill {
+    font-size: 11.5px; padding: 5px 11px; border-radius: 999px; cursor: pointer;
+    border: 1.5px solid var(--line); background: var(--card); color: var(--ink-2);
+    transition: all .2s; user-select: none; white-space: nowrap;
+  }
+  .step-pill:hover { border-color: var(--blue); color: var(--blue); }
+  .step-pill.done { border-color: var(--green-bd); background: var(--green-bg); color: var(--green); }
+  .step-pill.active {
+    border-color: var(--blue); background: var(--blue); color: #fff;
+    box-shadow: 0 4px 12px rgba(59,130,246,.35);
+  }
+
+  .stage { display: grid; grid-template-columns: 1.2fr .8fr; gap: 16px; margin-bottom: 16px; }
+  @media (max-width: 900px) { .stage { grid-template-columns: 1fr; } }
+
+  .card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 18px; box-shadow: 0 2px 10px rgba(17,24,39,.05);
+  }
+  .card h3 {
+    font-size: 13px; color: var(--ink-2); font-weight: 600;
+    text-transform: uppercase; letter-spacing: .8px; margin-bottom: 12px;
+  }
+  .card h3 .file { color: var(--ink-3); text-transform: none; letter-spacing: 0; font-weight: 400; }
+
+  /* 对象 + mark word */
+  .obj-row { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
+  .obj-box {
+    display: flex; align-items: center; gap: 8px;
+    border: 2px dashed var(--blue-bd); background: var(--blue-bg); color: var(--blue);
+    padding: 7px 14px; border-radius: 12px; font-family: Consolas, monospace; font-size: 13px;
+  }
+  .obj-box .arrow { font-size: 16px; }
+  .lock-chip {
+    font-family: Consolas, monospace; font-size: 13px; padding: 4px 12px; border-radius: 8px;
+    background: var(--orange-bg); border: 1px solid var(--orange-bd); color: var(--orange);
+    transition: all .3s; font-weight: 700;
+  }
+  .lock-chip.blue { background: var(--blue-bg); border-color: var(--blue-bd); color: var(--blue); }
+  .lock-chip.purple { background: var(--purple-bg); border-color: var(--purple-bd); color: var(--purple); }
+  .lock-chip.green { background: var(--green-bg); border-color: var(--green-bd); color: var(--green); }
+
+  .mw-label { font-size: 11.5px; color: var(--ink-3); margin-bottom: 6px; font-family: Consolas, monospace; }
+  .mw { display: flex; border: 2px solid var(--ink); border-radius: 10px; overflow: hidden; height: 52px; margin-bottom: 8px; }
+  .field {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    position: relative; transition: background .3s, transform .3s; border-right: 1px solid rgba(17,24,39,.15);
+  }
+  .field:last-child { border-right: none; }
+  .field .fname { font-size: 10px; font-weight: 700; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.25); }
+  .field .fbits { font-size: 8.5px; color: rgba(255,255,255,.8); }
+  .field .fval { font-family: Consolas, monospace; font-size: 12px; font-weight: 700; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.25); }
+  .field.unused   { background: var(--blue); }
+  .field.hash     { background: var(--orange); }
+  .field.valhalla { background: var(--purple); }
+  .field.age      { background: var(--purple); }
+  .field.selffwd  { background: var(--green); }
+  .field.lock     { background: var(--green); }
+  .field.lock.monitor { background: var(--purple); }
+  .field.pop { transform: translateY(-6px); box-shadow: 0 8px 20px rgba(0,0,0,.25); z-index: 2; }
+  .field.flash-green { animation: flashGreen .7s ease 2; }
+  .field.flash-red { animation: flashRed .7s ease 2; }
+  .field.flash-purple { animation: flashPurple .7s ease 2; }
+  @keyframes flashGreen { 0%,100% { background: var(--green); } 50% { background: #059669; } }
+  @keyframes flashRed { 0%,100% { background: var(--green); } 50% { background: var(--red); } }
+  @keyframes flashPurple { 0%,100% { background: var(--green); } 50% { background: var(--purple); } }
+
+  /* lock 位放大 */
+  .lock-big {
+    display: flex; align-items: center; gap: 14px; margin: 6px 0 4px;
+    font-family: Consolas, monospace; font-size: 13px; flex-wrap: wrap;
+  }
+  .lock-big .bits {
+    font-size: 26px; font-weight: 800; letter-spacing: 4px; line-height: 1;
+    padding: 4px 14px; border-radius: 10px; border: 2px solid var(--green);
+    background: var(--green-bg); color: var(--green); transition: all .3s;
+  }
+  .lock-big .bits.b01 { border-color: var(--green); background: var(--green-bg); color: var(--green); }
+  .lock-big .bits.b00 { border-color: var(--blue);  background: var(--blue-bg);  color: var(--blue); }
+  .lock-big .bits.b10 { border-color: var(--purple); background: var(--purple-bg); color: var(--purple); }
+  .lock-big .bits.b11 { border-color: var(--ink-3);  background: #f3f4f6;  color: var(--ink-3); }
+  .lock-big .desc { color: var(--ink-2); font-size: 12.5px; }
+
+  .mw-legend { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 8px; font-size: 11.5px; color: var(--ink-2); }
+  .lg { display: flex; align-items: center; gap: 5px; }
+  .lg i { width: 11px; height: 11px; border-radius: 3px; display: inline-block; }
+
+  /* 线程泳道 */
+  .threads { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 4px; }
+  .thread {
+    border: 1.5px solid var(--line); border-radius: 12px; padding: 10px 12px; transition: all .3s;
+  }
+  .thread .tname { font-size: 12.5px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+  .thread .tname .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--ink-3); transition: background .3s; }
+  .thread .tstate { font-size: 11.5px; color: var(--ink-2); margin-top: 4px; font-family: Consolas, monospace; }
+  .thread .tbar { height: 6px; background: var(--line); border-radius: 3px; margin-top: 8px; overflow: hidden; }
+  .thread .tbar i { display: block; height: 100%; width: 0; background: var(--blue); transition: width .5s; border-radius: 3px; }
+  .thread.t1 .tbar i { background: var(--blue); }
+  .thread.t2 .tbar i { background: var(--orange); }
+  .thread.hot { border-color: var(--blue); box-shadow: 0 0 0 3px var(--blue-bg); }
+  .thread.t2.hot { border-color: var(--orange); box-shadow: 0 0 0 3px var(--orange-bg); }
+  .thread.blocked { border-color: var(--red); background: var(--red-bg); }
+  .thread.blocked .tname .dot { background: var(--red); }
+  .thread.running .tname .dot { background: var(--green); }
+  .thread.waiting .tname .dot { background: var(--orange); }
+
+  /* 锁结构：LockStack + ObjectMonitor */
+  .lock-structures { display: grid; grid-template-columns: 1fr 1.4fr; gap: 10px; margin-top: 14px; }
+  @media (max-width: 560px) { .lock-structures { grid-template-columns: 1fr; } }
+  .struct {
+    border: 1.5px solid var(--line); border-radius: 12px; padding: 10px 12px; min-height: 128px;
+    transition: border-color .3s;
+  }
+  .struct h4 { font-size: 12px; color: var(--ink-2); font-weight: 700; margin-bottom: 8px; display: flex; justify-content: space-between; }
+  .struct h4 .ref { font-weight: 400; color: var(--ink-3); font-size: 10.5px; font-family: Consolas, monospace; }
+  .struct.hl-stack { border-color: var(--blue); box-shadow: 0 0 0 3px var(--blue-bg); }
+  .struct.hl-mon { border-color: var(--purple); box-shadow: 0 0 0 3px var(--purple-bg); }
+  .stack-view { display: flex; flex-direction: column-reverse; gap: 4px; font-family: Consolas, monospace; font-size: 12px; }
+  .stack-view .cell {
+    border: 1.5px solid var(--blue-bd); background: var(--blue-bg); color: var(--blue);
+    border-radius: 7px; padding: 3px 10px; text-align: center; transition: all .35s;
+  }
+  .stack-view .cell.new { animation: popIn .5s ease; }
+  .stack-view .cell.out { animation: popOut .5s ease forwards; }
+  .stack-view .empty { color: var(--ink-3); font-size: 11.5px; text-align: center; padding: 8px 0; }
+  @keyframes popIn { 0% { transform: translateY(-12px); opacity: 0; } 100% { transform: none; opacity: 1; } }
+  @keyframes popOut { 0% { transform: none; opacity: 1; } 100% { transform: translateY(12px); opacity: 0; } }
+
+  .mon-view { font-size: 12px; font-family: Consolas, monospace; }
+  .mon-row { display: flex; align-items: center; gap: 8px; padding: 3px 0; }
+  .mon-row .k { color: var(--purple); font-weight: 700; width: 82px; flex-shrink: 0; }
+  .mon-row .v {
+    background: var(--purple-bg); border: 1px solid var(--purple-bd); color: var(--purple);
+    border-radius: 7px; padding: 2px 10px; min-width: 44px; text-align: center;
+    transition: all .35s; font-size: 11.5px;
+  }
+  .mon-row .v.none { background: #f3f4f6; border-color: var(--line); color: var(--ink-3); }
+  .mon-row .v.new { animation: popIn .5s ease; }
+  .mon-row .v.wake { animation: flashGreen2 .8s ease 2; }
+  .mon-queue { margin-top: 4px; border-top: 1px dashed var(--purple-bd); padding-top: 4px; }
+  .mon-queue .qlabel { color: var(--purple); font-weight: 700; font-size: 11px; }
+  .mon-queue .qbox { display: flex; gap: 5px; margin-top: 4px; flex-wrap: wrap; min-height: 26px; align-items: center; }
+  .mon-queue .qitem {
+    border: 1.5px solid var(--orange-bd); background: var(--orange-bg); color: var(--orange);
+    border-radius: 7px; padding: 2px 9px; font-size: 11.5px; transition: all .35s;
+  }
+  .mon-queue .qitem.new { animation: popIn .5s ease; }
+  .mon-queue .qitem.parked { border-color: var(--red); background: var(--red-bg); color: var(--red); }
+  .mon-queue .qitem.wake { animation: flashGreen2 .8s ease 2; }
+  .mon-queue .qempty { color: var(--ink-3); font-size: 11px; }
+  @keyframes flashGreen2 { 0%,100% { background: var(--orange-bg); color: var(--orange); } 50% { background: var(--green-bg); color: var(--green); } }
+
+  /* code panel */
+  .code-panel {
+    background: var(--code-bg); border-radius: 12px; overflow: hidden;
+    font-family: Consolas, "Courier New", monospace; font-size: 12px;
+  }
+  .code-head {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 8px 14px; background: rgba(255,255,255,.06); color: #9ca3af; font-size: 11px;
+  }
+  .code-head .file { color: var(--green); }
+  .code-body { padding: 12px 14px; overflow-x: auto; }
+  .code-body pre { color: var(--code-ink); }
+  .code-body .ln { display: inline-block; width: 38px; color: #4b5563; user-select: none; }
+  .code-body .hl { background: rgba(245,158,11,.22); color: #fbbf24; display: inline-block; width: 100%; border-radius: 4px; padding: 0 2px; }
+  .code-body .cm { color: #6b7280; }
+  .code-body .kw { color: #93c5fd; }
+
+  .controls {
+    display: flex; justify-content: center; align-items: center; gap: 10px;
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 12px 16px; margin-bottom: 16px; box-shadow: 0 2px 10px rgba(17,24,39,.05); flex-wrap: wrap;
+  }
+  .btn {
+    border: 1.5px solid var(--line); background: #fff; color: var(--ink);
+    font-size: 14px; padding: 7px 16px; border-radius: 10px; cursor: pointer;
+    transition: all .15s; min-width: 44px; font-family: inherit;
+  }
+  .btn:hover:not(:disabled) { border-color: var(--blue); color: var(--blue); }
+  .btn:disabled { opacity: .4; cursor: not-allowed; }
+  .btn.primary { background: var(--blue); border-color: var(--blue); color: #fff; font-weight: 600; }
+  .btn.primary:hover:not(:disabled) { background: #2563eb; color: #fff; }
+  .btn.reset { color: var(--ink-2); }
+  .prog { flex: 1; max-width: 300px; height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; }
+  .prog i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--blue), var(--purple)); transition: width .3s; }
+  .step-count { font-size: 13px; color: var(--ink-2); font-family: Consolas, monospace; white-space: nowrap; }
+
+  .explain {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 18px 20px; margin-bottom: 16px; box-shadow: 0 2px 10px rgba(17,24,39,.05);
+    min-height: 100px;
+  }
+  .explain .tag {
+    display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: 1px;
+    padding: 2px 10px; border-radius: 6px; margin-bottom: 8px;
+  }
+  .explain .tag.blue   { background: var(--blue-bg);   color: var(--blue); }
+  .explain .tag.orange { background: var(--orange-bg); color: var(--orange); }
+  .explain .tag.purple { background: var(--purple-bg); color: var(--purple); }
+  .explain .tag.green  { background: var(--green-bg);  color: var(--green); }
+  .explain .tag.red    { background: var(--red-bg);    color: var(--red); }
+  .explain p { font-size: 14px; color: var(--ink); }
+  .explain .kw2 { font-family: Consolas, monospace; background: var(--bg); padding: 0 5px; border-radius: 4px; color: var(--blue); font-size: 13px; }
+  .explain .hl2 { color: var(--orange); font-weight: 700; }
+  .explain .ok2 { color: var(--green); font-weight: 700; }
+
+  .ref-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  @media (max-width: 860px) { .ref-grid { grid-template-columns: 1fr; } }
+  .ref-grid .card { padding: 18px 20px; }
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--ink-2); font-weight: 600; background: var(--bg); }
+  td.mono { font-family: Consolas, monospace; font-size: 11.5px; }
+  tr:last-child td { border-bottom: none; }
+  a { color: var(--blue); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .toast {
+    position: fixed; left: 50%; bottom: 30px; transform: translateX(-50%) translateY(80px);
+    background: var(--ink); color: #fff; font-size: 13px; padding: 9px 20px; border-radius: 999px;
+    opacity: 0; transition: all .3s; z-index: 99; pointer-events: none;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  footer { text-align: center; color: var(--ink-3); font-size: 12px; margin-top: 10px; }
+  footer a { color: var(--ink-3); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1><span class="mono">synchronized</span> 锁升级全链路 · 交互动画</h1>
+    <p class="sub">unlocked(01) → fast-locked(00, LockStack 记账) → monitor(10, ObjectMonitor 排队) —— 两线程竞争逐步播放</p>
+    <div class="badges">
+      <span class="badge">JDK 28-internal</span>
+      <span class="badge purple">synchronizer.cpp</span>
+      <span class="badge green">markWord.hpp:55-58</span>
+      <span class="badge orange">无偏向锁时代</span>
+    </div>
+  </header>
+
+  <nav class="steps" id="pills"></nav>
+
+  <section class="stage">
+    <div class="card">
+      <h3>对象头 · 线程泳道 · 锁结构 <span class="file">mark word 锁位实时变化</span></h3>
+
+      <div class="obj-row">
+        <div class="obj-box">
+          <span>obj</span>
+          <span class="arrow">→</span>
+          <span>0x000000071234</span>
+        </div>
+        <span class="lock-chip" id="lockChip">lock = 01 · unlocked</span>
+      </div>
+
+      <div class="mw-label">mark word 位布局（64 bit，非紧凑头）</div>
+      <div class="mw" id="mw"></div>
+      <div class="lock-big">
+        <span class="bits b01" id="lockBits">01</span>
+        <span class="desc" id="lockDesc">unlocked · 无锁 · markWord.hpp:56</span>
+      </div>
+
+      <div class="mw-legend">
+        <span class="lg"><i style="background:var(--blue)"></i>unused (22)</span>
+        <span class="lg"><i style="background:var(--orange)"></i>hash (31)</span>
+        <span class="lg"><i style="background:var(--purple)"></i>valhalla (4) + age (4)</span>
+        <span class="lg"><i style="background:var(--green)"></i>self-fwd (1) + lock (2)</span>
+      </div>
+
+      <div class="threads">
+        <div class="thread t1 running" id="t1">
+          <div class="tname"><span class="dot"></span>T1（主线程）</div>
+          <div class="tstate" id="t1s">RUNNING · 就绪</div>
+          <div class="tbar"><i id="t1bar" style="width:0%"></i></div>
+        </div>
+        <div class="thread t2 running" id="t2">
+          <div class="tname"><span class="dot"></span>T2（竞争者）</div>
+          <div class="tstate" id="t2s">RUNNING · 就绪</div>
+          <div class="tbar"><i id="t2bar" style="width:0%"></i></div>
+        </div>
+      </div>
+
+      <div class="lock-structures">
+        <div class="struct" id="stackStruct">
+          <h4>T1 的 LockStack <span class="ref">线程私有 · macroAsm_x86:10641</span></h4>
+          <div class="stack-view" id="stackView"></div>
+        </div>
+        <div class="struct" id="monStruct">
+          <h4>ObjectMonitor <span class="ref">objectMonitor.hpp:172-200</span></h4>
+          <div class="mon-view" id="monView"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>真实源码 <span class="file">当前执行点</span></h3>
+      <div class="code-panel">
+        <div class="code-head">
+          <span class="file" id="codeFile">—</span>
+          <span id="codeTag">初始状态</span>
+        </div>
+        <div class="code-body"><pre id="codeBody"></pre></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="controls">
+    <button class="btn" id="btnPrev" title="上一步 (←)">⏮ 上一步</button>
+    <button class="btn primary" id="btnPlay" title="播放/暂停 (Space)">▶ 播放</button>
+    <button class="btn" id="btnNext" title="下一步 (→)">下一步 ⏭</button>
+    <button class="btn reset" id="btnReset" title="重置 (R)">⟳ 重置</button>
+    <div class="prog"><i id="progBar"></i></div>
+    <span class="step-count" id="stepCount">0 / 12</span>
+  </section>
+
+  <section class="explain">
+    <span class="tag blue" id="exTag">初始状态</span>
+    <p id="exText"></p>
+  </section>
+
+  <section class="ref-grid">
+    <div class="card">
+      <h3>mark word 锁位枚举（JDK 28）</h3>
+      <table>
+        <tr><th>锁位</th><th>状态</th><th>含义</th><th>证据</th></tr>
+        <tr><td class="mono">01</td><td>unlocked</td><td>无锁，可被任意线程 CAS</td><td class="mono">markWord.hpp:56</td></tr>
+        <tr><td class="mono">00</td><td>fast-locked</td><td>轻量锁，<b>不存指针</b>，LockStack 记账</td><td class="mono">markWord.hpp:55</td></tr>
+        <tr><td class="mono">10</td><td>monitor</td><td>已膨胀，mark word 指向 ObjectMonitor</td><td class="mono">markWord.hpp:57</td></tr>
+        <tr><td class="mono">11</td><td>marked</td><td>GC 标记/转发（旧资料里是 biased！）</td><td class="mono">markWord.hpp:58</td></tr>
+      </table>
+      <p style="font-size:12px;color:var(--ink-2);margin-top:10px">
+        JDK 28 已删除偏向锁：<span class="mono">UseBiasedLocking</span> 全仓零命中，<span class="mono">11</span> 位收归 GC。
+        轻量锁不再写 displaced header——对象头只翻锁位，谁持有锁看线程 LockStack。
+      </p>
+    </div>
+
+    <div class="card">
+      <h3>关键源码锚点（可在 IDEA 中跳转核对）</h3>
+      <table>
+        <tr><th>步骤</th><th>文件:行号</th><th>代码</th></tr>
+        <tr><td>解释器模板</td><td class="mono">templateTable_x86.cpp:4045-4151</td><td class="mono">monitorenter → lock_object(rmon)</td></tr>
+        <tr><td>内联 CAS</td><td class="mono">macroAssembler_x86.cpp:10589-10645</td><td class="mono">fast_lock：01→00 + LockStack push</td></tr>
+        <tr><td>慢路径</td><td class="mono">interpreterRuntime.cpp:783-790</td><td class="mono">→ ObjectSynchronizer::enter</td></tr>
+        <tr><td>四段式</td><td class="mono">synchronizer.cpp:1725-1783</td><td class="mono">递归 → 快速锁 → 自旋 → 膨胀</td></tr>
+        <tr><td>膨胀</td><td class="mono">synchronizer.cpp:1935-1990</td><td class="mono">FastHashCode 先行 + get_or_insert_monitor</td></tr>
+        <tr><td>排队</td><td class="mono">objectMonitor.cpp:484-507</td><td class="mono">enter → spin_enter → EnterI 挂 entry_list</td></tr>
+        <tr><td>释放</td><td class="mono">synchronizer.cpp:1785-1831</td><td class="mono">exit：CAS 解锁 / monitor-&gt;exit</td></tr>
+        <tr><td>唤醒</td><td class="mono">objectMonitor.cpp:1519</td><td class="mono">exit_epilog：选 _succ 只唤醒一个</td></tr>
+      </table>
+    </div>
+  </section>
+
+  <footer>
+    配套文档：<a href="02-synchronized-lockupgrade.md">02-synchronized-lockupgrade.md</a> · 衔接 <a href="../object/06-wait-notify.md">Object 06 wait/notify</a> ·
+    操作提示：Space 播放/暂停，← → 步进，R 重置
+  </footer>
+
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+"use strict";
+
+/* ================= 数据 ================= */
+
+const FIELDS = [
+  { key: "unused",   name: "unused",  bits: 22, hi: 63, lo: 42, cls: "unused",   binCls: "bin-blue" },
+  { key: "hash",     name: "hash",    bits: 31, hi: 41, lo: 11, cls: "hash",     binCls: "bin-orange" },
+  { key: "valhalla", name: "valhalla",bits: 4,  hi: 10, lo: 7,  cls: "valhalla", binCls: "bin-purple" },
+  { key: "age",      name: "age",     bits: 4,  hi: 6,  lo: 3,  cls: "age",      binCls: "bin-purple" },
+  { key: "selffwd",  name: "self-fwd",bits: 1,  hi: 2,  lo: 2,  cls: "selffwd",  binCls: "bin-green" },
+  { key: "lock",     name: "lock",    bits: 2,  hi: 1,  lo: 0,  cls: "lock",     binCls: "bin-green" },
+];
+const HASH = 0x2F1A8C3D;  // 演示用的 identity hash
+
+/* 每步定义 */
+const STEPS = [
+  {
+    tag: "blue", label: "① 初始状态",
+    desc: "对象 <span class='kw2'>obj</span> 处于 <span class='kw2'>unlocked</span>（lock = <span class='hl2'>01</span>），hash 位未生成。T1、T2 两个线程就绪，谁先拿到锁就看谁先 CAS 成功。<br>JDK 28 锁位枚举：<span class='kw2'>01</span> unlocked / <span class='kw2'>00</span> fast-locked / <span class='kw2'>10</span> monitor / <span class='kw2'>11</span> marked（GC）。",
+    lock: "01", hash: 0,
+    t1: { state: "RUNNING · 就绪", cls: "running", bar: 0 },
+    t2: { state: "RUNNING · 就绪", cls: "running", bar: 0 },
+    stack: [], mon: { owner: null, entry: [], wait: [] },
+    code: { file: "src/hotspot/share/oops/markWord.hpp:55-58", tag: "锁位枚举", lines: [
+      ["", "// [header          | 00]  locked        fast-locking in use"],
+      ["", "// [header          | 01]  unlocked      regular object header"],
+      ["", "// [header          | 10]  monitor       inflated lock"],
+      ["", "// [ptr             | 11]  marked        GC forward"],
+    ], hl: -1 },
+  },
+  {
+    tag: "blue", label: "② T1 monitorenter",
+    desc: "T1 执行 <span class='kw2'>monitorenter</span> 字节码（0xc2）。解释器模板先在<span class='hl2'>栈帧的 monitor block</span> 里找一个空闲 Lock Record（BasicObjectLock），找不到就扩容。<br>注意模板开头还做了 <span class='kw2'>inline type 检查</span>——value class 不允许加锁，直接抛 IdentityException。",
+    lock: "01", hash: 0,
+    t1: { state: "RUNNING · monitorenter", cls: "hot", bar: 12 },
+    t2: { state: "RUNNING · 就绪", cls: "running", bar: 0 },
+    stack: [], mon: { owner: null, entry: [], wait: [] },
+    code: { file: "src/hotspot/cpu/x86/templateTable_x86.cpp:4045-4053", tag: "解释器模板", lines: [
+      ["", "void TemplateTable::monitorenter() {"],
+      ["", "  transition(atos, vtos);"],
+      ["", "  __ null_check(rax);                // 空指针检查"],
+      ["", "  Label is_inline_type;"],
+      ["", "  __ movptr(rbx, Address(rax, oopDesc::mark_offset_in_bytes()));"],
+      ["", "  __ test_markword_is_inline_type(rbx, is_inline_type);"],
+      ["", "  // ... 扫描/分配 BasicObjectLock ..."],
+      ["", "  __ lock_object(rmon);              // ← 真正加锁"],
+    ], hl: 7 },
+  },
+  {
+    tag: "green", label: "③ CAS 01→00",
+    desc: "内联汇编 <span class='kw2'>fast_lock</span> 执行关键 CAS：<span class='kw2'>lock(); cmpxchgptr(tmp, [obj+mark])</span>，把锁位从 <span class='kw2'>01</span> 改成 <span class='kw2'>00</span>。<br><span class='ok2'>CAS 成功</span>——mark word 只翻锁位、<span class='hl2'>不写任何指针</span>（没有 displaced header！），这就是 JDK 28 轻量锁与教科书最大的区别。",
+    lock: "00", hash: 0,
+    t1: { state: "RUNNING · CAS 抢锁成功", cls: "hot", bar: 28 },
+    t2: { state: "RUNNING · 就绪", cls: "running", bar: 0 },
+    stack: [], mon: { owner: null, entry: [], wait: [] },
+    code: { file: "src/hotspot/cpu/x86/macroAssembler_x86.cpp:10626-10636", tag: "fast_lock · CAS", lines: [
+      ["", "  // Try to lock. Transition lock bits 0b01 => 0b00"],
+      ["", "  movptr(tmp, reg_rax);"],
+      ["", "  andptr(tmp, ~(int32_t)markWord::unlocked_value);"],
+      ["", "  orptr(reg_rax, markWord::unlocked_value);"],
+      ["", "  lock(); cmpxchgptr(tmp, Address(obj, oopDesc::mark_offset_in_bytes()));"],
+      ["", "  jcc(Assembler::notEqual, slow);     // CAS 失败 → 慢路径"],
+    ], hl: 4 },
+  },
+  {
+    tag: "blue", label: "④ LockStack push",
+    desc: "CAS 成功后，对象被 <span class='kw2'>push 进 T1 的 LockStack</span>（线程私有锁栈）。<br>“谁持有锁”完全由 LockStack 追踪——栈顶就是最近加的锁。<span class='ok2'>同一线程重入时只比较栈顶 O(1)</span>（模板 10619 行 <span class='kw2'>cmpptr obj, [thread+top]</span>）。",
+    lock: "00", hash: 0,
+    t1: { state: "临界区执行中", cls: "hot", bar: 42 },
+    t2: { state: "RUNNING · 就绪", cls: "running", bar: 0 },
+    stack: ["obj"], mon: { owner: null, entry: [], wait: [] },
+    code: { file: "src/hotspot/cpu/x86/macroAssembler_x86.cpp:10641-10645", tag: "fast_lock · push", lines: [
+      ["", "  bind(push);"],
+      ["", "  // After successful lock, push object on lock-stack."],
+      ["", "  movptr(Address(thread, top), obj);"],
+      ["", "  incrementl(top, oopSize);"],
+      ["", "  movl(Address(thread, JavaThread::lock_stack_top_offset()), top);"],
+    ], hl: 2 },
+  },
+  {
+    tag: "green", label: "⑤ T1 临界区",
+    desc: "T1 拿着锁执行临界区代码。<br>此时 mark word 锁位 = <span class='kw2'>00</span>（fast-locked），LockStack 栈顶 = <span class='kw2'>obj</span>，无 ObjectMonitor——<span class='ok2'>零膨胀、零系统调用</span>，这就是轻量锁的性能本质。",
+    lock: "00", hash: 0,
+    t1: { state: "临界区执行中", cls: "hot", bar: 55 },
+    t2: { state: "RUNNING · 就绪", cls: "running", bar: 0 },
+    stack: ["obj"], mon: { owner: null, entry: [], wait: [] },
+    code: { file: "src/hotspot/share/runtime/synchronizer.cpp:1761", tag: "synchronizer.cpp", lines: [
+      ["", "  while (true) {"],
+      ["", "    // Fast-locking does not use the 'lock' argument."],
+      ["", "    // Fast-lock spinning to avoid inflating for short critical sections."],
+      ["", "    if (fast_lock_try_enter(obj(), lock_stack, current)) {"],
+      ["", "      return;    // ← T1 已在上一步成功"],
+      ["", "    }"],
+    ], hl: 3 },
+  },
+  {
+    tag: "red", label: "⑥ T2 CAS 失败",
+    desc: "T2 执行 <span class='kw2'>monitorenter</span>：同样走 fast_lock 内联路径，但 <span class='kw2'>cmpxchgptr 失败</span>（mark word 已是 00，被 T1 持有），跳 <span class='kw2'>slow</span> 慢路径。<br>注意失败原因：<b>锁位不是 01</b>，CAS 无法把 01 翻成 00。",
+    lock: "00", hash: 0,
+    t1: { state: "临界区执行中", cls: "hot", bar: 55 },
+    t2: { state: "CAS 失败 · 慢路径", cls: "hot", bar: 20 },
+    stack: ["obj"], mon: { owner: null, entry: [], wait: [] },
+    code: { file: "src/hotspot/cpu/x86/macroAssembler_x86.cpp:10635-10636", tag: "fast_lock · CAS 失败", lines: [
+      ["", "  lock(); cmpxchgptr(tmp, Address(obj, oopDesc::mark_offset_in_bytes()));"],
+      ["", "  jcc(Assembler::notEqual, slow);   // ← T2 在此失败"],
+      ["", "  // 只有 CAS 成功才 push LockStack"],
+    ], hl: 1 },
+  },
+  {
+    tag: "orange", label: "⑦ T2 自旋",
+    desc: "T2 进入 <span class='kw2'>ObjectSynchronizer::enter</span> 慢路径：先试 <span class='kw2'>fast_lock_try_enter</span>，失败后 <span class='kw2'>fast_lock_spin_enter</span> <span class='hl2'>自旋</span>。<br>设计意图（源码注释）：<span class='kw2'>“只在该膨胀时才膨胀，短临界区自旋更划算”</span>——自旋避免了立刻膨胀成重量锁的系统调用开销。",
+    lock: "00", hash: 0,
+    t1: { state: "临界区执行中", cls: "hot", bar: 55 },
+    t2: { state: "自旋中 (fast_lock_spin_enter)", cls: "waiting", bar: 38 },
+    stack: ["obj"], mon: { owner: null, entry: [], wait: [] },
+    code: { file: "src/hotspot/share/runtime/synchronizer.cpp:1755-1765", tag: "synchronizer.cpp · 自旋", lines: [
+      ["", "  while (true) {"],
+      ["", "    // Fast-lock spinning to avoid inflating for short critical sections."],
+      ["", "    // The goal is to only inflate when the extra cost of using ObjectMonitors"],
+      ["", "    // is worth it."],
+      ["", "    if (fast_lock_try_enter(obj(), lock_stack, current)) return;"],
+      ["", "    else if (fast_lock_spin_enter(obj(), lock_stack, current, observed_deflation)) return;"],
+    ], hl: 5 },
+  },
+  {
+    tag: "purple", label: "⑧ 装 hash",
+    desc: "自旋无果，走 <span class='kw2'>inflate_and_enter</span>。膨胀要往 mark word 写 monitor 指针，而 identity hash 也在 mark word 里——<span class='hl2'>必须先调用 FastHashCode 把 hash 固化</span>（源码注释：<span class='kw2'>“Lightweight monitors require that hash codes are installed first”</span>）。<br>hash 位此刻点亮：<span class='kw2'>0x2F1A8C3D</span>。",
+    lock: "00", hash: HASH,
+    t1: { state: "临界区执行中", cls: "hot", bar: 55 },
+    t2: { state: "膨胀准备中", cls: "hot", bar: 55 },
+    stack: ["obj"], mon: { owner: null, entry: [], wait: [] },
+    code: { file: "src/hotspot/share/runtime/synchronizer.cpp:1952-1957", tag: "inflate_and_enter", lines: [
+      ["", "  // Get or create the monitor"],
+      ["", "  if (monitor == nullptr) {"],
+      ["", "    // Lightweight monitors require that hash codes are installed first"],
+      ["", "    ObjectSynchronizer::FastHashCode(locking_thread, object);  // ← 装 hash"],
+      ["", "    monitor = get_or_insert_monitor(object, current, cause);"],
+      ["", "  }"],
+    ], hl: 3 },
+  },
+  {
+    tag: "purple", label: "⑨ 膨胀 00→10",
+    desc: "<span class='kw2'>get_or_insert_monitor</span> 从 MonitorList 拿到（或创建）ObjectMonitor，mark word 锁位 <span class='kw2'>00 → 10</span>，<span class='hl2'>monitor 状态建立</span>。<br>ObjectMonitor 闪亮登场：<span class='kw2'>_owner = 空</span>，等锁队列 <span class='kw2'>_entry_list = 空</span>，wait 队列 <span class='kw2'>_wait_set = 空</span>。T1 的锁从 LockStack 记账 <b>迁移</b> 到 monitor 记账。",
+    lock: "10", hash: HASH,
+    t1: { state: "锁迁移到 monitor", cls: "hot", bar: 55 },
+    t2: { state: "膨胀完成", cls: "hot", bar: 62 },
+    stack: ["obj"], mon: { owner: null, entry: [], wait: [] },
+    code: { file: "src/hotspot/share/runtime/synchronizer.cpp:1956 + objectMonitor.hpp:172", tag: "monitor 建立", lines: [
+      ["", "  monitor = get_or_insert_monitor(object, current, cause);"],
+      ["", "  // ObjectMonitor 核心字段 (objectMonitor.hpp:172-200):"],
+      ["", "  int64_t volatile _owner;             // owner_id"],
+      ["", "  volatile intx _recursions;          // 重入计数"],
+      ["", "  ObjectWaiter* volatile _entry_list;  // 等锁队列"],
+      ["", "  ObjectWaiter* volatile _wait_set;    // wait() 队列"],
+    ], hl: 0 },
+  },
+  {
+    tag: "red", label: "⑩ T2 入队 park",
+    desc: "T2 调用 <span class='kw2'>ObjectMonitor::enter</span>（<span class='kw2'>objectMonitor.cpp:484</span>）：先试 <span class='kw2'>spin_enter</span> 仍失败，于是把自己包成 <span class='kw2'>ObjectWaiter</span>，<span class='hl2'>挂到 _entry_list 尾部</span>，然后 <span class='kw2'>park()</span> 挂起——T2 状态变 BLOCKED。<br>注意 JDK 28 没有 <span class='kw2'>_cxq</span> 了，只有一个双向链表的 <span class='kw2'>_entry_list</span>（带头尾指针）。",
+    lock: "10", hash: HASH,
+    t1: { state: "临界区执行中", cls: "hot", bar: 55 },
+    t2: { state: "BLOCKED · 排队中", cls: "blocked", bar: 80 },
+    stack: ["obj"], mon: { owner: null, entry: ["T2"], wait: [] },
+    code: { file: "src/hotspot/share/runtime/objectMonitor.cpp:484-507", tag: "ObjectMonitor::enter", lines: [
+      ["", "bool ObjectMonitor::enter(JavaThread* current, bool post_jvmti_events) {"],
+      ["", "  if (spin_enter(current)) {          // 自旋试进"],
+      ["", "    return true;"],
+      ["", "  }"],
+      ["", "  ..."],
+      ["", "  // 自旋失败：包成 ObjectWaiter 挂 _entry_list 尾部 + park"],
+    ], hl: 1 },
+  },
+  {
+    tag: "green", label: "⑪ T1 exit",
+    desc: "T1 执行 <span class='kw2'>monitorexit</span>：内联 fast_unlock 发现已是 monitor 态，走 <span class='kw2'>ObjectSynchronizer::exit</span>（<span class='kw2'>synchronizer.cpp:1785</span>）→ <span class='kw2'>monitor->exit</span>。<br>先清 <span class='kw2'>_owner</span>、<span class='kw2'>_recursions</span>，然后进入 <span class='kw2'>exit_epilog</span> 挑选唤醒对象。<span class='kw2'>_owner 清空，LockStack 弹出 obj</span>。",
+    lock: "10", hash: HASH,
+    t1: { state: "释放锁", cls: "hot", bar: 68 },
+    t2: { state: "BLOCKED · 排队中", cls: "blocked", bar: 80 },
+    stack: [], mon: { owner: "T1→释放", entry: ["T2"], wait: [] },
+    code: { file: "src/hotspot/share/runtime/synchronizer.cpp:1817-1830", tag: "exit · monitor 路径", lines: [
+      ["", "  assert(mark.has_monitor(), \"must be\");"],
+      ["", "  // The monitor exists"],
+      ["", "  ObjectMonitor* monitor;"],
+      ["", "  monitor = read_caches(current, lock, object);   // 先读 Lock Record 缓存"],
+      ["", "  if (monitor == nullptr) monitor = get_monitor_from_table(object);"],
+      ["", "  monitor->exit(current);                         // ← 交给 ObjectMonitor"],
+    ], hl: 5 },
+  },
+  {
+    tag: "orange", label: "⑫ 唤醒继承者",
+    desc: "<span class='kw2'>exit_epilog</span>（<span class='kw2'>objectMonitor.cpp:1519</span>）从 <span class='kw2'>_entry_list</span> 选出继承者 <span class='kw2'>_succ = T2</span>，<span class='ok2'>只 unpark 这一个</span>（避免惊群）。<br>T2 从 <span class='kw2'>_entry_list</span> 摘出，重新竞争并成功获得锁，进入临界区——<span class='ok2'>锁升级全链路闭环</span>：01 → 00（LockStack）→ 10（ObjectMonitor）→ 释放 → 交棒 T2。",
+    lock: "10", hash: HASH,
+    t1: { state: "退出 · 结束", cls: "running", bar: 100 },
+    t2: { state: "RUNNING · 获锁进临界区", cls: "hot", bar: 100 },
+    stack: [], mon: { owner: "T2", entry: [], wait: [] },
+    code: { file: "src/hotspot/share/runtime/objectMonitor.cpp:1519", tag: "exit_epilog · 唤醒", lines: [
+      ["", "void ObjectMonitor::exit_epilog(JavaThread* current, ObjectWaiter* Wakee) {"],
+      ["", "  // ... 从 _entry_list 选继承者，只唤醒一个"],
+      ["", "  if (Wakee != nullptr) {"],
+      ["", "    for (;;) {"],
+      ["", "      if (ExitRelease == Atomic::cmpxchg(&_owner, ExitRelease, Wakee->TState ...)) {"],
+      ["", "        Wakee->unpark();           // ← 唤醒 T2"],
+      ["", "        break;"],
+      ["", "      }"],
+      ["", "    }"],
+      ["", "  }"],
+    ], hl: 4 },
+  },
+];
+
+/* ================= 渲染 ================= */
+
+let idx = 0;
+let playing = false;
+let timer = null;
+const STEP_MS = 3400;
+
+const $ = id => document.getElementById(id);
+const mwEl = $("mw"), pillsEl = $("pills");
+const codeBody = $("codeBody"), codeFile = $("codeFile"), codeTag = $("codeTag");
+const lockChip = $("lockChip"), lockBits = $("lockBits"), lockDesc = $("lockDesc");
+const exTag = $("exTag"), exText = $("exText");
+const stepCount = $("stepCount"), progBar = $("progBar");
+const btnPlay = $("btnPlay"), btnPrev = $("btnPrev"), btnNext = $("btnNext");
+const toastEl = $("toast");
+const stackView = $("stackView"), monView = $("monView");
+const t1El = $("t1"), t2El = $("t2");
+const t1s = $("t1s"), t2s = $("t2s");
+const t1bar = $("t1bar"), t2bar = $("t2bar");
+const stackStruct = $("stackStruct"), monStruct = $("monStruct");
+
+function padBits(n, len) {
+  return n.toString(2).padStart(len, "0");
+}
+
+function buildMarkWord(hashVal, lockVal) {
+  return {
+    unused:   padBits(0, 22),
+    hash:     padBits(hashVal, 31),
+    valhalla: "0000",
+    age:      "0000",
+    selffwd:  "0",
+    lock:     lockVal,
+  };
+}
+
+const LOCK_META = {
+  "01": { cls: "b01", text: "unlocked · 无锁 · markWord.hpp:56", chip: "", chipText: "lock = 01 · unlocked" },
+  "00": { cls: "b00", text: "fast-locked · 轻量锁 · LockStack 记账 · markWord.hpp:55", chip: "blue", chipText: "lock = 00 · fast-locked" },
+  "10": { cls: "b10", text: "monitor · 重量锁 · 指向 ObjectMonitor · markWord.hpp:57", chip: "purple", chipText: "lock = 10 · monitor" },
+};
+
+function renderPills() {
+  pillsEl.innerHTML = "";
+  STEPS.forEach((s, i) => {
+    const b = document.createElement("span");
+    b.className = "step-pill" + (i === idx ? " active" : (i < idx ? " done" : ""));
+    b.textContent = s.label;
+    b.onclick = () => { goTo(i); };
+    pillsEl.appendChild(b);
+  });
+}
+
+function renderMarkWord(anim) {
+  const s = STEPS[idx];
+  const bits = buildMarkWord(s.hash, s.lock);
+  mwEl.innerHTML = "";
+  FIELDS.forEach(f => {
+    const d = document.createElement("div");
+    d.className = "field " + f.cls;
+    if (f.key === "lock" && s.lock === "10") d.classList.add("monitor");
+    d.style.width = (f.bits / 64 * 100) + "%";
+    let val = bits[f.key];
+    if (f.key === "unused") val = "0x" + parseInt(bits.unused, 2).toString(16).padStart(6, "0");
+    else if (f.key === "hash") val = "0x" + parseInt(bits.hash, 2).toString(16).toUpperCase().padStart(8, "0");
+    d.innerHTML =
+      "<span class='fname'>" + f.name + "</span>" +
+      "<span class='fbits'>" + f.hi + "–" + f.lo + "</span>" +
+      "<span class='fval'>" + val + "</span>";
+    d.title = f.name + " [" + f.hi + ":" + f.lo + "] " + f.bits + " bit";
+    if (anim === "lock-green" && f.key === "lock") {
+      d.classList.add("flash-green"); setTimeout(() => d.classList.remove("flash-green"), 1600);
+    } else if (anim === "lock-red" && f.key === "lock") {
+      d.classList.add("flash-red"); setTimeout(() => d.classList.remove("flash-red"), 1600);
+    } else if (anim === "lock-purple" && f.key === "lock") {
+      d.classList.add("flash-purple"); setTimeout(() => d.classList.remove("flash-purple"), 1600);
+    } else if (anim === "hash-pop" && f.key === "hash") {
+      d.classList.add("pop"); setTimeout(() => d.classList.remove("pop"), 900);
+    }
+    mwEl.appendChild(d);
+  });
+
+  // lock 位放大
+  const meta = LOCK_META[s.lock];
+  lockBits.className = "bits " + meta.cls;
+  lockBits.textContent = s.lock;
+  lockDesc.textContent = meta.text;
+  lockChip.className = "lock-chip" + (meta.chip ? " " + meta.chip : "");
+  lockChip.textContent = meta.chipText;
+}
+
+function renderThreads() {
+  const s = STEPS[idx];
+  [["t1", t1El, t1s, t1bar, s.t1], ["t2", t2El, t2s, t2bar, s.t2]].forEach(pair => {
+    const el = pair[1], stEl = pair[2], barEl = pair[3], st = pair[4];
+    el.className = "thread " + pair[0] + " " + st.cls;
+    stEl.textContent = st.state;
+    barEl.style.width = st.bar + "%";
+  });
+}
+
+function renderStructures() {
+  const s = STEPS[idx];
+  const prev = idx > 0 ? STEPS[idx - 1] : null;
+
+  // LockStack
+  stackView.innerHTML = "";
+  if (s.stack.length === 0) {
+    stackView.innerHTML = "<div class='empty'>（空）</div>";
+    stackStruct.className = "struct";
+  } else {
+    stackStruct.className = "struct hl-stack";
+    s.stack.forEach((o, i) => {
+      const cell = document.createElement("div");
+      cell.className = "cell";
+      if (prev && prev.stack.length < s.stack.length && i === s.stack.length - 1) cell.classList.add("new");
+      cell.textContent = o;
+      stackView.appendChild(cell);
+    });
+  }
+
+  // ObjectMonitor
+  const m = s.mon;
+  monView.innerHTML = "";
+  monStruct.className = "struct" + (s.lock === "10" ? " hl-mon" : "");
+
+  const ownerRow = document.createElement("div");
+  ownerRow.className = "mon-row";
+  ownerRow.innerHTML = "<span class='k'>_owner</span>";
+  const ov = document.createElement("span");
+  ov.className = "v" + (m.owner ? "" : " none");
+  ov.textContent = m.owner || "空";
+  ownerRow.appendChild(ov);
+  monView.appendChild(ownerRow);
+
+  const recRow = document.createElement("div");
+  recRow.className = "mon-row";
+  recRow.innerHTML = "<span class='k'>_recursions</span>";
+  const rv = document.createElement("span");
+  rv.className = "v none";
+  rv.textContent = "0";
+  recRow.appendChild(rv);
+  monView.appendChild(recRow);
+
+  const q = document.createElement("div");
+  q.className = "mon-queue";
+  q.innerHTML = "<span class='qlabel'>_entry_list 等锁队列</span><div class='qbox'></div>";
+  const qbox = q.querySelector(".qbox");
+  if (m.entry.length === 0) {
+    qbox.innerHTML = "<span class='qempty'>（空）</span>";
+  } else {
+    m.entry.forEach((t, i) => {
+      const item = document.createElement("span");
+      item.className = "qitem" + (t === "T2" && s.t2.cls === "blocked" ? " parked" : "");
+      if (prev && prev.mon.entry.length < m.entry.length && i === m.entry.length - 1) item.classList.add("new");
+      if (t === "T2" && idx === STEPS.length - 1) item.classList.add("wake");
+      item.textContent = t + (t === "T2" && s.t2.cls === "blocked" ? " · park" : "");
+      qbox.appendChild(item);
+    });
+  }
+  monView.appendChild(q);
+
+  const wq = document.createElement("div");
+  wq.className = "mon-queue";
+  wq.innerHTML = "<span class='qlabel'>_wait_set（wait 队列）</span><div class='qbox'><span class='qempty'>（空）</span></div>";
+  monView.appendChild(wq);
+}
+
+function renderCode() {
+  const c = STEPS[idx].code;
+  codeFile.textContent = c.file;
+  codeTag.textContent = c.tag;
+  let html = "";
+  c.lines.forEach((ln, i) => {
+    const cls = i === c.hl ? "hl" : "";
+    let text = ln[1];
+    if (/^\/\//.test(text.trim()) || /^\/\*/.test(text.trim())) text = "<span class='cm'>" + text + "</span>";
+    html += "<span class='ln'>" + ln[0] + "</span><span class='" + cls + "'>" + text + "</span>\n";
+  });
+  codeBody.innerHTML = html;
+}
+
+function renderExplain() {
+  const s = STEPS[idx];
+  exTag.className = "tag " + s.tag;
+  exTag.textContent = s.label;
+  exText.innerHTML = s.desc;
+}
+
+function render(anim) {
+  renderPills();
+  renderMarkWord(anim || null);
+  renderThreads();
+  renderStructures();
+  renderCode();
+  renderExplain();
+  stepCount.textContent = (idx + 1) + " / " + STEPS.length;
+  progBar.style.width = ((idx + 1) / STEPS.length * 100) + "%";
+  btnPrev.disabled = idx === 0;
+  btnNext.disabled = idx === STEPS.length - 1;
+}
+
+function goTo(i, anim) {
+  idx = Math.max(0, Math.min(STEPS.length - 1, i));
+  render(anim);
+}
+
+function step(delta) {
+  stop();
+  goTo(idx + delta);
+}
+
+function play() {
+  if (playing) { stop(); return; }
+  if (idx === STEPS.length - 1) goTo(0);
+  playing = true;
+  btnPlay.textContent = "⏸ 暂停";
+  const tick = () => {
+    if (idx < STEPS.length - 1) {
+      const next = STEPS[idx + 1];
+      const anim =
+        next.lock === "00" && STEPS[idx].lock === "01" ? "lock-green"
+        : next.lock === "10" && STEPS[idx].lock === "00" ? "lock-purple"
+        : (next.hash !== 0 && STEPS[idx].hash === 0) ? "hash-pop"
+        : next.tag === "red" ? "lock-red" : null;
+      goTo(idx + 1, anim);
+      timer = setTimeout(tick, STEP_MS);
+    } else {
+      stop();
+      toast("播放完毕 —— 锁升级全链路闭环：01 → 00 → 10 → 释放 → 交棒 🎬");
+    }
+  };
+  timer = setTimeout(tick, 900);
+}
+
+function stop() {
+  playing = false;
+  btnPlay.textContent = "▶ 播放";
+  if (timer) { clearTimeout(timer); timer = null; }
+}
+
+function toast(msg) {
+  toastEl.textContent = msg;
+  toastEl.classList.add("show");
+  setTimeout(() => toastEl.classList.remove("show"), 2600);
+}
+
+btnPlay.onclick = play;
+btnNext.onclick = () => step(1);
+btnPrev.onclick = () => step(-1);
+btnReset.onclick = () => { stop(); goTo(0); };
+
+document.addEventListener("keydown", e => {
+  if (e.code === "Space") { e.preventDefault(); play(); }
+  else if (e.code === "ArrowRight") step(1);
+  else if (e.code === "ArrowLeft") step(-1);
+  else if (e.code === "KeyR") { stop(); goTo(0); }
+});
+
+render(null);
+</script>
+</body>
+</html>

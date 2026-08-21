@@ -1,0 +1,141 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 720" font-family="'Segoe UI', 'Microsoft YaHei', sans-serif">
+  <!-- 背景：米白点阵 -->
+  <rect width="1000" height="720" fill="#FBF7F0"/>
+  <pattern id="dots" width="20" height="20" patternUnits="userSpaceOnUse">
+    <circle cx="2" cy="2" r="1" fill="#E8DFCE"/>
+  </pattern>
+  <rect width="1000" height="720" fill="url(#dots)"/>
+
+  <!-- 标题 -->
+  <text x="500" y="38" text-anchor="middle" font-size="22" font-weight="bold" fill="#3A3A3A">new Foo() 对象诞生全链路</text>
+  <text x="500" y="60" text-anchor="middle" font-size="12.5" fill="#8A8272">字节码 → 快路径 TLAB → 慢路径三段式 → 对象头初始化 → 构造器</text>
+
+  <!-- ============ 第一行：字节码 ============ -->
+  <rect x="60" y="85" width="180" height="62" rx="10" fill="#FFFFFF" stroke="#5B7CFA" stroke-width="2"/>
+  <rect x="60" y="85" width="6" height="62" rx="3" fill="#5B7CFA"/>
+  <text x="80" y="108" font-size="14" font-weight="bold" fill="#5B7CFA">① new #c (0xbb)</text>
+  <text x="80" y="130" font-size="11" fill="#6A6A6A">bytecodes.hpp:231</text>
+  <text x="80" y="144" font-size="10.5" fill="#8A8272">压入未初始化引用</text>
+
+  <!-- 箭头 1 → 2 -->
+  <line x1="240" y1="116" x2="295" y2="116" stroke="#5B7CFA" stroke-width="2" marker-end="url(#arrowB)"/>
+
+  <!-- ============ 第二行：解释器快路径（4 检查 + TLAB） ============ -->
+  <rect x="300" y="80" width="330" height="72" rx="10" fill="#FFFFFF" stroke="#5B7CFA" stroke-width="2"/>
+  <rect x="300" y="80" width="6" height="72" rx="3" fill="#5B7CFA"/>
+  <text x="320" y="102" font-size="14" font-weight="bold" fill="#5B7CFA">② TemplateTable::_new 快路径</text>
+  <text x="320" y="122" font-size="10.5" fill="#6A6A6A">templateTable_x86.cpp:3732</text>
+  <text x="320" y="138" font-size="10.5" fill="#8A8272">CP tag → klass → clinit 屏障 → layout_helper 四连查</text>
+
+  <!-- 检查小胶囊 -->
+  <rect x="315" y="162" width="88" height="24" rx="12" fill="#EEF2FF" stroke="#5B7CFA" stroke-width="1"/>
+  <text x="359" y="178" text-anchor="middle" font-size="10.5" fill="#3A3A3A">CP 已解析</text>
+  <rect x="412" y="162" width="88" height="24" rx="12" fill="#EEF2FF" stroke="#5B7CFA" stroke-width="1"/>
+  <text x="456" y="178" text-anchor="middle" font-size="10.5" fill="#3A3A3A">klass 已加载</text>
+  <rect x="509" y="162" width="88" height="24" rx="12" fill="#F3EEFF" stroke="#9B7BFA" stroke-width="1"/>
+  <text x="553" y="178" text-anchor="middle" font-size="10.5" fill="#3A3A3A">clinit 屏障</text>
+  <rect x="300" y="196" width="297" height="24" rx="12" fill="#EEF2FF" stroke="#5B7CFA" stroke-width="1"/>
+  <text x="448" y="212" text-anchor="middle" font-size="10.5" fill="#3A3A3A">layout_helper 无慢路径位（instance_size 就绪）</text>
+
+  <!-- 从 ② 下到 TLAB -->
+  <line x1="465" y1="220" x2="465" y2="258" stroke="#5B7CFA" stroke-width="2" marker-end="url(#arrowB)"/>
+
+  <!-- ============ 第三行：TLAB bump-pointer ============ -->
+  <rect x="300" y="262" width="340" height="88" rx="10" fill="#FFF9EE" stroke="#F5A623" stroke-width="2"/>
+  <rect x="300" y="262" width="6" height="88" rx="3" fill="#F5A623"/>
+  <text x="320" y="284" font-size="14" font-weight="bold" fill="#C47F00">③ TLAB bump-pointer（零锁！）</text>
+  <text x="320" y="304" font-size="10.5" fill="#6A6A6A">barrierSetAssembler_x86.cpp:281-313</text>
+  <text x="320" y="322" font-size="10.5" fill="#8A8272">mov obj=top → lea end=obj+size → cmp end vs end → mov top=end</text>
+  <text x="320" y="340" font-size="10.5" fill="#C47F00">线程私有 r15_thread，无锁无原子操作</text>
+
+  <!-- TLAB 图 -->
+  <rect x="680" y="262" width="270" height="70" rx="8" fill="#FFF3DE" stroke="#F5A623" stroke-width="1.5"/>
+  <text x="695" y="282" font-size="11.5" font-weight="bold" fill="#C47F00">TLAB（线程私有）</text>
+  <rect x="695" y="292" width="130" height="20" fill="#FFE3B0" stroke="#F5A623" stroke-width="1"/>
+  <rect x="695" y="292" width="26" height="20" fill="#F5A623" opacity="0.25"/>
+  <text x="700" y="306" font-size="9.5" fill="#8A5A00">top 前移 size → obj</text>
+  <rect x="830" y="292" width="105" height="20" fill="#FBF7F0" stroke="#E8DFCE" stroke-width="1"/>
+  <text x="845" y="306" font-size="9.5" fill="#8A8272">剩余空间</text>
+  <text x="695" y="326" font-size="9.5" fill="#8A8272">fast path：仅 3-4 条指令</text>
+
+  <!-- ③ 成功 → ⑤ 初始化 -->
+  <line x1="640" y1="306" x2="672" y2="306" stroke="#F5A623" stroke-width="2" marker-end="url(#arrowO)"/>
+  <line x1="465" y1="350" x2="465" y2="400" stroke="#5B7CFA" stroke-width="2" marker-end="url(#arrowB)"/>
+
+  <!-- ============ 第四行：对象头初始化 ============ -->
+  <rect x="300" y="404" width="340" height="88" rx="10" fill="#EFFAF2" stroke="#34B36B" stroke-width="2"/>
+  <rect x="300" y="404" width="6" height="88" rx="3" fill="#34B36B"/>
+  <text x="320" y="426" font-size="14" font-weight="bold" fill="#23854B">⑤ 对象头初始化 + 字段清零</text>
+  <text x="320" y="446" font-size="10.5" fill="#6A6A6A">templateTable_x86.cpp:3792-3830</text>
+  <text x="320" y="464" font-size="10.5" fill="#8A8272">mark = prototype (unlocked 01) · klass 指针 · 8B 清零循环</text>
+  <text x="320" y="482" font-size="10.5" fill="#23854B">出生即 unlocked —— synchronized 升级的起点</text>
+
+  <!-- 对象布局图 -->
+  <rect x="680" y="404" width="270" height="88" rx="8" fill="#E4F6EA" stroke="#34B36B" stroke-width="1.5"/>
+  <text x="695" y="424" font-size="11.5" font-weight="bold" fill="#23854B">对象布局</text>
+  <rect x="695" y="434" width="240" height="18" fill="#BEE9CC" stroke="#34B36B" stroke-width="1"/>
+  <text x="705" y="447" font-size="9.5" fill="#1D5C3C">mark word = prototype</text>
+  <rect x="695" y="454" width="240" height="18" fill="#D6F2E0" stroke="#34B36B" stroke-width="1"/>
+  <text x="705" y="467" font-size="9.5" fill="#1D5C3C">klass 指针 → InstanceKlass</text>
+  <rect x="695" y="474" width="240" height="12" fill="#F0FBF3" stroke="#BEE9CC" stroke-width="1"/>
+  <text x="705" y="483" font-size="9.5" fill="#1D5C3C">字段全零（8B 一组）</text>
+
+  <!-- ⑤ → ⑥ -->
+  <line x1="465" y1="492" x2="465" y2="530" stroke="#5B7CFA" stroke-width="2" marker-end="url(#arrowB)"/>
+
+  <!-- ============ 第五行：构造器 ============ -->
+  <rect x="300" y="534" width="340" height="72" rx="10" fill="#F3EEFF" stroke="#9B7BFA" stroke-width="2"/>
+  <rect x="300" y="534" width="6" height="72" rx="3" fill="#9B7BFA"/>
+  <text x="320" y="556" font-size="14" font-weight="bold" fill="#7A5BD6">⑥ invokespecial &lt;init&gt;</text>
+  <text x="320" y="576" font-size="10.5" fill="#6A6A6A">templateTable_x86.cpp:3496</text>
+  <text x="320" y="594" font-size="10.5" fill="#8A8272">构造器执行 → 对象完全初始化，引用可用</text>
+
+  <!-- ============ 慢路径分支（右侧） ============ -->
+  <!-- ③ 失败 → 慢路径 -->
+  <path d="M 640 300 C 730 300, 760 300, 790 340 L 790 380" fill="none" stroke="#EF5A5A" stroke-width="2" stroke-dasharray="6,4" marker-end="url(#arrowR)"/>
+  <text x="712" y="322" font-size="10.5" fill="#D64545">TLAB 不够 → 慢路径</text>
+
+  <!-- 慢路径块 -->
+  <rect x="680" y="560" width="280" height="130" rx="10" fill="#FFFFFF" stroke="#EF5A5A" stroke-width="2"/>
+  <rect x="680" y="560" width="6" height="130" rx="3" fill="#EF5A5A"/>
+  <text x="700" y="582" font-size="13.5" font-weight="bold" fill="#D64545">④ 慢路径三段式</text>
+  <text x="700" y="600" font-size="10" fill="#6A6A6A">memAllocator.cpp:327-348</text>
+  <rect x="700" y="612" width="240" height="22" rx="11" fill="#FFF0F0" stroke="#EF5A5A" stroke-width="1"/>
+  <text x="820" y="627" text-anchor="middle" font-size="10" fill="#3A3A3A">① fast：TLAB 再试一次</text>
+  <rect x="700" y="638" width="240" height="22" rx="11" fill="#FFF0F0" stroke="#EF5A5A" stroke-width="1"/>
+  <text x="820" y="653" text-anchor="middle" font-size="10" fill="#3A3A3A">② slow：退休 TLAB → refill（ResizeTLAB）</text>
+  <rect x="700" y="664" width="240" height="22" rx="11" fill="#FFF0F0" stroke="#EF5A5A" stroke-width="1"/>
+  <text x="820" y="679" text-anchor="middle" font-size="10" fill="#3A3A3A">③ outside：大对象直接堆分配</text>
+
+  <!-- 慢路径 → ⑤ 对象初始化 -->
+  <line x1="680" y1="620" x2="648" y2="450" stroke="#EF5A5A" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrowR)"/>
+  <text x="612" y="540" font-size="10" fill="#D64545" transform="rotate(-40 612 540)">汇合</text>
+
+  <!-- ============ 底部：C2 彩蛋 ============ -->
+  <rect x="60" y="530" width="200" height="130" rx="10" fill="#FFF9EE" stroke="#F5A623" stroke-width="1.5"/>
+  <text x="80" y="552" font-size="13" font-weight="bold" fill="#C47F00">C2 的"消灭"彩蛋</text>
+  <text x="80" y="574" font-size="10.5" fill="#6A6A6A">AllocateNode · macro.cpp:2413</text>
+  <text x="80" y="594" font-size="10.5" fill="#8A8272">逃逸分析 → 未逃逸对象</text>
+  <text x="80" y="612" font-size="10.5" fill="#8A8272">→ 标量替换：分配整个删除</text>
+  <text x="80" y="630" font-size="10.5" fill="#C47F00">escape.cpp:416 · EliminateAllocations</text>
+  <text x="80" y="650" font-size="10.5" fill="#C47F00">→ 锁消除联动（EliminateLocks）</text>
+
+  <!-- 箭头定义 -->
+  <defs>
+    <marker id="arrowB" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
+      <polygon points="0 0, 9 3.5, 0 7" fill="#5B7CFA"/>
+    </marker>
+    <marker id="arrowO" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
+      <polygon points="0 0, 9 3.5, 0 7" fill="#F5A623"/>
+    </marker>
+    <marker id="arrowR" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
+      <polygon points="0 0, 9 3.5, 0 7" fill="#EF5A5A"/>
+    </marker>
+  </defs>
+
+  <!-- 图例 -->
+  <rect x="60" y="92" width="180" height="80" rx="8" fill="#FFFFFF" stroke="#E8DFCE" stroke-width="1"/>
+  <text x="78" y="112" font-size="11" font-weight="bold" fill="#3A3A3A">图例</text>
+  <rect x="78" y="122" width="14" height="14" rx="3" fill="#5B7CFA"/><text x="100" y="134" font-size="10.5" fill="#6A6A6A">字节码 / 解释器</text>
+  <rect x="78" y="142" width="14" height="14" rx="3" fill="#F5A623"/><text x="100" y="154" font-size="10.5" fill="#6A6A6A">TLAB / C2</text>
+</svg>

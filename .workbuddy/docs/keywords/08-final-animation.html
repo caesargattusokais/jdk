@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>08 · final 四面孔交互动画</title>
+<style>
+  :root{
+    --blue:#3b82f6; --purple:#8b5cf6; --orange:#f59e0b; --green:#10b981;
+    --bg:#f6f7fb; --card:#FFFFFF; --ink:#1f2937; --sub:#6b7280; --line:#e5e7eb;
+    --shadow:0 2px 6px rgba(17,24,39,.05);
+  
+    --blue-bg:#eff6ff; --blue-bd:#bfdbfe;
+    --purple-bg:#f5f3ff; --purple-bd:#ddd6fe;
+    --orange-bg:#fffbeb; --orange-bd:#fde68a;
+    --green-bg:#ecfdf5; --green-bd:#a7f3d0;
+    --red:#ef4444; --red-bg:#fef2f2; --red-bd:#fecaca;
+    --ink-2:#6b7280; --ink-3:#9ca3af;
+    --code-bg:#111827; --code-ink:#e5e7eb;
+  }
+  /* header / badges（与 02/03/04 对齐） */
+  header{text-align:center;margin-bottom:18px}
+  header h1{font-size:25px;letter-spacing:.5px}
+  header h1 .mono{font-family:Consolas,monospace;color:var(--blue)}
+  header .sub{color:var(--ink-2);font-size:13.5px;margin-top:6px}
+  .badges{margin-top:12px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+  header .badge{font-size:12px;padding:3px 12px;border-radius:999px;border:1px solid var(--blue-bd);
+    background:var(--blue-bg);color:var(--blue);font-family:Consolas,monospace}
+  header .badge.purple{border-color:var(--purple-bd);background:var(--purple-bg);color:var(--purple)}
+  header .badge.green{border-color:var(--green-bd);background:var(--green-bg);color:var(--green)}
+  header .badge.orange{border-color:var(--orange-bd);background:var(--orange-bg);color:var(--orange)}
+  header .badge.red{border-color:var(--red-bd);background:var(--red-bg);color:var(--red)}
+
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{background:var(--bg); color:var(--ink); font-family:'Segoe UI','Microsoft YaHei',sans-serif; padding:18px;}
+  .wrap{max-width:1180px; margin:0 auto;}
+
+  h1{font-size:22px; margin-bottom:4px;}
+  .sub{font-size:13px; color:var(--sub); margin-bottom:14px;}
+  .steps{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:16px; justify-content:center;}
+  .step-pill{font-size:11.5px; padding:5px 11px; border-radius:999px; cursor:pointer; border:1.5px solid var(--line); background:var(--card); color:var(--sub); display:flex; align-items:center; justify-content:center; transition:all .2s; user-select:none; white-space:nowrap; min-width:30px;}
+  .step-pill.active{border-color:var(--blue); background:var(--blue); color:#fff; box-shadow:0 4px 12px rgba(59,130,246,.35);}
+  .step-pill.done{border-color:var(--green); background:var(--green); color:#fff;}
+
+  .grid{display:grid; grid-template-columns:300px 1fr 310px; gap:12px; margin-bottom:12px;}
+  .panel{background:var(--card); border-radius:12px; padding:14px; box-shadow:var(--shadow);}
+  .panel h2{font-size:14px; margin-bottom:10px; padding-left:8px; border-left:4px solid var(--green);}
+  .panel.p2 h2{border-color:var(--orange);}
+  .panel.p3 h2{border-color:var(--blue);}
+
+  /* left: faces */
+  .face{display:flex; align-items:center; gap:8px; padding:10px 12px; border-radius:10px; margin-bottom:8px;
+        background:#eff6ff; cursor:pointer; transition:all .3s; border:1.5px solid transparent;}
+  .face .num{width:26px; height:26px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:bold; color:#fff; font-size:13px;}
+  .face .tt{font-size:13px; font-weight:bold;}
+  .face .ds{font-size:11px; color:var(--sub); margin-top:2px;}
+  .face.f1 .num{background:var(--green);} .face.f2 .num{background:var(--blue);} .face.f3 .num{background:var(--orange);} .face.f4 .num{background:var(--purple);}
+  .face.on{border-color:var(--orange); background:#fffbeb; box-shadow:var(--shadow);}
+  .face.f1.on{border-color:var(--green);}
+  .face.f2.on{border-color:var(--blue);}
+  .face.f3.on{border-color:var(--orange);}
+  .face.f4.on{border-color:var(--purple); background:#f5f3ff;}
+  .note{margin-top:10px; font-size:11.5px; color:var(--sub); background:#f3f4f6; border-radius:8px; padding:7px 9px;}
+
+  /* middle: stage */
+  .stageBox{background:#111827; border-radius:10px; padding:10px 12px; font-family:Consolas,monospace; font-size:12px; line-height:1.75; color:#e5e7eb; min-height:220px;}
+  .stageBox .hl{background:#4a3410; border-radius:3px; color:#fbbf24;}
+  .stageBox .dim{color:#64748b;}
+  .stageBox .grn{color:#a7f3d0;}
+  .stageBox .org{color:#fde68a;}
+  .stageBox .pur{color:#ddd6fe;}
+  .stageBox .blu{color:#bfdbfe;}
+  .vrow{display:flex; align-items:center; gap:6px; padding:2px 0; font-size:11.5px; font-family:Consolas,monospace;}
+  .vslot{display:inline-block; min-width:64px; text-align:center; border-radius:6px; padding:2px 8px; font-size:11px; background:#1f2937; color:#d1d5db;}
+  .vslot.hot{background:#4a3410; color:#fbbf24;}
+  .vslot.empty{background:#374151; color:#6b7280; border:1px dashed #4b5563;}
+  .detail{margin-top:8px; font-size:12px; color:#4b5563; background:#f3f4f6; border-radius:8px; padding:7px 9px; min-height:34px;}
+
+  /* right: source */
+  .src{background:#111827; border-radius:12px; padding:12px 14px; box-shadow:var(--shadow); margin-bottom:12px;}
+  .src h2{font-size:13px; color:#9ca3af; margin-bottom:8px;}
+  .src .code{font-family:Consolas,monospace; font-size:12px; line-height:1.7; white-space:pre; overflow-x:auto; color:#e5e7eb;}
+  .src .code .hl{background:#4a3410; border-radius:3px; color:#fbbf24;}
+  .src .code .dim{color:#64748b;}
+  .scene{margin-top:8px; font-size:11px; color:#6b7280; background:#f3f4f6; border-radius:8px; padding:6px 8px;}
+
+  /* controls */
+  .ctl{display:flex; align-items:center; gap:10px; justify-content:center; padding:10px; background:var(--card); border-radius:12px; box-shadow:var(--shadow);}
+  .btn{width:44px; height:44px; border-radius:50%; border:none; background:var(--blue); color:#fff; font-size:16px; cursor:pointer; transition:all .15s; font-weight:bold;}
+  .btn:hover{transform:scale(1.08);}
+  .btn.green{background:var(--green);}
+  .btn.orange{background:var(--orange); width:52px; height:52px;}
+  .hint{font-size:12px; color:var(--sub);}
+  /* stepDesc：可读性排版（对齐 07 手法：结论 + 分点，术语加色） */
+  .stepDesc{font-size:14px; font-weight:normal; line-height:1.85; color:#334155; background:#eff6ff; border-radius:9px; padding:11px 16px; margin-bottom:12px; border-left:4px solid var(--orange);}
+  .stepDesc b{color:var(--blue); font-weight:600;}
+  .stepDesc code{color:#7c3aed; font-family:Consolas,monospace; background:rgba(139,92,246,.10); padding:0 5px; border-radius:4px; font-size:12.5px;}
+  .kbd{display:inline-block; border:1px solid var(--line); border-radius:4px; padding:0 6px; background:#fff; font-size:11px; color:#4b5563;}
+
+  @media(max-width:1000px){.grid{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1><span class="mono">final</span> · 不可变的四副面孔</h1>
+    <div class="sub">ConstantValue（classFileParser.cpp:1270）· 不进 vtable（Object.java:471）· JMM freeze（parse1.cpp:1069）· 禁继承（classFileParser.cpp:6326）· JDK 28</div>
+    <div class="badges">
+      <span class="badge ">final</span>
+      <span class="badge purple">Object.java:471</span>
+      <span class="badge green">JMM freeze</span>
+      <span class="badge orange">ConstantValue</span>
+      <span class="badge red">final class · ICCE</span>
+    </div>
+  </header>
+
+  <div class="steps" id="pills"></div>
+  <div class="stepDesc" id="stepDesc">点击 ▶ 开始播放，Space 播放/暂停，← → 步进，R 重置</div>
+
+  <div class="grid">
+    <!-- 左：四面孔 -->
+    <div class="panel p1">
+      <h2>四副面孔导航</h2>
+      <div class="face f1" id="face1"><span class="num">1</span><div><div class="tt">static final 常量</div><div class="ds">ConstantValue 属性 · 常量折叠</div></div></div>
+      <div class="face f2" id="face2"><span class="num">2</span><div><div class="tt">final 方法</div><div class="ds">不进 vtable · 直接内联</div></div></div>
+      <div class="face f3" id="face3"><span class="num">3</span><div><div class="tt">final 实例字段</div><div class="ds">JMM freeze · 构造器出口屏障</div></div></div>
+      <div class="face f4" id="face4"><span class="num">4</span><div><div class="tt">final 类</div><div class="ds">禁继承 · ICCE 防线</div></div></div>
+      <div class="note" id="fnote">当前：面孔 ①<br>static final int MAX = 100</div>
+    </div>
+
+    <!-- 中：舞台 -->
+    <div class="panel p2">
+      <h2>机制舞台</h2>
+      <div class="stageBox" id="stage">// 当前面孔机制</div>
+      <div class="detail" id="detail">—</div>
+    </div>
+
+    <!-- 右：源码 -->
+    <div class="panel p3">
+      <h2>源码证据</h2>
+      <div class="src">
+        <div class="code" id="src">// 源码面板</div>
+      </div>
+      <div class="scene" id="scene">—</div>
+    </div>
+  </div>
+
+  <!-- 控制 -->
+  <div class="ctl">
+    <button class="btn" id="btnPrev" title="上一步">◀</button>
+    <button class="btn orange" id="btnPlay" title="播放/暂停 (Space)">▶</button>
+    <button class="btn" id="btnNext" title="下一步">▶</button>
+    <button class="btn green" id="btnReset" title="重置 (R)">↺</button>
+    <span class="hint"><span class="kbd">Space</span> 播放/暂停 · <span class="kbd">←</span> <span class="kbd">→</span> 步进 · <span class="kbd">R</span> 重置 · 点击步骤胶囊跳转</span>
+  </div>
+
+</div>
+
+<script>
+(() => {
+  const S = {
+    face1: document.getElementById('face1'),
+    face2: document.getElementById('face2'),
+    face3: document.getElementById('face3'),
+    face4: document.getElementById('face4'),
+    fnote: document.getElementById('fnote'),
+    stage: document.getElementById('stage'),
+    detail: document.getElementById('detail'),
+    src: document.getElementById('src'),
+    scene: document.getElementById('scene'),
+    desc: document.getElementById('stepDesc'),
+    pills: document.getElementById('pills'),
+  };
+  const COL = { blue:'#3b82f6', purple:'#8b5cf6', orange:'#f59e0b', green:'#10b981' };
+
+  function faces(n){
+    S.face1.className='face f1'+(n===1?' on':'');
+    S.face2.className='face f2'+(n===2?' on':'');
+    S.face3.className='face f3'+(n===3?' on':'');
+    S.face4.className='face f4'+(n===4?' on':'');
+  }
+  function stage(html){ S.stage.innerHTML = html; }
+  function src(html){ S.src.innerHTML = html; }
+  function scene(txt){ S.scene.innerHTML = txt; }
+
+  const steps = [
+    // 0 初始
+    { d:`final 一个关键字，能修饰 <b>4 种对象</b>——静态常量、方法、实例字段、类，每种机制完全不同。
+<b>① static final 常量</b>：编译期折叠成字面量，运行期零成本
+<b>② final 方法</b>：不进虚方法表，编译器直接内联
+<b>③ final 实例字段</b>：构造器出口一次屏障，发布即冻结（JMM freeze）
+<b>④ final 类</b>：禁止继承，加载期抛 IncompatibleClassChangeError
+先看面孔①——它最常见，也是坑最多的地方。`,
+      fn:()=>{
+        faces(1); S.fnote.innerHTML='当前：面孔 ①<br>static final int MAX = 100';
+        stage(`<span class="grn">面孔 ① static final 常量</span>\n<span class="dim">修饰对象：static final 字段 + 常量表达式</span>\n<span class="dim">编译期产物：ConstantValue 属性</span>\n<span class="dim">运行期：零成本（无字段读取）</span>\n<span class="org">先看 javac 如何识别与折叠</span>`);
+        S.detail.textContent='final static 常量 = 编译期常量（JLS §15.29）。';
+        src(`<span class="dim">// FinalDemo.java</span>\nstatic final int MAX = 100;         <span class="dim">← 常量表达式</span>\nstatic final int RND = (int)(Math.random()*10);  <span class="dim">← 不是！</span>\nint x = MAX + 1;                   <span class="dim">← 折叠为 101</span>`);
+        scene('场景 0：<b>面孔① static final 常量</b>');
+      }},
+    // 1 识别常量表达式
+    { d:`javac 先问一个问题：<b>初始化器是常量表达式吗？</b>是 → 折叠；不是 → 留到类初始化里真赋值。
+<b>① 常量表达式</b>：字面量、算术、其他常量的组合（JLS §15.29）
+<b>② MAX = 100</b>：是 → 使用处直接内联成 101，<code>getstatic</code> 都不发
+<b>③ RND = Math.random()</b>：不是 → 真读字段，走 <code>&lt;clinit&gt;</code>（05 篇）
+<b>④ "折叠"</b>：编译时把结果算好写进字节码，运行期白嫖`,
+      fn:()=>{
+        faces(1);
+        stage(`<span class="grn">javac 判定（JLS §15.29）</span>\n<span class="dim">MAX:  final static + 字面量 100</span>\n  <span class="org">→ 是常量表达式 → 折叠 ✅</span>\n<span class="dim">RND:  Math.random() 调用</span>\n  <span class="org">→ 不是常量 → 进 &lt;clinit&gt;（05 篇）</span>\n<span class="dim">// 使用处：bipush 100（无 getstatic）</span>`);
+        S.detail.textContent='常量折叠的关键判据：初始化器是否为 JLS 常量表达式。';
+        src(`<span class="dim">// 使用处字节码对比</span>\nint x = MAX + 1;   <span class="dim">→</span> bipush 101  <span class="grn">// 无字段读取</span>\nint y = RND + 1;   <span class="dim">→</span> getstatic RND  <span class="org">// 真读字段</span>`);
+        scene('场景 1：<b>常量表达式判定</b>');
+      }},
+    // 2 ConstantValue 解析
+    { d:`常量字段在 class 文件里带一个 <b>ConstantValue 属性</b>，VM 加载时解析它。
+<b>① 前提</b>：只有 <code>static final</code> 才可能有（classFileParser.cpp:1270 只处理 is_static）
+<b>② 属性内容</b>：一个 u2（2 字节）——常量池索引，指向真正的常量值
+<b>③ 校验</b>：verify_constantvalue 检查常量类型与字段签名匹配（:1283）
+<b>④ 反例</b>：实例 final 字段没有此属性——它们在构造器里赋值
+<b>u2</b> = 2 字节无符号整数；<b>常量池</b> = class 文件里存放所有常量的大表格。`,
+      fn:()=>{
+        faces(1);
+        stage(`<span class="blu">if (is_static && attr == tag_constant_value) {</span>  <span class="dim">// :1270</span>\n  <span class="grn">if (constantvalue_index != 0)</span>\n  <span class="org">    classfile_parse_error("Duplicate...");</span>  <span class="dim">// :1273</span>\n  <span class="grn">constantvalue_index = cfs->get_u2(CHECK);</span>   <span class="dim">// :1281</span>\n  <span class="grn">verify_constantvalue(cp, idx, sig, CHECK);</span>  <span class="dim">// :1283</span>\n<span class="blu">}</span>  <span class="dim">// 只处理 static！</span>`);
+        S.detail.textContent='只有 static final 有 ConstantValue；实例 final 在构造器赋值，无此属性。';
+        src(`<span class="dim">// javap -v 输出</span>\nstatic final int MAX;\n  descriptor: I\n  flags: (0x0018) ACC_STATIC, ACC_FINAL\n  ConstantValue: int 100    <span class="grn">← 属性</span>\n\n<span class="dim">// 字段无 ConstantValue 时</span>\n  flags: (0x0010) ACC_FINAL  <span class="dim">← 仅标志</span>`);
+        scene('场景 2：<b>ConstantValue 属性解析</b>');
+      }},
+    // 3 坑：重编译
+    { d:`常量折叠的最大坑：<b>改了常量值，使用方不会跟着变</b>——101 已经焊死在字节码里了。
+<b>① 编译时</b>：使用方把 MAX+1 算成 101 直接写进字节码
+<b>② 只重编译 FinalDemo.class</b>：ConstantValue 变成 200，但使用方还是 101
+<b>③ 必须</b>：使用方一起重编译（经典发布事故，接口常量尤甚）
+<b>④ 例外</b>：反射读字段能拿到新值，因为字段对象还在`,
+      fn:()=>{
+        faces(1);
+        stage(`<span class="org">折叠的坑：改值必须重编译使用方</span>\n<span class="dim">FinalDemo.class:  ConstantValue: int 100</span>\n<span class="dim">使用方.class:     bipush 101（已内联）</span>\n<span class="org">只更新 FinalDemo → 使用方还是 101</span>\n<span class="dim">// 反射仍能读到新值（字段对象保留）</span>`);
+        S.detail.textContent='这也是为什么接口常量/公共常量类改值要谨慎发布。';
+        src(`<span class="dim">// strict 交互（JDK 28, classFileParser.cpp:6444）</span>\nif (fi.initializer_index() != 0) {\n  <span class="grn">// skip strict static fields with ConstantValue</span>\n} else {\n  update_strict_static_unset(true);\n}`);
+        scene('场景 3：<b>改常量需重编译使用方</b>');
+      }},
+    // 4 面孔2 引入
+    { d:`面孔②：<b>final 方法 = 禁止覆盖</b>，所以 VM 干脆不把它放进虚方法表。
+<b>① 虚方法表（vtable）</b>：每个类一张"方法指针表"，虚调用查表跳转（06 篇的 vtable）
+<b>② 铁证</b>：Object.java:471 的 wait0 注释——"final modifier so method not in vtable"
+<b>③ 效果</b>：不占槽 → 调用目标唯一 → 不存在分派歧义`,
+      fn:()=>{
+        faces(2); S.fnote.innerHTML='当前：面孔 ②<br>private final native void wait0(...)';
+        stage(`<span class="blu">面孔 ② final 方法 → 不进 vtable</span>\n<span class="dim">Object.java:471-472:</span>\n<span class="org">// final modifier so method not in vtable</span>\n<span class="grn">private final native void wait0(...);</span>\n<span class="dim">// vtable = 虚分派表（klassVtable）</span>\n<span class="dim">// ACC_FINAL 方法不占槽位</span>`);
+        S.detail.textContent='final 方法链接期被排除出 vtable——分派表更小，调用无歧义。';
+        src(`<span class="dim">// Object.java:471-472（JDK 28 原文）</span>\n\n// final modifier so method not in vtable\nprivate final native void wait0(long timeoutMillis)\n        throws InterruptedException;`);
+        scene('场景 4：<b>面孔② final 方法</b>');
+      }},
+    // 5 vtable 对比
+    { d:`<b>有槽 vs 无槽</b>——性能差异就在这里。
+<b>① 普通虚方法</b>：vtable 里有槽，<code>invokevirtual</code> 运行时查表才知道跳哪
+<b>② final 方法</b>：vtable 无槽，目标唯一
+<b>③ C2 优化</b>：拿到唯一目标 → 直接内联，连调用指令都省了
+<b>④ 安全侧</b>：任何子类都无法偷偷换掉实现（比"约定"硬）`,
+      fn:()=>{
+        faces(2);
+        stage(`<span class="blu">虚方法表（vtable）</span>\n<span class="vrow"><span class="vslot hot">[0]</span> toString()      <span class="dim">invokevirtual → 查表</span></span>\n<span class="vrow"><span class="vslot hot">[1]</span> hashCode()      <span class="dim">invokevirtual → 查表</span></span>\n<span class="vrow"><span class="vslot hot">[2]</span> equals(...)      <span class="dim">invokevirtual → 查表</span></span>\n<span class="vrow"><span class="vslot empty">[-]</span> wait0()         <span class="org">final → 无槽！</span></span>\n<span class="dim">// C2: 目标唯一 → 直接内联</span>`);
+        S.detail.textContent='wait0 若是虚方法，虚拟线程/子类可能影响分派路径——final 杜绝。';
+        src(`<span class="dim">// 链接期：ACC_FINAL 方法排除出 vtable</span>\n<span class="dim">// klassVtable 构建时跳过 final 方法</span>\n<span class="dim">// 调用点：invokevirtual 但目标唯一</span>\n<span class="grn">// C2 → direct call / inline</span>`);
+        scene('场景 5：<b>vtable 槽位对比</b>');
+      }},
+    // 6 面孔3 引入
+    { d:`面孔③：<b>final 实例字段解决"发布可见性"</b>——别的线程拿到对象，一定能看到 final 字段的初值。
+<b>① 场景</b>：A 线程 new 出对象（id=42）再发布；B 线程拿到引用
+<b>② 问题</b>：没有 synchronized/volatile 时，B 看到 id 一定是 42 吗？一般不敢保证
+<b>③ 承诺</b>：JMM §17.5——final 字段保证能（freeze 语义）
+<b>④ 实现</b>：构造器出口插一道内存屏障，"卡"住 final 写入`,
+      fn:()=>{
+        faces(3); S.fnote.innerHTML='当前：面孔 ③<br>final int id; 构造器里赋值';
+        stage(`<span class="org">面孔 ③ final 实例字段 → JMM freeze</span>\n<span class="dim">final int id;  FinalDemo() { id = 42; }</span>\n<span class="dim">问题：线程 B 拿到对象引用时，</span>\n<span class="dim">      一定能看到 id == 42 吗？</span>\n<span class="org">JMM 保证：能（无需 synchronized/volatile）</span>\n<span class="dim">实现：构造器出口屏障一次冻结</span>`);
+        S.detail.textContent='freeze 语义：final 写入被屏障"卡"在对象发布之前。';
+        src(`<span class="dim">// 需要的保证（JMM §17.5）</span>\nThread A:  d = new FinalDemo();  <span class="org">// id=42</span>\n           publish(d);\nThread B:  if (d != null) <span class="grn">d.id == 42 必真</span>\n<span class="dim">// 无 final：需 volatile/同步才可见</span>`);
+        scene('场景 6：<b>面孔③ JMM freeze</b>');
+      }},
+    // 7 do_exits 屏障
+    { d:`C2 的实现：<b>构造器出口插屏障</b>（parse1.cpp:1069 Parse::do_exits）。
+<b>① 触发条件</b>：构造器写过 final/@Stable 字段（wrote_non_strict_final()，:1108）
+<b>② 动作</b>：insert_mem_bar 插 <code>MemBarStoreStore</code> 或 <code>MemBarRelease</code>（:1113）
+<b>③ 效果</b>：屏障前的写（final 赋值）不会跑到对象发布之后——这就是 freeze
+<b>④ 屏障</b> = 内存屏障，禁止 CPU/编译器重排的一道闸`,
+      fn:()=>{
+        faces(3);
+        stage(`<span class="blu">void Parse::do_exits() {</span>  <span class="dim">// parse1.cpp:1069</span>\n  <span class="grn">if (method()->is_object_constructor() &&</span>\n  <span class="grn">    (wrote_non_strict_final() || wrote_stable() || ...)) {</span>  <span class="dim">// :1108</span>\n    <span class="org">_exits.insert_mem_bar(</span>\n    <span class="org">      UseStoreStoreForCtor ? Op_MemBarStoreStore : Op_MemBarRelease,</span>\n    <span class="org">      recorded_alloc);</span>  <span class="dim">// :1113</span>\n  <span class="grn">}</span>\n<span class="blu">}</span>`);
+        S.detail.textContent='wrote_non_strict_final 标志：构造器每写一个 final 字段置位（parse1.cpp:455）。';
+        src(`<span class="dim">// parse1.cpp:1108-1114（截取）</span>\nif (method()->is_object_constructor() &&\n    (wrote_non_strict_final() || wrote_stable() ||\n     (AlwaysSafeConstructors && wrote_fields()) ||\n     (support_IRIW_... && wrote_volatile()))) {\n  _exits.insert_mem_bar(\n    UseStoreStoreForCtor ? Op_MemBarStoreStore : Op_MemBarRelease,\n    recorded_alloc);`);
+        scene('场景 7：<b>do_exits 出口屏障</b>');
+      }},
+    // 8 x86 空编码 + 异常路径
+    { d:`freeze 的硬件成本<b>因平台而异</b>：x86 上免费，弱内存序平台付真屏障。
+<b>① 类型选择</b>：UseStoreStoreForCtor（JDK 9+ 默认）→ MemBarStoreStore；否则 MemBarRelease
+<b>② x86（TSO）</b>：两种屏障都是空编码——CPU 本身不会乱序（03 篇已证）
+<b>③ PPC64 等</b>：弱内存序 → 需要真实屏障指令
+<b>④ 异常路径</b>：不插屏障（:1103-1106 注释）——对象没发布，无需 freeze
+<b>⑤ 逃逸分析</b>：对象不逃逸 → 屏障冗余，可删（:1119）`,
+      fn:()=>{
+        faces(3);
+        stage(`<span class="grn">屏障类型与平台差异</span>\n<span class="dim">UseStoreStoreForCtor → Op_MemBarStoreStore（JDK 9+）</span>\n<span class="dim">否则 → Op_MemBarRelease</span>\n<span class="org">x86 TSO → 两者空编码（03 篇已证）</span>\n<span class="dim">PPC64 → 需要真实屏障</span>\n<span class="pur">异常路径不插（:1103-1106 注释）</span>\n<span class="dim">// 逃逸分析可消冗余屏障（:1119）</span>`);
+        S.detail.textContent='freeze 的"成本"按平台分化：x86 免费，弱内存序平台付真屏障。';
+        src(`<span class="dim">// "All bets are off" unless...（:1103）</span>\n// 构造器抛异常 → 对象不会发布\n// → 无需屏障\n// EA: 不逃逸 → compute_MemBar_redundancy\n//     可删除冗余屏障（:1119-1122）`);
+        scene('场景 8：<b>x86 空编码 · 异常不插</b>');
+      }},
+    // 9 面孔4 引入
+    { d:`面孔④：<b>final 类 = 禁继承</b>。javac 编译期拦截，字节码层带 ACC_FINAL 标志。
+<b>① 编译期</b>：<code>class Sub extends Immutable</code>（Immutable 是 final）→ javac 直接报错
+<b>② 字节码</b>：class 文件的 access_flags 带 ACC_FINAL（0x0010）
+<b>③ javap</b>：显示 flags: (0x0010) ACC_FINAL
+<b>④ 与 sealed 互斥</b>：final 类不能再声明 PermittedSubclasses（classFileParser.cpp:3798）`,
+      fn:()=>{
+        faces(4); S.fnote.innerHTML='当前：面孔 ④<br>final class Immutable';
+        stage(`<span class="pur">面孔 ④ final 类 → 禁继承</span>\n<span class="dim">final class Immutable { ... }</span>\n<span class="grn">javac：extends 它 → 编译期直接报错</span>\n<span class="dim">字节码：class access_flags 带 ACC_FINAL</span>\n<span class="dim">javap: flags: (0x0010) ACC_FINAL</span>\n<span class="org">与 sealed 互斥（:3798）</span>`);
+        S.detail.textContent='final 类：编译期 javac 拦，运行期 VM 拦——双重防线。';
+        src(`<span class="dim">// FinalDemo.java</span>\nfinal class Immutable {          <span class="grn">← final 类</span>\n  final int id;\n  Immutable(int id){ this.id = id; }\n}\n\n<span class="org">// 编译期：</span>\nclass Sub extends Immutable {}   <span class="org">// ✗ cannot inherit from final</span>\n\n<span class="dim">// javap -v Immutable</span>\nflags: (0x0010) ACC_FINAL        <span class="dim">← 类级标志</span>`);
+        scene('场景 9：<b>面孔④ final 类</b>');
+      }},
+    // 10 VM 防线 + 隐式 final
+    { d:`就算绕过 javac 手写字节码去继承 final 类，<b>VM 加载时也会抛异常拦截</b>。
+<b>① 检查点</b>：classFileParser.cpp:6326——解析到超类是 final
+<b>② 异常</b>：IncompatibleClassChangeError（ICCE），消息 "cannot inherit from final class"
+<b>③ 隐式 final</b>：final 类的所有方法都算 final 方法（ciMethod.hpp:353）→ 全部可内联
+<b>④ 精确类型</b>：final 类实例类型唯一 → instanceof/checkcast 直接比较（ciInstanceKlass.hpp:324），绕开 06 篇的 super_check_offset 查链
+<b>⑤ 双重防线</b>：javac 拦编译期，VM 拦运行期`,
+      fn:()=>{
+        faces(4);
+        stage(`<span class="blu">VM 防线：继承 final 超类 → ICCE</span>\n<span class="dim">classFileParser.cpp:6326:</span>\n<span class="org">if (_super_klass->is_final())</span>\n<span class="org">  classfile_icce_error(</span>\n<span class="org">    "class %s cannot inherit from final class %s")</span>\n<span class="dim">// 异常：IncompatibleClassChangeError</span>\n<span class="grn">// 隐式 final：方法也全 final（ciMethod.hpp:353）</span>`);
+        S.detail.textContent='ICCE 由 classfile_icce_error 抛出（classFileError.cpp:90）。';
+        src(`<span class="dim">// classFileParser.cpp:6326-6329（截取）</span>\nif (_super_klass->is_final()) {\n  classfile_icce_error(\n    "class %s cannot inherit from final class %s", ...);\n  return;\n}\n\n<span class="dim">// ciMethod.hpp:353 —— final 类的方法全是 final 方法</span>\nbool is_final_method() const {\n  return is_final() || holder()->is_final();\n}\n\n<span class="dim">// ciInstanceKlass.hpp:324 —— C2 拿精确类型</span>\nif (is_loaded() && is_final() && !is_interface())\n  return this;  <span class="grn">// exact_klass</span>`);
+        scene('场景 10：<b>VM 防线 · 隐式 final</b>');
+      }},
+    // 11 strict 交互
+    { d:`与 05 篇交汇：<b>JDK 28 的 strict static 校验对带 ConstantValue 的常量自动豁免</b>。
+<b>① strict static</b>：要求 <code>&lt;clinit&gt;</code> 必须显式给每个 strict 字段赋值（05 篇）
+<b>② 冲突</b>：static final 常量编译期就有值，根本不在 <code>&lt;clinit&gt;</code> 里赋值
+<b>③ 豁免</b>：classFileParser.cpp:6444——initializer_index != 0 → 跳过，不标记 unset
+<b>④ 无值字段</b>：标记 unset，clinit 结束逐位检查（instanceKlass.cpp:1587）`,
+      fn:()=>{
+        faces(1); S.fnote.innerHTML='当前：面孔 ①（与 05 篇交汇）<br>strict static × ConstantValue';
+        stage(`<span class="pur">strict static × ConstantValue（JDK 28）</span>\n<span class="dim">for each strict static field:</span>\n  <span class="grn">if (fi.initializer_index() != 0)</span>\n  <span class="org">    // skip: 带 ConstantValue 豁免 ✅</span>  <span class="dim">// :6444</span>\n  <span class="org">else update_strict_static_unset(true);</span>\n<span class="dim">// 校验在 clinit 结束（instanceKlass.cpp:1587）</span>\n<span class="dim">// static strict final int K = 1 → 通过</span>\n<span class="dim">// static strict int x;      → 抛异常</span>`);
+        S.detail.textContent='面孔①与 05 篇的 strict static 校验在此交汇。';
+        src(`<span class="dim">// classFileParser.cpp:6444（截取）</span>\nif (fi.initializer_index() != 0) {\n  // skip strict static fields with\n  // ConstantValue attributes\n} else {\n  _fields_status->adr_at(fi.index())\n    ->update_strict_static_unset(true);\n}`);
+        scene('场景 11：<b>strict static 豁免</b>');
+      }},
+    // 12 四面孔对比
+    { d:`一张表看懂 final：<b>修饰谁 → 落点到哪</b>。
+<b>① static final</b> → ConstantValue 属性 · 编译期折叠 · classFileParser.cpp:1270
+<b>② final 方法</b> → 无 vtable 槽 · C2 内联 · Object.java:471
+<b>③ final 实例字段</b> → 出口屏障 freeze · parse1.cpp:1069
+<b>④ final 类</b> → 禁继承 · ICCE 防线 · classFileParser.cpp:6326
+共同点：全部源自 ACC_FINAL 一个标志位。局部 final 变量/参数：纯编译期约束，字节码零痕迹。`,
+      fn:()=>{
+        faces(-1); S.fnote.innerHTML='四面孔速查表';
+        stage(`<span class="grn">面孔① static final</span>  <span class="dim">→ ConstantValue · 零成本 · :1270</span>\n<span class="blu">面孔② final 方法</span>    <span class="dim">→ 无 vtable 槽 · 内联 · Object.java:471</span>\n<span class="org">面孔③ 实例字段</span>      <span class="dim">→ 出口屏障 freeze · :1069</span>\n<span class="pur">面孔④ final 类</span>      <span class="dim">→ 禁继承 · ICCE · :6326</span>\n<span class="dim">// 共同点：都源自 ACC_FINAL 语义</span>\n<span class="dim">// final 局部变量/参数：无任何痕迹</span>`);
+        S.detail.textContent='一张表看懂 final：修饰谁 → 落点到哪。';
+        src(`<span class="dim">// 一句话记忆</span>\nstatic final  → 编译期写入（常量）\n方法 final    → 分派表特权（内联）\n实例 final    → 发布前冻结（屏障）\n类 final      → 继承禁区（ICCE）\n局部 final    → 纯编译期约束（零痕迹）`);
+        scene('场景 12：<b>四面孔速查</b>');
+      }},
+    // 13 final vs volatile
+    { d:`<b>final 管"发布前"，volatile 管"发布后"</b>——互补，不是替代。
+<b>① final</b>：构造器出口 1 次屏障 → 冻结，之后无限读零成本
+<b>② volatile</b>：每次读写都插屏障 → 始终新鲜（03 篇的 lock addl）
+<b>③ 选型</b>：不可变对象 → final 字段 + 安全发布就够，无需 volatile
+<b>④ 可变状态</b>：才需要 volatile / synchronized`,
+      fn:()=>{
+        faces(3);
+        stage(`<span class="org">final vs volatile（互补关系）</span>\n<span class="grn">final:  构造器出口 1 次屏障 → freeze</span>\n<span class="dim">       之后无限读 → 零成本</span>\n<span class="blu">volatile: 每次读写插屏障 → 始终新鲜</span>\n<span class="dim">        写后 Volatile / 读后 Acquire（03 篇）</span>\n<span class="org">场景：不可变对象 → final 字段 + 发布</span>\n<span class="dim">      可变状态 → volatile/同步</span>`);
+        S.detail.textContent='final 是"一次冻结"，volatile 是"持续新鲜"——不可变对象的发布用 final 就够。';
+        src(`<span class="dim">// 03 篇衔接</span>\nvolatile 写后: MemBarVolatile（x86 lock addl）\nfinal 构造器:  MemBarStoreStore（x86 空编码）\n<span class="grn">// 发布不可变对象：final 字段即可</span>\n<span class="dim">// 无需 volatile —— freeze 已保证</span>`);
+        scene('场景 13：<b>final vs volatile</b>');
+      }},
+    // 14 系列闭环
+    { d:`系列闭环：<b>final 虽小，牵动整个 VM</b>。
+<b>① new（04）</b>：被冻结的对象正是 TLAB 里分配的那块内存
+<b>② static（05）</b>：非常量 final static 在 clinit 赋值；strict 豁免在此交汇
+<b>③ instanceof（06）</b>：final 类 exact type → 直接比较，绕开 super_check_offset 查链
+<b>④ volatile（03）</b>：屏障体系互补
+<b>⑤ synchronized（02）</b>：wait0 靠 final 保 native 绑定
+下一篇（09）：控制流与字面量——if/else/switch/for/while 等剩余关键字全景。`,
+      fn:()=>{
+        faces(-1); S.fnote.innerHTML='系列闭环';
+        stage(`<span class="blu">与系列闭环</span>\n<span class="dim">new（04）: 冻结的正是 TLAB 分配的对象</span>\n<span class="dim">static（05）: 非常量 final static → clinit</span>\n<span class="dim">instanceof（06）: final 类 → 直接比较</span>\n<span class="dim">volatile（03）: freeze 与屏障体系互补</span>\n<span class="dim">synchronized（02）: wait0 final native 保绑定</span>\n<span class="org">final 是"语言级约束 → VM 机制"的典范</span>`);
+        S.detail.textContent='final 虽小，牵动整个 VM：常量池、分派表、内存屏障、类加载。';
+        src(`<span class="dim">// 下一篇（09）</span>\n控制流与字面量补完：if/else/switch\n/for/while/do/break/continue/return\n+ true/false/null/void/var 等\n—— 剩余关键字的字节码全景`);
+        scene('场景 14：<b>系列闭环</b>');
+      }},
+  ];
+
+  let idx = -1, timer = null, playing = false;
+
+  function render(i){
+    idx = i;
+    steps[i].fn();
+    S.desc.innerHTML = (i+1) + '/' + steps.length + ' · ' + steps[i].d;
+    document.querySelectorAll('.step-pill').forEach((c,j)=>{
+      c.className = 'step-pill' + (j===i?' active':(j<i?' done':''));
+    });
+    document.getElementById('btnPlay').textContent = '▶';
+    playing = false;
+  }
+  function next(){ if(idx < steps.length-1) render(idx+1); }
+  function prev(){ if(idx > 0) render(idx-1); }
+  function play(){
+    if(playing){ clearInterval(timer); playing=false; document.getElementById('btnPlay').textContent='▶'; return; }
+    if(idx >= steps.length-1){ render(0); }
+    playing = true; document.getElementById('btnPlay').textContent='⏸';
+    timer = setInterval(()=>{
+      if(idx >= steps.length-1){ clearInterval(timer); playing=false; document.getElementById('btnPlay').textContent='▶'; return; }
+      render(idx+1);
+    }, 3600);
+  }
+  function reset(){ clearInterval(timer); playing=false; render(0); }
+
+  steps.forEach((s,i)=>{
+    const c = document.createElement('div');
+    c.className='step-pill'; c.textContent=i+1; c.title=s.d;
+    c.onclick = ()=>render(i);
+    S.pills.appendChild(c);
+  });
+
+  document.getElementById('btnPrev').onclick = prev;
+  document.getElementById('btnNext').onclick = next;
+  document.getElementById('btnPlay').onclick = play;
+  document.getElementById('btnReset').onclick = reset;
+  document.addEventListener('keydown', e=>{
+    if(e.code==='Space'){ e.preventDefault(); play(); }
+    else if(e.key==='ArrowRight') next();
+    else if(e.key==='ArrowLeft') prev();
+    else if(e.key==='r'||e.key==='R') reset();
+  });
+
+  render(0);
+})();
+</script>
+</body>
+</html>

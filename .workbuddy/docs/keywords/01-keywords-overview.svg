@@ -1,0 +1,191 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 800" font-family="Segoe UI, Microsoft YaHei, sans-serif">
+  <defs>
+    <pattern id="dots" width="24" height="24" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#e7e5e4"/>
+    </pattern>
+  </defs>
+
+  <!-- 背景 -->
+  <rect x="0" y="0" width="760" height="800" fill="#fafaf9"/>
+  <rect x="0" y="0" width="760" height="800" fill="url(#dots)"/>
+
+  <!-- 标题块 -->
+  <rect x="30" y="16" width="700" height="58" rx="12" fill="#1e3a8a"/>
+  <text x="380" y="42" text-anchor="middle" font-size="19" font-weight="bold" fill="#ffffff">Java 50 关键字 —— 背后都是 HotSpot 机制</text>
+  <text x="380" y="62" text-anchor="middle" font-size="11.5" fill="#bfdbfe">按机制分域 · 橙=并发 绿=对象 蓝=生命周期/声明 紫=异常 · JDK 28</text>
+
+  <!-- 主干线 -->
+  <path d="M 60 100 Q 55 430 60 765" fill="none" stroke="#94a3b8" stroke-width="2.5" stroke-dasharray="6 6" stroke-linecap="round"/>
+  <circle cx="60" cy="124" r="4" fill="#f59e0b"/>
+  <circle cx="60" cy="216" r="4" fill="#10b981"/>
+  <circle cx="60" cy="308" r="4" fill="#3b82f6"/>
+  <circle cx="60" cy="400" r="4" fill="#8b5cf6"/>
+  <circle cx="60" cy="510" r="4" fill="#f59e0b"/>
+  <circle cx="60" cy="638" r="4" fill="#3b82f6"/>
+  <circle cx="60" cy="748" r="4" fill="#10b981"/>
+
+  <!-- 分支曲线 -->
+  <path d="M 60 124 C 72 124 78 124 90 124" fill="none" stroke="#94a3b8" stroke-width="1.8"/>
+  <path d="M 60 216 C 72 216 78 216 90 216" fill="none" stroke="#94a3b8" stroke-width="1.8"/>
+  <path d="M 60 308 C 72 308 78 308 90 308" fill="none" stroke="#94a3b8" stroke-width="1.8"/>
+  <path d="M 60 400 C 72 400 78 400 90 400" fill="none" stroke="#94a3b8" stroke-width="1.8"/>
+  <path d="M 60 510 C 72 510 78 510 90 510" fill="none" stroke="#94a3b8" stroke-width="1.8"/>
+  <path d="M 60 638 C 72 638 78 638 90 638" fill="none" stroke="#94a3b8" stroke-width="1.8"/>
+  <path d="M 60 748 C 72 748 78 748 90 748" fill="none" stroke="#94a3b8" stroke-width="1.8"/>
+
+  <!-- ============ 卡片 1：并发域（橙） ============ -->
+  <rect x="90" y="86" width="640" height="76" rx="10" fill="#ffffff" stroke="#e7e5e4" stroke-width="1.5"/>
+  <rect x="90" y="86" width="8" height="76" rx="4" fill="#f59e0b"/>
+  <circle cx="106" cy="98" r="3" fill="#f59e0b"/>
+  <circle cx="714" cy="98" r="3" fill="#f59e0b"/>
+  <text x="114" y="110" font-size="15" font-weight="bold" fill="#b45309">并发域</text>
+  <text x="114" y="126" font-size="10.5" fill="#78716c">monitor 体系 · JMM 内存屏障</text>
+  <rect x="330" y="128" width="100" height="26" rx="13" fill="#f59e0b" fill-opacity="0.12" stroke="#f59e0b" stroke-width="1.2"/>
+  <text x="380" y="145" text-anchor="middle" font-size="12" fill="#92400e">synchronized</text>
+  <rect x="446" y="128" width="76" height="26" rx="13" fill="#f59e0b" fill-opacity="0.12" stroke="#f59e0b" stroke-width="1.2"/>
+  <text x="484" y="145" text-anchor="middle" font-size="12" fill="#92400e">volatile</text>
+
+  <!-- ============ 卡片 2：对象与内存域（绿） ============ -->
+  <rect x="90" y="178" width="640" height="76" rx="10" fill="#ffffff" stroke="#e7e5e4" stroke-width="1.5"/>
+  <rect x="90" y="178" width="8" height="76" rx="4" fill="#10b981"/>
+  <circle cx="106" cy="190" r="3" fill="#10b981"/>
+  <circle cx="714" cy="190" r="3" fill="#10b981"/>
+  <text x="114" y="202" font-size="15" font-weight="bold" fill="#047857">对象与内存域</text>
+  <text x="114" y="218" font-size="10.5" fill="#78716c">分配路径 · 类型检查 · 引用语义</text>
+  <rect x="330" y="220" width="44" height="26" rx="13" fill="#10b981" fill-opacity="0.12" stroke="#10b981" stroke-width="1.2"/>
+  <text x="352" y="237" text-anchor="middle" font-size="12" fill="#065f46">new</text>
+  <rect x="392" y="220" width="96" height="26" rx="13" fill="#10b981" fill-opacity="0.12" stroke="#10b981" stroke-width="1.2"/>
+  <text x="440" y="237" text-anchor="middle" font-size="12" fill="#065f46">instanceof</text>
+  <rect x="506" y="220" width="42" height="26" rx="13" fill="#10b981" fill-opacity="0.12" stroke="#10b981" stroke-width="1.2"/>
+  <text x="527" y="237" text-anchor="middle" font-size="12" fill="#065f46">this</text>
+  <rect x="566" y="220" width="52" height="26" rx="13" fill="#10b981" fill-opacity="0.12" stroke="#10b981" stroke-width="1.2"/>
+  <text x="592" y="237" text-anchor="middle" font-size="12" fill="#065f46">super</text>
+
+  <!-- ============ 卡片 3：生命周期域（蓝） ============ -->
+  <rect x="90" y="270" width="640" height="76" rx="10" fill="#ffffff" stroke="#e7e5e4" stroke-width="1.5"/>
+  <rect x="90" y="270" width="8" height="76" rx="4" fill="#3b82f6"/>
+  <circle cx="106" cy="282" r="3" fill="#3b82f6"/>
+  <circle cx="714" cy="282" r="3" fill="#3b82f6"/>
+  <text x="114" y="294" font-size="15" font-weight="bold" fill="#1d4ed8">生命周期域</text>
+  <text x="114" y="310" font-size="10.5" fill="#78716c">类初始化 · 不可变性 · JNI 绑定</text>
+  <rect x="330" y="312" width="60" height="26" rx="13" fill="#3b82f6" fill-opacity="0.12" stroke="#3b82f6" stroke-width="1.2"/>
+  <text x="360" y="329" text-anchor="middle" font-size="12" fill="#1e40af">static</text>
+  <rect x="408" y="312" width="48" height="26" rx="13" fill="#3b82f6" fill-opacity="0.12" stroke="#3b82f6" stroke-width="1.2"/>
+  <text x="432" y="329" text-anchor="middle" font-size="12" fill="#1e40af">final</text>
+  <rect x="474" y="312" width="86" height="26" rx="13" fill="#3b82f6" fill-opacity="0.12" stroke="#3b82f6" stroke-width="1.2"/>
+  <text x="517" y="329" text-anchor="middle" font-size="12" fill="#1e40af">transient</text>
+  <rect x="578" y="312" width="58" height="26" rx="13" fill="#3b82f6" fill-opacity="0.12" stroke="#3b82f6" stroke-width="1.2"/>
+  <text x="607" y="329" text-anchor="middle" font-size="12" fill="#1e40af">native</text>
+
+  <!-- ============ 卡片 4：异常域（紫） ============ -->
+  <rect x="90" y="362" width="640" height="76" rx="10" fill="#ffffff" stroke="#e7e5e4" stroke-width="1.5"/>
+  <rect x="90" y="362" width="8" height="76" rx="4" fill="#8b5cf6"/>
+  <circle cx="106" cy="374" r="3" fill="#8b5cf6"/>
+  <circle cx="714" cy="374" r="3" fill="#8b5cf6"/>
+  <text x="114" y="386" font-size="15" font-weight="bold" fill="#7c3aed">异常域</text>
+  <text x="114" y="402" font-size="10.5" fill="#78716c">异常表 Exception Table · 解栈查 handler</text>
+  <rect x="330" y="404" width="36" height="26" rx="13" fill="#8b5cf6" fill-opacity="0.12" stroke="#8b5cf6" stroke-width="1.2"/>
+  <text x="348" y="421" text-anchor="middle" font-size="12" fill="#5b21b6">try</text>
+  <rect x="382" y="404" width="48" height="26" rx="13" fill="#8b5cf6" fill-opacity="0.12" stroke="#8b5cf6" stroke-width="1.2"/>
+  <text x="406" y="421" text-anchor="middle" font-size="12" fill="#5b21b6">catch</text>
+  <rect x="446" y="404" width="64" height="26" rx="13" fill="#8b5cf6" fill-opacity="0.12" stroke="#8b5cf6" stroke-width="1.2"/>
+  <text x="478" y="421" text-anchor="middle" font-size="12" fill="#5b21b6">finally</text>
+  <rect x="526" y="404" width="48" height="26" rx="13" fill="#8b5cf6" fill-opacity="0.12" stroke="#8b5cf6" stroke-width="1.2"/>
+  <text x="550" y="421" text-anchor="middle" font-size="12" fill="#5b21b6">throw</text>
+  <rect x="590" y="404" width="58" height="26" rx="13" fill="#8b5cf6" fill-opacity="0.12" stroke="#8b5cf6" stroke-width="1.2"/>
+  <text x="619" y="421" text-anchor="middle" font-size="12" fill="#5b21b6">throws</text>
+  <rect x="664" y="404" width="52" height="26" rx="13" fill="#8b5cf6" fill-opacity="0.12" stroke="#8b5cf6" stroke-width="1.2"/>
+  <text x="690" y="421" text-anchor="middle" font-size="12" fill="#5b21b6">assert</text>
+
+  <!-- ============ 卡片 5：控制流域（橙） ============ -->
+  <rect x="90" y="454" width="640" height="112" rx="10" fill="#ffffff" stroke="#e7e5e4" stroke-width="1.5"/>
+  <rect x="90" y="454" width="8" height="112" rx="4" fill="#f59e0b"/>
+  <circle cx="106" cy="466" r="3" fill="#f59e0b"/>
+  <circle cx="714" cy="466" r="3" fill="#f59e0b"/>
+  <text x="114" y="478" font-size="15" font-weight="bold" fill="#b45309">控制流域</text>
+  <text x="114" y="494" font-size="10.5" fill="#78716c">跳转 / 跳转表字节码 · C2 循环优化</text>
+  <rect x="330" y="496" width="36" height="26" rx="13" fill="#f59e0b" fill-opacity="0.12" stroke="#f59e0b" stroke-width="1.2"/>
+  <text x="348" y="513" text-anchor="middle" font-size="12" fill="#92400e">if</text>
+  <rect x="384" y="496" width="44" height="26" rx="13" fill="#f59e0b" fill-opacity="0.12" stroke="#f59e0b" stroke-width="1.2"/>
+  <text x="406" y="513" text-anchor="middle" font-size="12" fill="#92400e">else</text>
+  <rect x="446" y="496" width="66" height="26" rx="13" fill="#f59e0b" fill-opacity="0.12" stroke="#f59e0b" stroke-width="1.2"/>
+  <text x="479" y="513" text-anchor="middle" font-size="12" fill="#92400e">switch</text>
+  <rect x="530" y="496" width="42" height="26" rx="13" fill="#f59e0b" fill-opacity="0.12" stroke="#f59e0b" stroke-width="1.2"/>
+  <text x="551" y="513" text-anchor="middle" font-size="12" fill="#92400e">case</text>
+  <rect x="590" y="496" width="72" height="26" rx="13" fill="#f59e0b" fill-opacity="0.12" stroke="#f59e0b" stroke-width="1.2"/>
+  <text x="626" y="513" text-anchor="middle" font-size="12" fill="#92400e">default</text>
+  <rect x="680" y="496" width="44" height="26" rx="13" fill="#f59e0b" fill-opacity="0.12" stroke="#f59e0b" stroke-width="1.2"/>
+  <text x="702" y="513" text-anchor="middle" font-size="12" fill="#92400e">while</text>
+  <rect x="330" y="528" width="32" height="26" rx="13" fill="#f59e0b" fill-opacity="0.12" stroke="#f59e0b" stroke-width="1.2"/>
+  <text x="346" y="545" text-anchor="middle" font-size="12" fill="#92400e">do</text>
+  <rect x="380" y="528" width="32" height="26" rx="13" fill="#f59e0b" fill-opacity="0.12" stroke="#f59e0b" stroke-width="1.2"/>
+  <text x="396" y="545" text-anchor="middle" font-size="12" fill="#92400e">for</text>
+  <rect x="430" y="528" width="52" height="26" rx="13" fill="#f59e0b" fill-opacity="0.12" stroke="#f59e0b" stroke-width="1.2"/>
+  <text x="456" y="545" text-anchor="middle" font-size="12" fill="#92400e">break</text>
+  <rect x="500" y="528" width="78" height="26" rx="13" fill="#f59e0b" fill-opacity="0.12" stroke="#f59e0b" stroke-width="1.2"/>
+  <text x="539" y="545" text-anchor="middle" font-size="12" fill="#92400e">continue</text>
+  <rect x="596" y="528" width="58" height="26" rx="13" fill="#f59e0b" fill-opacity="0.12" stroke="#f59e0b" stroke-width="1.2"/>
+  <text x="625" y="545" text-anchor="middle" font-size="12" fill="#92400e">return</text>
+  <rect x="672" y="528" width="46" height="26" rx="13" fill="#f59e0b" fill-opacity="0.12" stroke="#f59e0b" stroke-width="1.2"/>
+  <text x="695" y="545" text-anchor="middle" font-size="12" fill="#92400e">yield</text>
+
+  <!-- ============ 卡片 6：声明域（蓝） ============ -->
+  <rect x="90" y="582" width="640" height="112" rx="10" fill="#ffffff" stroke="#e7e5e4" stroke-width="1.5"/>
+  <rect x="90" y="582" width="8" height="112" rx="4" fill="#3b82f6"/>
+  <circle cx="106" cy="594" r="3" fill="#3b82f6"/>
+  <circle cx="714" cy="594" r="3" fill="#3b82f6"/>
+  <text x="114" y="606" font-size="15" font-weight="bold" fill="#1d4ed8">声明域</text>
+  <text x="114" y="622" font-size="10.5" fill="#78716c">class 结构 · vtable/itable · 新属性</text>
+  <rect x="260" y="624" width="44" height="26" rx="13" fill="#3b82f6" fill-opacity="0.12" stroke="#3b82f6" stroke-width="1.2"/>
+  <text x="282" y="641" text-anchor="middle" font-size="12" fill="#1e40af">class</text>
+  <rect x="318" y="624" width="74" height="26" rx="13" fill="#3b82f6" fill-opacity="0.12" stroke="#3b82f6" stroke-width="1.2"/>
+  <text x="355" y="641" text-anchor="middle" font-size="12" fill="#1e40af">interface</text>
+  <rect x="406" y="624" width="40" height="26" rx="13" fill="#3b82f6" fill-opacity="0.12" stroke="#3b82f6" stroke-width="1.2"/>
+  <text x="426" y="641" text-anchor="middle" font-size="12" fill="#1e40af">enum</text>
+  <rect x="460" y="624" width="56" height="26" rx="13" fill="#3b82f6" fill-opacity="0.12" stroke="#3b82f6" stroke-width="1.2"/>
+  <text x="488" y="641" text-anchor="middle" font-size="12" fill="#1e40af">record</text>
+  <rect x="530" y="624" width="66" height="26" rx="13" fill="#3b82f6" fill-opacity="0.12" stroke="#3b82f6" stroke-width="1.2"/>
+  <text x="563" y="641" text-anchor="middle" font-size="12" fill="#1e40af">extends</text>
+  <rect x="610" y="624" width="88" height="26" rx="13" fill="#3b82f6" fill-opacity="0.12" stroke="#3b82f6" stroke-width="1.2"/>
+  <text x="654" y="641" text-anchor="middle" font-size="12" fill="#1e40af">implements</text>
+  <rect x="712" y="624" width="4" height="26" rx="2" fill="#3b82f6" fill-opacity="0" stroke="#3b82f6" stroke-width="0"/>
+  <rect x="260" y="656" width="66" height="26" rx="13" fill="#3b82f6" fill-opacity="0.12" stroke="#3b82f6" stroke-width="1.2"/>
+  <text x="293" y="673" text-anchor="middle" font-size="12" fill="#1e40af">abstract</text>
+  <rect x="340" y="656" width="56" height="26" rx="13" fill="#3b82f6" fill-opacity="0.12" stroke="#3b82f6" stroke-width="1.2"/>
+  <text x="368" y="673" text-anchor="middle" font-size="12" fill="#1e40af">sealed</text>
+  <rect x="410" y="656" width="66" height="26" rx="13" fill="#3b82f6" fill-opacity="0.12" stroke="#3b82f6" stroke-width="1.2"/>
+  <text x="443" y="673" text-anchor="middle" font-size="12" fill="#1e40af">permits</text>
+  <rect x="490" y="656" width="52" height="26" rx="13" fill="#3b82f6" fill-opacity="0.12" stroke="#3b82f6" stroke-width="1.2"/>
+  <text x="516" y="673" text-anchor="middle" font-size="12" fill="#1e40af">public</text>
+  <rect x="556" y="656" width="78" height="26" rx="13" fill="#3b82f6" fill-opacity="0.12" stroke="#3b82f6" stroke-width="1.2"/>
+  <text x="595" y="673" text-anchor="middle" font-size="12" fill="#1e40af">protected</text>
+  <rect x="648" y="656" width="58" height="26" rx="13" fill="#3b82f6" fill-opacity="0.12" stroke="#3b82f6" stroke-width="1.2"/>
+  <text x="677" y="673" text-anchor="middle" font-size="12" fill="#1e40af">private</text>
+  <text x="260" y="701" font-size="10" fill="#94a3b8">+ package / import / module 系 9 词（requires · exports · opens · uses · provides · with · to · transitive）</text>
+
+  <!-- ============ 卡片 7：字面量与保留（绿） ============ -->
+  <rect x="90" y="710" width="640" height="76" rx="10" fill="#ffffff" stroke="#e7e5e4" stroke-width="1.5"/>
+  <rect x="90" y="710" width="8" height="76" rx="4" fill="#10b981"/>
+  <circle cx="106" cy="722" r="3" fill="#10b981"/>
+  <circle cx="714" cy="722" r="3" fill="#10b981"/>
+  <text x="114" y="734" font-size="15" font-weight="bold" fill="#047857">字面量与保留</text>
+  <text x="114" y="750" font-size="10.5" fill="#78716c">常量 / 类型标签 / 无意义占位</text>
+  <rect x="330" y="752" width="40" height="26" rx="13" fill="#10b981" fill-opacity="0.12" stroke="#10b981" stroke-width="1.2"/>
+  <text x="350" y="769" text-anchor="middle" font-size="12" fill="#065f46">true</text>
+  <rect x="386" y="752" width="48" height="26" rx="13" fill="#10b981" fill-opacity="0.12" stroke="#10b981" stroke-width="1.2"/>
+  <text x="410" y="769" text-anchor="middle" font-size="12" fill="#065f46">false</text>
+  <rect x="450" y="752" width="40" height="26" rx="13" fill="#10b981" fill-opacity="0.12" stroke="#10b981" stroke-width="1.2"/>
+  <text x="470" y="769" text-anchor="middle" font-size="12" fill="#065f46">null</text>
+  <rect x="506" y="752" width="44" height="26" rx="13" fill="#10b981" fill-opacity="0.12" stroke="#10b981" stroke-width="1.2"/>
+  <text x="528" y="769" text-anchor="middle" font-size="12" fill="#065f46">void</text>
+  <rect x="566" y="752" width="38" height="26" rx="13" fill="#10b981" fill-opacity="0.12" stroke="#10b981" stroke-width="1.2"/>
+  <text x="585" y="769" text-anchor="middle" font-size="12" fill="#065f46">var</text>
+  <line x1="622" y1="757" x2="622" y2="773" stroke="#d6d3d1" stroke-width="1.5"/>
+  <rect x="636" y="752" width="40" height="26" rx="13" fill="#94a3b8" fill-opacity="0.15" stroke="#94a3b8" stroke-width="1.2" stroke-dasharray="3 2"/>
+  <text x="656" y="769" text-anchor="middle" font-size="12" fill="#475569">goto</text>
+  <rect x="686" y="752" width="44" height="26" rx="13" fill="#94a3b8" fill-opacity="0.15" stroke="#94a3b8" stroke-width="1.2" stroke-dasharray="3 2"/>
+  <text x="708" y="769" text-anchor="middle" font-size="12" fill="#475569">const</text>
+
+  <!-- 底部说明 -->
+  <text x="380" y="792" text-anchor="middle" font-size="10.5" fill="#a8a29e">深色虚线 chip = 保留字（goto / const / _），无任何语义</text>
+</svg>

@@ -1,0 +1,110 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 660" font-family="'Segoe UI','Microsoft YaHei',sans-serif">
+  <defs>
+    <marker id="arwB" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#3b82f6"/></marker>
+    <marker id="arwP" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#7c3aed"/></marker>
+    <marker id="arwO" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#f59e0b"/></marker>
+    <marker id="arwG" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#10b981"/></marker>
+  </defs>
+
+  <rect x="0" y="0" width="900" height="660" rx="14" fill="#ffffff"/>
+  <text x="450" y="34" text-anchor="middle" font-size="20" font-weight="bold" fill="#1e293b">方法调用全链路 · 第四站：C2 去虚化与内联</text>
+  <text x="450" y="56" text-anchor="middle" font-size="13" fill="#64748b">doCall.cpp — 四连问 → 决策总闸 → 生成 IR · 把"查表"优化成"不查表"</text>
+
+  <!-- ============ 顶部：字节码 ============ -->
+  <rect x="320" y="74" width="260" height="50" rx="10" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.6"/>
+  <text x="450" y="96" text-anchor="middle" font-size="15" font-weight="bold" fill="#1d4ed8">invokevirtual #12</text>
+  <text x="450" y="114" text-anchor="middle" font-size="11.5" fill="#475569">方法跑热 → C2 编译 → 编译器面前还是这条字节码</text>
+
+  <line x1="450" y1="124" x2="450" y2="146" stroke="#f59e0b" stroke-width="1.8" marker-end="url(#arwO)"/>
+
+  <!-- ============ 第 1 段：do_call 入口（橙） ============ -->
+  <rect x="60" y="148" width="780" height="92" rx="12" fill="#fffbeb" stroke="#f59e0b" stroke-width="1.4" stroke-dasharray="6 4"/>
+  <text x="80" y="170" font-size="13" font-weight="bold" fill="#b45309">① 入口 · Parse::do_call（doCall.cpp:550）— 三问</text>
+
+  <rect x="90" y="184" width="200" height="44" rx="8" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.3"/>
+  <text x="190" y="202" text-anchor="middle" font-size="11.5" fill="#1e293b" font-weight="bold">is_virtual / is_interface？</text>
+  <text x="190" y="219" text-anchor="middle" font-size="10" fill="#6b7280">:557-558 多态候选判定</text>
+
+  <rect x="320" y="184" width="200" height="44" rx="8" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.3"/>
+  <text x="420" y="202" text-anchor="middle" font-size="11.5" fill="#1e293b" font-weight="bold">has_receiver？</text>
+  <text x="420" y="219" text-anchor="middle" font-size="10" fill="#6b7280">:559 决定 null 检查 / 类型分析</text>
+
+  <rect x="550" y="184" width="200" height="44" rx="8" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.3"/>
+  <text x="650" y="202" text-anchor="middle" font-size="11.5" fill="#1e293b" font-weight="bold">will_link？</text>
+  <text x="650" y="219" text-anchor="middle" font-size="10" fill="#6b7280">:579 类未加载 → 不编译此调用点</text>
+
+  <text x="450" y="232" text-anchor="middle" font-size="10.5" fill="#b45309" font-weight="bold">输出三件套：callee · vtable_index=invalid · call_does_dispatch=false（乐观假设不分派）</text>
+
+  <line x1="450" y1="240" x2="450" y2="260" stroke="#3b82f6" stroke-width="1.8" marker-end="url(#arwB)"/>
+
+  <!-- ============ 第 2 段：optimize_virtual_call（蓝） ============ -->
+  <rect x="60" y="262" width="780" height="130" rx="12" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.4" stroke-dasharray="6 4"/>
+  <text x="80" y="284" font-size="13" font-weight="bold" fill="#1d4ed8">② 情报收集 · optimize_virtual_call（:1169）→ optimize_inlining（:1194）— 四连问</text>
+
+  <rect x="80" y="296" width="168" height="58" rx="8" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.3"/>
+  <text x="164" y="315" text-anchor="middle" font-size="11.5" fill="#1e293b" font-weight="bold">① 静态绑定？</text>
+  <text x="164" y="332" text-anchor="middle" font-size="10" fill="#475569">can_be_statically_bound</text>
+  <text x="164" y="347" text-anchor="middle" font-size="9.5" fill="#1d4ed8">final/static/private（:1203）</text>
+
+  <rect x="258" y="296" width="168" height="58" rx="8" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.3"/>
+  <text x="342" y="315" text-anchor="middle" font-size="11.5" fill="#1e293b" font-weight="bold">② receiver 情报？</text>
+  <text x="342" y="332" text-anchor="middle" font-size="10" fill="#475569">receiver_type != null（:1207）</text>
+  <text x="342" y="347" text-anchor="middle" font-size="9.5" fill="#1d4ed8">数组+Object 方法天然单态（:1216）</text>
+
+  <rect x="436" y="296" width="168" height="58" rx="8" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.3"/>
+  <text x="520" y="315" text-anchor="middle" font-size="11.5" fill="#1e293b" font-weight="bold">③ CHA 唯一？</text>
+  <text x="520" y="332" text-anchor="middle" font-size="10" fill="#475569">find_monomorphic_target（:1238）</text>
+  <text x="520" y="347" text-anchor="middle" font-size="9.5" fill="#1d4ed8">命中 → 绑 + 记依赖（:1250）</text>
+
+  <rect x="614" y="296" width="168" height="58" rx="8" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.3"/>
+  <text x="698" y="315" text-anchor="middle" font-size="11.5" fill="#1e293b" font-weight="bold">④ 类型 exact？</text>
+  <text x="698" y="332" text-anchor="middle" font-size="10" fill="#475569">klass_is_exact（:1257）</text>
+  <text x="698" y="347" text-anchor="middle" font-size="9.5" fill="#1d4ed8">exact → resolve 直绑</text>
+
+  <rect x="200" y="364" width="500" height="22" rx="6" fill="#bfdbfe" stroke="none"/>
+  <text x="450" y="379" text-anchor="middle" font-size="10.5" fill="#1e3a8a" font-weight="bold">任一命中 → call_does_dispatch=false（可直调/内联） · 全部落空 → true（保持多态）</text>
+
+  <line x1="450" y1="392" x2="450" y2="412" stroke="#7c3aed" stroke-width="1.8" marker-end="url(#arwP)"/>
+
+  <!-- ============ 第 3 段：call_generator（紫） ============ -->
+  <rect x="60" y="414" width="780" height="112" rx="12" fill="#faf5ff" stroke="#7c3aed" stroke-width="1.4" stroke-dasharray="6 4"/>
+  <text x="80" y="436" font-size="13" font-weight="bold" fill="#6d28d9">③ 决策总闸 · Compile::call_generator（doCall.cpp:94）— 读 profile 后分路</text>
+
+  <rect x="80" y="450" width="210" height="62" rx="8" fill="#f3e8ff" stroke="#7c3aed" stroke-width="1.3"/>
+  <text x="185" y="469" text-anchor="middle" font-size="11.5" fill="#1e293b" font-weight="bold">[0] intrinsic 优先</text>
+  <text x="185" y="486" text-anchor="middle" font-size="10" fill="#6b7280">find_intrinsic（:153）</text>
+  <text x="185" y="502" text-anchor="middle" font-size="9.5" fill="#6d28d9">虚拟分派型 → 寄存让路（:169）</text>
+
+  <rect x="320" y="450" width="250" height="62" rx="8" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.3"/>
+  <text x="445" y="469" text-anchor="middle" font-size="11.5" fill="#1e293b" font-weight="bold">[A] profile 守卫（多态）</text>
+  <text x="445" y="486" text-anchor="middle" font-size="10" fill="#6b7280">单态/双态：morphism ≤ 2（:261）</text>
+  <text x="445" y="502" text-anchor="middle" font-size="9.5" fill="#6d28d9">for_predicted_call 守卫菱形（:322）</text>
+
+  <rect x="600" y="450" width="230" height="62" rx="8" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.3"/>
+  <text x="715" y="469" text-anchor="middle" font-size="11.5" fill="#1e293b" font-weight="bold">[B] 多态兜底</text>
+  <text x="715" y="486" text-anchor="middle" font-size="10" fill="#6b7280">for_virtual_call（:406）</text>
+  <text x="715" y="502" text-anchor="middle" font-size="9.5" fill="#6d28d9">保留虚调用 → Dynamic 节点</text>
+
+  <text x="450" y="519" text-anchor="middle" font-size="10.5" fill="#6d28d9" font-weight="bold">非多态（!dispatch）→ ok_to_inline → for_inline（ParseGenerator）；CHA 接口单实现者 → guarded_call（:346）</text>
+
+  <line x1="450" y1="526" x2="450" y2="546" stroke="#10b981" stroke-width="1.8" marker-end="url(#arwG)"/>
+
+  <!-- ============ 第 4 段：generate（绿） ============ -->
+  <rect x="60" y="548" width="780" height="100" rx="12" fill="#ecfdf5" stroke="#10b981" stroke-width="1.4" stroke-dasharray="6 4"/>
+  <text x="80" y="570" font-size="13" font-weight="bold" fill="#047857">④ 生成 IR · cg-&gt;generate（doCall.cpp:721）— 三种形态 + 内联账</text>
+
+  <rect x="80" y="584" width="225" height="52" rx="8" fill="#d1fae5" stroke="#10b981" stroke-width="1.3"/>
+  <text x="192" y="603" text-anchor="middle" font-size="11.5" fill="#1e293b" font-weight="bold">ParseGenerator（内联）</text>
+  <text x="192" y="621" text-anchor="middle" font-size="10" fill="#475569">重新解析字节码展开（callGenerator.cpp:128）</text>
+
+  <rect x="338" y="584" width="225" height="52" rx="8" fill="#d1fae5" stroke="#10b981" stroke-width="1.3"/>
+  <text x="450" y="603" text-anchor="middle" font-size="11.5" fill="#1e293b" font-weight="bold">DirectCallGenerator</text>
+  <text x="450" y="621" text-anchor="middle" font-size="10" fill="#475569">CallStaticJavaNode · 静态绑（:193）</text>
+
+  <rect x="596" y="584" width="225" height="52" rx="8" fill="#d1fae5" stroke="#10b981" stroke-width="1.3"/>
+  <text x="708" y="603" text-anchor="middle" font-size="11.5" fill="#1e293b" font-weight="bold">VirtualCallGenerator</text>
+  <text x="708" y="621" text-anchor="middle" font-size="10" fill="#475569">CallDynamicJavaNode · 保留多态（:303）</text>
+
+  <rect x="150" y="641" width="600" height="0" rx="0" fill="none"/>
+  <text x="450" y="640" text-anchor="middle" font-size="10.5" fill="#047857" font-weight="bold">内联账（bytecodeInfo.cpp）：size vs max_inline_size · freq ≥ 0.25（:167）· 深度/递归/累计（:430/472/480）· 依赖失效 → 去优化</text>
+</svg>

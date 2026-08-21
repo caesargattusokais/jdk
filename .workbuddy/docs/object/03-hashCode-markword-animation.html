@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Object.hashCode() 身份哈希 · mark word 交互动画 — JDK 28 源码跟读</title>
+<style>
+  :root {
+    --blue: #3b82f6;   --blue-bg: #eff6ff;   --blue-bd: #bfdbfe;
+    --purple: #8b5cf6; --purple-bg: #f5f3ff; --purple-bd: #ddd6fe;
+    --orange: #f59e0b; --orange-bg: #fffbeb; --orange-bd: #fde68a;
+    --green: #10b981;  --green-bg: #ecfdf5;  --green-bd: #a7f3d0;
+    --red: #ef4444;    --red-bg: #fef2f2;
+    --ink: #1f2937;    --ink-2: #6b7280;     --ink-3: #9ca3af;
+    --line: #e5e7eb;   --card: #ffffff;      --bg: #f6f7fb;
+    --code-bg: #111827; --code-ink: #e5e7eb;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Segoe UI", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
+    background: linear-gradient(180deg, var(--bg), #eef1f7);
+    color: var(--ink); padding: 24px 16px 48px; line-height: 1.6;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; }
+
+  /* ---------- header ---------- */
+  header { text-align: center; margin-bottom: 22px; }
+  header h1 { font-size: 26px; letter-spacing: .5px; }
+  header h1 .mono { font-family: Consolas, monospace; color: var(--blue); }
+  header .sub { color: var(--ink-2); font-size: 14px; margin-top: 6px; }
+  .badges { margin-top: 12px; display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+  .badge {
+    font-size: 12px; padding: 3px 12px; border-radius: 999px;
+    border: 1px solid var(--blue-bd); background: var(--blue-bg); color: var(--blue);
+    font-family: Consolas, monospace;
+  }
+  .badge.purple { border-color: var(--purple-bd); background: var(--purple-bg); color: var(--purple); }
+  .badge.green  { border-color: var(--green-bd);  background: var(--green-bg);  color: var(--green); }
+
+  /* ---------- step pills ---------- */
+  .steps { display: flex; justify-content: center; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
+  .step-pill {
+    font-size: 12px; padding: 5px 12px; border-radius: 999px; cursor: pointer;
+    border: 1.5px solid var(--line); background: var(--card); color: var(--ink-2);
+    transition: all .2s; user-select: none; white-space: nowrap;
+  }
+  .step-pill:hover { border-color: var(--blue); color: var(--blue); }
+  .step-pill.done { border-color: var(--green-bd); background: var(--green-bg); color: var(--green); }
+  .step-pill.active {
+    border-color: var(--blue); background: var(--blue); color: #fff;
+    box-shadow: 0 4px 12px rgba(59,130,246,.35);
+  }
+
+  /* ---------- stage ---------- */
+  .stage { display: grid; grid-template-columns: 1.15fr .85fr; gap: 16px; margin-bottom: 16px; }
+  @media (max-width: 860px) { .stage { grid-template-columns: 1fr; } }
+
+  .card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 18px; box-shadow: 0 2px 10px rgba(17,24,39,.05);
+  }
+  .card h3 {
+    font-size: 13px; color: var(--ink-2); font-weight: 600;
+    text-transform: uppercase; letter-spacing: .8px; margin-bottom: 14px;
+  }
+  .card h3 .file { color: var(--ink-3); text-transform: none; letter-spacing: 0; font-weight: 400; }
+
+  /* object + markword side */
+  .obj-row { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; flex-wrap: wrap; }
+  .obj-box {
+    display: flex; align-items: center; gap: 8px;
+    border: 2px dashed var(--blue-bd); background: var(--blue-bg); color: var(--blue);
+    padding: 8px 16px; border-radius: 12px; font-family: Consolas, monospace; font-size: 14px;
+  }
+  .obj-box .arrow { font-size: 18px; }
+  .hash-chip {
+    font-family: Consolas, monospace; font-size: 13px; padding: 4px 12px; border-radius: 8px;
+    background: var(--orange-bg); border: 1px solid var(--orange-bd); color: var(--orange);
+    transition: all .3s;
+  }
+  .hash-chip.has { background: var(--green-bg); border-color: var(--green-bd); color: var(--green); }
+
+  /* 64-bit mark word */
+  .mw-label { font-size: 12px; color: var(--ink-3); margin-bottom: 8px; font-family: Consolas, monospace; }
+  .mw { display: flex; border: 2px solid var(--ink); border-radius: 10px; overflow: hidden; height: 64px; }
+  .field {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    position: relative; transition: background .3s, transform .3s; cursor: pointer; border-right: 1px solid rgba(17,24,39,.15);
+  }
+  .field:last-child { border-right: none; }
+  .field .fname { font-size: 11px; font-weight: 700; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.25); }
+  .field .fbits { font-size: 10px; color: rgba(255,255,255,.85); }
+  .field .fval { font-family: Consolas, monospace; font-size: 13px; font-weight: 700; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.25); margin-top: 1px; }
+  .field.unused   { background: var(--blue); }
+  .field.hash     { background: var(--orange); }
+  .field.valhalla { background: var(--purple); }
+  .field.age      { background: var(--purple); }
+  .field.selffwd  { background: var(--green); }
+  .field.lock     { background: var(--green); }
+  .field.empty { background: #d1d5db; }
+  .field.pop { transform: translateY(-6px); box-shadow: 0 8px 20px rgba(0,0,0,.25); z-index: 2; }
+  .field.flash-red { animation: flashRed .7s ease 2; }
+  .field.flash-green { animation: flashGreen .7s ease 2; }
+  @keyframes flashRed { 0%,100% { background: var(--orange); } 50% { background: var(--red); } }
+  @keyframes flashGreen { 0%,100% { background: var(--orange); } 50% { background: var(--green); } }
+
+  .mw-bin { margin-top: 10px; font-family: Consolas, monospace; font-size: 11.5px; word-break: break-all; letter-spacing: .5px; }
+  .mw-bin b { font-weight: 600; }
+  .bin-blue   { color: var(--blue); }  .bin-orange { color: var(--orange); }
+  .bin-purple { color: var(--purple); } .bin-green  { color: var(--green); }
+
+  .mw-legend { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 12px; font-size: 12px; color: var(--ink-2); }
+  .lg { display: flex; align-items: center; gap: 5px; }
+  .lg i { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+
+  /* code panel */
+  .code-panel {
+    background: var(--code-bg); border-radius: 12px; overflow: hidden;
+    font-family: Consolas, "Courier New", monospace; font-size: 12.5px;
+  }
+  .code-head {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 8px 14px; background: rgba(255,255,255,.06); color: #9ca3af; font-size: 11px;
+  }
+  .code-head .file { color: var(--green); }
+  .code-body { padding: 12px 14px; overflow-x: auto; }
+  .code-body pre { color: var(--code-ink); }
+  .code-body .ln { display: inline-block; width: 34px; color: #4b5563; user-select: none; }
+  .code-body .hl { background: rgba(245,158,11,.22); color: #fbbf24; display: inline-block; width: 100%; border-radius: 4px; padding: 0 2px; }
+  .code-body .cm { color: #6b7280; }
+  .code-body .kw { color: #93c5fd; }
+  .code-body .fn { color: #c4b5fd; }
+
+  /* ---------- controls ---------- */
+  .controls {
+    display: flex; justify-content: center; align-items: center; gap: 10px;
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 12px 16px; margin-bottom: 16px; box-shadow: 0 2px 10px rgba(17,24,39,.05);
+  }
+  .btn {
+    border: 1.5px solid var(--line); background: #fff; color: var(--ink);
+    font-size: 14px; padding: 7px 16px; border-radius: 10px; cursor: pointer;
+    transition: all .15s; min-width: 44px; font-family: inherit;
+  }
+  .btn:hover:not(:disabled) { border-color: var(--blue); color: var(--blue); }
+  .btn:disabled { opacity: .4; cursor: not-allowed; }
+  .btn.primary { background: var(--blue); border-color: var(--blue); color: #fff; font-weight: 600; }
+  .btn.primary:hover:not(:disabled) { background: #2563eb; color: #fff; }
+  .btn.reset { color: var(--ink-2); }
+  .prog { flex: 1; max-width: 320px; height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; }
+  .prog i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--blue), var(--purple)); transition: width .3s; }
+  .step-count { font-size: 13px; color: var(--ink-2); font-family: Consolas, monospace; white-space: nowrap; }
+
+  /* ---------- explain ---------- */
+  .explain {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 18px 20px; margin-bottom: 16px; box-shadow: 0 2px 10px rgba(17,24,39,.05);
+    min-height: 96px;
+  }
+  .explain .tag {
+    display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: 1px;
+    padding: 2px 10px; border-radius: 6px; margin-bottom: 8px;
+  }
+  .explain .tag.blue   { background: var(--blue-bg);   color: var(--blue); }
+  .explain .tag.orange { background: var(--orange-bg); color: var(--orange); }
+  .explain .tag.purple { background: var(--purple-bg); color: var(--purple); }
+  .explain .tag.green  { background: var(--green-bg);  color: var(--green); }
+  .explain .tag.red    { background: var(--red-bg);    color: var(--red); }
+  .explain p { font-size: 14px; color: var(--ink); }
+  .explain .kw2 { font-family: Consolas, monospace; background: var(--bg); padding: 0 5px; border-radius: 4px; color: var(--blue); font-size: 13px; }
+  .explain .hl2 { color: var(--orange); font-weight: 700; }
+  .explain .ok2 { color: var(--green); font-weight: 700; }
+
+  /* ---------- reference ---------- */
+  .ref-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  @media (max-width: 860px) { .ref-grid { grid-template-columns: 1fr; } }
+  .ref-grid .card { padding: 18px 20px; }
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--ink-2); font-weight: 600; background: var(--bg); }
+  td.mono { font-family: Consolas, monospace; font-size: 12px; }
+  tr:last-child td { border-bottom: none; }
+  a { color: var(--blue); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .toast {
+    position: fixed; left: 50%; bottom: 30px; transform: translateX(-50%) translateY(80px);
+    background: var(--ink); color: #fff; font-size: 13px; padding: 9px 20px; border-radius: 999px;
+    opacity: 0; transition: all .3s; z-index: 99; pointer-events: none;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  footer { text-align: center; color: var(--ink-3); font-size: 12px; margin-top: 10px; }
+  footer a { color: var(--ink-3); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1><span class="mono">Object.hashCode()</span> 身份哈希 · mark word 交互动画</h1>
+    <p class="sub">identity hash 如何写入对象头 —— 从 Java 调用到 CAS 安装，逐步播放</p>
+    <div class="badges">
+      <span class="badge">JDK 28-internal</span>
+      <span class="badge purple">synchronizer.cpp</span>
+      <span class="badge green">markWord.hpp:48-51</span>
+      <span class="badge">配套文档 01-hashCode-identity-hash.md</span>
+    </div>
+  </header>
+
+  <!-- step pills -->
+  <nav class="steps" id="pills"></nav>
+
+  <!-- stage -->
+  <section class="stage">
+    <div class="card">
+      <h3>对象与对象头 <span class="file">mark word · 64 bit</span></h3>
+
+      <div class="obj-row">
+        <div class="obj-box">
+          <span>obj</span>
+          <span class="arrow">→</span>
+          <span>0x000000071234</span>
+        </div>
+        <span class="hash-chip" id="hashChip">identity hash: 未生成 (0)</span>
+      </div>
+
+      <div class="mw-label">mark word 位布局（unlocked 状态，lock = 01）</div>
+      <div class="mw" id="mw"></div>
+      <div class="mw-bin" id="mwBin"></div>
+
+      <div class="mw-legend">
+        <span class="lg"><i style="background:var(--blue)"></i>unused (22)</span>
+        <span class="lg"><i style="background:var(--orange)"></i>hash (31)</span>
+        <span class="lg"><i style="background:var(--purple)"></i>valhalla (4) + age (4)</span>
+        <span class="lg"><i style="background:var(--green)"></i>self-fwd (1) + lock (2)</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>真实源码 <span class="file">当前执行点</span></h3>
+      <div class="code-panel">
+        <div class="code-head">
+          <span class="file" id="codeFile">—</span>
+          <span id="codeTag">初始状态</span>
+        </div>
+        <div class="code-body"><pre id="codeBody"></pre></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- controls -->
+  <section class="controls">
+    <button class="btn" id="btnPrev" title="上一步 (←)">⏮ 上一步</button>
+    <button class="btn primary" id="btnPlay" title="播放/暂停 (Space)">▶ 播放</button>
+    <button class="btn" id="btnNext" title="下一步 (→)">下一步 ⏭</button>
+    <button class="btn reset" id="btnReset" title="重置 (R)">⟳ 重置</button>
+    <div class="prog"><i id="progBar"></i></div>
+    <span class="step-count" id="stepCount">0 / 7</span>
+  </section>
+
+  <!-- explain -->
+  <section class="explain">
+    <span class="tag blue" id="exTag">初始状态</span>
+    <p id="exText"></p>
+  </section>
+
+  <!-- reference -->
+  <section class="ref-grid">
+    <div class="card">
+      <h3>mark word 字段（JDK 28，64 位非紧凑头）</h3>
+      <table>
+        <tr><th>字段</th><th>位数</th><th>位范围</th><th>含义</th></tr>
+        <tr><td class="mono">unused</td><td>22</td><td class="mono">63–42</td><td>预留（紧凑头模式下存 klass）</td></tr>
+        <tr><td class="mono">hash</td><td>31</td><td class="mono">41–11</td><td>identity hash，0 表示未生成</td></tr>
+        <tr><td class="mono">valhalla</td><td>4</td><td class="mono">10–7</td><td>内联类型/扁平数组标记</td></tr>
+        <tr><td class="mono">age</td><td>4</td><td class="mono">6–3</td><td>GC 分代年龄</td></tr>
+        <tr><td class="mono">self-fwd</td><td>1</td><td class="mono">2</td><td>GC 原地转发标记</td></tr>
+        <tr><td class="mono">lock</td><td>2</td><td class="mono">1–0</td><td><span class="mono">01</span> unlocked / <span class="mono">00</span> locked / <span class="mono">10</span> monitor</td></tr>
+      </table>
+      <p style="font-size:12px;color:var(--ink-2);margin-top:10px">
+        注：JDK 28 已移除 biased_lock 位（原布局 hash:25 / age:4 / biased:1 / lock:2），由 valhalla 位取代。
+        详见 <span class="mono">markWord.hpp:48-51</span>。
+      </p>
+    </div>
+
+    <div class="card">
+      <h3>get_next_hash 六种算法（synchronizer.cpp:638-676）</h3>
+      <table>
+        <tr><th>N</th><th>算法</th><th>特征</th></tr>
+        <tr><td class="mono">0</td><td>Park-Miller RNG（全局）</td><td>多核缓存一致性开销大</td></tr>
+        <tr><td class="mono">1</td><td>地址位运算 ^ stw_random</td><td>STW 之间稳定（idempotent）</td></tr>
+        <tr><td class="mono">2</td><td>恒 1</td><td>敏感性测试</td></tr>
+        <tr><td class="mono">3</td><td>自增序列</td><td>顺序可预测</td></tr>
+        <tr><td class="mono">4</td><td>对象地址</td><td>最简单，相邻对象规律性强</td></tr>
+        <tr><td class="mono">默认</td><td><b>Marsaglia xor-shift</b></td><td>线程本地状态，无锁无竞争</td></tr>
+      </table>
+      <p style="font-size:12px;color:var(--ink-2);margin-top:10px">
+        统一 <span class="mono">value &= markWord::hash_mask</span>（672 行）只保留 31 位；
+        <span class="mono">value == 0</span> 时替换为 <span class="mono">0xBAD</span>（673 行），与"未生成"状态区分。
+      </p>
+    </div>
+  </section>
+
+  <section class="card" style="margin-bottom:16px">
+    <h3>源码锚点（可在 IDEA 中直接跳转核对）</h3>
+    <table>
+      <tr><th>步骤</th><th>文件:行号</th><th>代码</th></tr>
+      <tr><td>① 调用</td><td class="mono">src/java.base/share/classes/java/lang/Object.java:130-131</td><td class="mono">@IntrinsicCandidate public native int hashCode()</td></tr>
+      <tr><td>② JNI 入口</td><td class="mono">src/hotspot/share/prims/jvm.cpp:787 / 836</td><td class="mono">JVM_IHashCode → FastHashCode(THREAD, obj)</td></tr>
+      <tr><td>③ 读对象头</td><td class="mono">src/hotspot/share/runtime/synchronizer.cpp:685</td><td class="mono">markWord mark = obj-&gt;mark_acquire()</td></tr>
+      <tr><td>④ 检查 hash</td><td class="mono">synchronizer.cpp:687-690</td><td class="mono">hash = mark.hash(); if (hash != 0) return hash;</td></tr>
+      <tr><td>⑤ 生成 hash</td><td class="mono">synchronizer.cpp:655-673</td><td class="mono">xor-shift → value &amp;= hash_mask; 0xBAD 兜底</td></tr>
+      <tr><td>⑥ CAS 安装</td><td class="mono">synchronizer.cpp:692-697</td><td class="mono">copy_set_hash → cas_set_mark(temp, mark)</td></tr>
+      <tr><td>⑦ 再次调用</td><td class="mono">synchronizer.cpp:687-689</td><td class="mono">直接读对象头返回，不再生成</td></tr>
+    </table>
+  </section>
+
+  <footer>
+    配套文档：<a href="01-hashCode-identity-hash.md">01-hashCode-identity-hash.md</a> · 返回 <a href="README.md">源码跟读记录索引</a> ·
+    操作提示：Space 播放/暂停，← → 步进，R 重置
+  </footer>
+
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+"use strict";
+
+/* ================= 数据 ================= */
+
+const FIELDS = [
+  { key: "unused",   name: "unused",  bits: 22, hi: 63, lo: 42, cls: "unused",   binCls: "bin-blue" },
+  { key: "hash",     name: "hash",    bits: 31, hi: 41, lo: 11, cls: "hash",     binCls: "bin-orange" },
+  { key: "valhalla", name: "valhalla",bits: 4,  hi: 10, lo: 7,  cls: "valhalla", binCls: "bin-purple" },
+  { key: "age",      name: "age",     bits: 4,  hi: 6,  lo: 3,  cls: "age",      binCls: "bin-purple" },
+  { key: "selffwd",  name: "self-fwd",bits: 1,  hi: 2,  lo: 2,  cls: "selffwd",  binCls: "bin-green" },
+  { key: "lock",     name: "lock",    bits: 2,  hi: 1,  lo: 0,  cls: "lock",     binCls: "bin-green" },
+];
+const HASH_GEN = 0x2F1A8C3D;  // 动画演示中 xor-shift 生成的 hash 值（31 位内）
+
+/* 每步定义：tag(色)、desc(HTML)、markHash、code 片段、动作 */
+const STEPS = [
+  {
+    tag: "blue", label: "① 对象诞生",
+    desc: "对象 <span class='kw2'>obj</span> 刚被分配，mark word 处于 <span class='kw2'>unlocked</span> 状态（lock = 01），hash 位全 0 —— 即 <span class='hl2'>“未生成 identity hash”</span>。<br>注意 JDK 28 布局：<span class='kw2'>hash</span> 占 31 位，放在 41–11 位。",
+    markHash: 0,
+    code: { file: "src/hotspot/share/oops/markWord.hpp:48-51", tag: "初始状态", lines: [
+      ["", "// 64 bits (without compact headers):"],
+      ["", "// ----------------------------------"],
+      ["", "// unused:22  hash:31  valhalla:4  age:4  self-fwd:1  lock:2"],
+      ["", "//            [41--------11]  [10-7] [6-3]  [2]   [1-0]"],
+    ], hl: -1 },
+    action: null,
+  },
+  {
+    tag: "blue", label: "② 调用 hashCode()",
+    desc: "你的代码调用 <span class='kw2'>obj.hashCode()</span>。Java 层声明：<span class='kw2'>native</span> 说明实现在 JVM 里，<span class='kw2'>@IntrinsicCandidate</span> 说明热点代码会被 JIT 内建替换（本动画演示 JNI 路径）。",
+    markHash: 0,
+    code: { file: "src/java.base/share/classes/java/lang/Object.java:130-131", tag: "JAVA", lines: [
+      ["", "@IntrinsicCandidate"],
+      ["", "public native int hashCode();"],
+    ], hl: 1 },
+    action: "call",
+  },
+  {
+    tag: "purple", label: "③ JNI 入口",
+    desc: "解释执行时走 JNI 入口 <span class='kw2'>JVM_IHashCode</span>（<span class='kw2'>jvm.cpp:787</span>），它检查 Valhalla 分支后，在 836 行转发到 <span class='kw2'>ObjectSynchronizer::FastHashCode(THREAD, obj)</span>。",
+    markHash: 0,
+    code: { file: "src/hotspot/share/prims/jvm.cpp:787 / 836", tag: "JNI 入口", lines: [
+      ["", "JVM_ENTRY(jint, JVM_IHashCode(JNIEnv* env, jobject handle))"],
+      ["", "  ..."],
+      ["", "  return checked_cast<jint>("],
+      ["", "      ObjectSynchronizer::FastHashCode(THREAD, obj));"],
+    ], hl: 3 },
+    action: "jni",
+  },
+  {
+    tag: "orange", label: "④ 读对象头",
+    desc: "进入 <span class='kw2'>FastHashCode</span> 的 <span class='kw2'>while(true)</span> 循环：先用 <span class='kw2'>mark_acquire()</span> 读一次对象头（带 acquire 语义的原子读）。<br>现在 mark word 从 obj 被“读”出来，准备检查。",
+    markHash: 0,
+    code: { file: "src/hotspot/share/runtime/synchronizer.cpp:678-685", tag: "synchronizer.cpp", lines: [
+      ["", "intptr_t ObjectSynchronizer::FastHashCode(Thread* current, oop obj) {"],
+      ["", "  while (true) {"],
+      ["", "    markWord temp, test;"],
+      ["", "    intptr_t hash;"],
+      ["", "    markWord mark = obj->mark_acquire();   // ← 读对象头"],
+    ], hl: 4 },
+    action: "read",
+  },
+  {
+    tag: "red", label: "⑤ 检查 hash",
+    desc: "<span class='kw2'>mark.hash()</span> 返回 0 —— 注释原话：<span class='kw2'>“The hash is located in the object header”</span>（hash 就存在对象头里）。<br><span class='hl2'>hash == 0 表示尚未生成</span>，不能直接返回，进入生成流程。",
+    markHash: 0,
+    code: { file: "src/hotspot/share/runtime/synchronizer.cpp:686-690", tag: "synchronizer.cpp", lines: [
+      ["", "    // The hash is located in the object header."],
+      ["", "    hash = mark.hash();                 // = 0 → 未生成"],
+      ["", "    if (hash != 0) {                   // if it has a hash..."],
+      ["", "      return hash;                     //   （本步不满足）"],
+      ["", "    }"],
+    ], hl: 1 },
+    action: "check",
+  },
+  {
+    tag: "orange", label: "⑥ 生成 hash",
+    desc: "调用 <span class='kw2'>get_next_hash</span>（<span class='kw2'>synchronizer.cpp:638-676</span>）。默认走 <span class='kw2'>Marsaglia xor-shift</span>：用线程本地状态 <span class='kw2'>_hashStateX/Y/Z/W</span> 做移位异或，<b>无锁无竞争</b>。<br>生成的 32 位值 <span class='kw2'>0x2F1A8C3D</span> 经 <span class='kw2'>value &amp;= hash_mask</span> 截断到 31 位，且 0 会被替换成 <span class='kw2'>0xBAD</span>。",
+    markHash: 0,
+    code: { file: "src/hotspot/share/runtime/synchronizer.cpp:655-673", tag: "synchronizer.cpp · 默认算法", lines: [
+      ["", "    unsigned t = current->_hashStateX;   // 线程本地状态"],
+      ["", "    t ^= (t << 11);"],
+      ["", "    current->_hashStateX = current->_hashStateY;"],
+      ["", "    current->_hashStateY = current->_hashStateZ;"],
+      ["", "    current->_hashStateZ = current->_hashStateW;"],
+      ["", "    unsigned v = current->_hashStateW;"],
+      ["", "    v = (v ^ (v >> 19)) ^ (t ^ (t >> 8));"],
+      ["", "    current->_hashStateW = v;"],
+      ["", "    value = v;                              // = 0x2F1A8C3D"],
+      ["", "  value &= markWord::hash_mask;             // 只保留 31 位"],
+      ["", "  if (value == 0) value = 0xBAD;            // 兜底"],
+    ], hl: 8 },
+    action: "gen",
+  },
+  {
+    tag: "green", label: "⑦ CAS 安装",
+    desc: "把 hash 合并进对象头（<span class='kw2'>copy_set_hash</span>），再用 <span class='kw2'>cas_set_mark(temp, mark)</span> <b>原子安装</b>：<br>如果 CAS 返回的旧值 <span class='kw2'>test == mark</span>，说明没有其他线程抢写 → 安装成功，<span class='ok2'>hash 正式写入对象头</span>；否则自旋重试。",
+    markHash: HASH_GEN,
+    code: { file: "src/hotspot/share/runtime/synchronizer.cpp:691-698", tag: "synchronizer.cpp · CAS", lines: [
+      ["", "    hash = get_next_hash(current, obj); // get a new hash"],
+      ["", "    temp = mark.copy_set_hash(hash);   // merge hash into header"],
+      ["", "    test = obj->cas_set_mark(temp, mark); // 原子安装"],
+      ["", "    if (test == mark) {               // 成功：hash 已安装"],
+      ["", "      return hash;                    //   return 0x2F1A8C3D"],
+      ["", "    }"],
+      ["", "    // CAS failed, retry"],
+    ], hl: 2 },
+    action: "cas",
+  },
+  {
+    tag: "blue", label: "⑧ 再次调用",
+    desc: "同一个对象再调 <span class='kw2'>hashCode()</span>：<span class='kw2'>mark.hash()</span> 现在非 0，<span class='ok2'>直接读对象头返回 0x2F1A8C3D</span>，不再生成、不再 CAS。<br>这就是“identity hash 一生只生成一次”的真相 —— 存在对象头里，随对象生灭。",
+    markHash: HASH_GEN,
+    code: { file: "src/hotspot/share/runtime/synchronizer.cpp:687-689", tag: "synchronizer.cpp · 命中缓存", lines: [
+      ["", "    hash = mark.hash();               // = 0x2F1A8C3D，非 0"],
+      ["", "    if (hash != 0) {                 // has a hash, just return it"],
+      ["", "      return hash;                   //   return 0x2F1A8C3D"],
+      ["", "    }"],
+    ], hl: 0 },
+    action: "return",
+  },
+];
+
+/* ================= 渲染 ================= */
+
+let idx = 0;           // 当前步骤
+let playing = false;
+let timer = null;
+const STEP_MS = 3200;  // 播放模式下每步停留
+
+const $ = id => document.getElementById(id);
+const mwEl = $("mw"), mwBinEl = $("mwBin"), pillsEl = $("pills");
+const codeBody = $("codeBody"), codeFile = $("codeFile"), codeTag = $("codeTag");
+const hashChip = $("hashChip"), exTag = $("exTag"), exText = $("exText");
+const stepCount = $("stepCount"), progBar = $("progBar");
+const btnPlay = $("btnPlay"), btnPrev = $("btnPrev"), btnNext = $("btnNext");
+const toastEl = $("toast");
+
+function padBits(n, len) {
+  return n.toString(2).padStart(len, "0");
+}
+
+function buildMarkWord(hashVal) {
+  // 各字段二进制串（保持 64 位顺序：高位在前）
+  const hb = padBits(hashVal, 31);
+  return {
+    unused:   padBits(0, 22),
+    hash:     hb,
+    valhalla: "0000",
+    age:      "0000",
+    selffwd:  "0",
+    lock:     "01",
+  };
+}
+
+function renderPills() {
+  pillsEl.innerHTML = "";
+  STEPS.forEach((s, i) => {
+    const b = document.createElement("span");
+    b.className = "step-pill" + (i === idx ? " active" : (i < idx ? " done" : ""));
+    b.textContent = s.label;
+    b.onclick = () => { goTo(i); };
+    pillsEl.appendChild(b);
+  });
+}
+
+function renderMarkWord(anim) {
+  const bits = buildMarkWord(STEPS[idx].markHash);
+  mwEl.innerHTML = "";
+  FIELDS.forEach(f => {
+    const d = document.createElement("div");
+    d.className = "field " + f.cls;
+    d.style.width = (f.bits / 64 * 100) + "%";
+    let val = bits[f.key];
+    if (f.key === "unused") val = "0x" + parseInt(bits.unused, 2).toString(16).padStart(6, "0");
+    else if (f.key === "hash") val = "0x" + parseInt(bits.hash, 2).toString(16).toUpperCase().padStart(8, "0");
+    d.innerHTML =
+      "<span class='fname'>" + f.name + "</span>" +
+      "<span class='fbits'>" + f.hi + "–" + f.lo + "</span>" +
+      "<span class='fval'>" + val + "</span>";
+    d.title = f.name + " [" + f.hi + ":" + f.lo + "] " + f.bits + " bit";
+    if (anim === "pop-hash") {
+      if (f.key === "hash") {
+        d.classList.add("pop");
+        setTimeout(() => d.classList.remove("pop"), 900);
+      }
+    } else if (anim === "flash-red" && f.key === "hash") {
+      d.classList.add("flash-red");
+      setTimeout(() => d.classList.remove("flash-red"), 1600);
+    } else if (anim === "flash-green" && f.key === "hash") {
+      d.classList.add("flash-green");
+      setTimeout(() => d.classList.remove("flash-green"), 1600);
+    }
+    mwEl.appendChild(d);
+  });
+
+  // 完整 64 位二进制
+  mwBinEl.innerHTML = "";
+  FIELDS.forEach(f => {
+    const sp = document.createElement("b");
+    sp.className = f.binCls;
+    sp.textContent = bits[f.key] + (f.key !== "lock" ? " " : "");
+    mwBinEl.appendChild(sp);
+  });
+}
+
+function renderCode() {
+  const c = STEPS[idx].code;
+  codeFile.textContent = c.file;
+  codeTag.textContent = c.tag;
+  let html = "";
+  c.lines.forEach((ln, i) => {
+    const cls = i === c.hl ? "hl" : "";
+    let text = ln[1];
+    // 极简高亮：注释
+    if (/^\/\//.test(text.trim()) || /^\/\*/.test(text.trim())) text = "<span class='cm'>" + text + "</span>";
+    else if (i === c.hl) text = text;
+    html += "<span class='ln'>" + ln[0] + "</span><span class='" + cls + "'>" + text + "</span>\n";
+  });
+  codeBody.innerHTML = html;
+}
+
+function renderExplain() {
+  const s = STEPS[idx];
+  exTag.className = "tag " + s.tag;
+  exTag.textContent = s.label;
+  exText.innerHTML = s.desc;
+  hashChip.className = "hash-chip" + (s.markHash !== 0 ? " has" : "");
+  hashChip.textContent = s.markHash !== 0
+    ? "identity hash: 0x" + s.markHash.toString(16).toUpperCase().padStart(8, "0") + "（已写入对象头）"
+    : "identity hash: 未生成 (0)";
+}
+
+function render(anim) {
+  renderPills();
+  renderMarkWord(anim || null);
+  renderCode();
+  renderExplain();
+  stepCount.textContent = (idx + 1) + " / " + STEPS.length;
+  progBar.style.width = ((idx + 1) / STEPS.length * 100) + "%";
+  btnPrev.disabled = idx === 0;
+  btnNext.disabled = idx === STEPS.length - 1;
+}
+
+function goTo(i, anim) {
+  idx = Math.max(0, Math.min(STEPS.length - 1, i));
+  render(anim);
+}
+
+function step(delta) {
+  stop();
+  goTo(idx + delta);
+  if (idx === 0) btnPrev.disabled = true;
+}
+
+function play() {
+  if (playing) { stop(); return; }
+  if (idx === STEPS.length - 1) goTo(0);
+  playing = true;
+  btnPlay.textContent = "⏸ 暂停";
+  const tick = () => {
+    if (idx < STEPS.length - 1) {
+      const anim = STEPS[idx + 1].action === "read" ? "pop-hash"
+        : STEPS[idx + 1].action === "check" ? "flash-red"
+        : STEPS[idx + 1].action === "cas" ? "flash-green"
+        : null;
+      goTo(idx + 1, anim);
+      timer = setTimeout(tick, STEP_MS);
+    } else {
+      stop();
+      toast("播放完毕 —— 全过程 8 步，identity hash 已装入对象头 🎬");
+    }
+  };
+  timer = setTimeout(tick, 900);
+}
+
+function stop() {
+  playing = false;
+  btnPlay.textContent = "▶ 播放";
+  if (timer) { clearTimeout(timer); timer = null; }
+}
+
+function toast(msg) {
+  toastEl.textContent = msg;
+  toastEl.classList.add("show");
+  setTimeout(() => toastEl.classList.remove("show"), 2400);
+}
+
+/* ================= 事件 ================= */
+
+btnPlay.onclick = play;
+btnNext.onclick = () => step(1);
+btnPrev.onclick = () => step(-1);
+btnReset.onclick = () => { stop(); goTo(0); };
+
+document.addEventListener("keydown", e => {
+  if (e.code === "Space") { e.preventDefault(); play(); }
+  else if (e.code === "ArrowRight") step(1);
+  else if (e.code === "ArrowLeft") step(-1);
+  else if (e.code === "KeyR") { stop(); goTo(0); }
+});
+
+/* 首次渲染 */
+render(null);
+</script>
+</body>
+</html>

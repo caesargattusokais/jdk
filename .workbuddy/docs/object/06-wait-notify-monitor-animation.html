@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Object.wait()/notify() 锁膨胀 · ObjectMonitor 交互动画 — JDK 28 源码跟读</title>
+<style>
+  :root {
+    --blue: #3b82f6;   --blue-bg: #eff6ff;   --blue-bd: #bfdbfe;
+    --purple: #8b5cf6; --purple-bg: #f5f3ff; --purple-bd: #ddd6fe;
+    --orange: #f59e0b; --orange-bg: #fffbeb; --orange-bd: #fde68a;
+    --green: #10b981;  --green-bg: #ecfdf5;  --green-bd: #a7f3d0;
+    --red: #ef4444;    --red-bg: #fef2f2;
+    --ink: #1f2937;    --ink-2: #6b7280;     --ink-3: #9ca3af;
+    --line: #e5e7eb;   --card: #ffffff;      --bg: #f6f7fb;
+    --code-bg: #111827; --code-ink: #e5e7eb;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Segoe UI", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
+    background: linear-gradient(180deg, var(--bg), #eef1f7);
+    color: var(--ink); padding: 24px 16px 48px; line-height: 1.6;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; }
+
+  header { text-align: center; margin-bottom: 22px; }
+  header h1 { font-size: 24px; letter-spacing: .5px; }
+  header h1 .mono { font-family: Consolas, monospace; color: var(--purple); }
+  header .sub { color: var(--ink-2); font-size: 14px; margin-top: 6px; }
+  .badges { margin-top: 12px; display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+  .badge {
+    font-size: 12px; padding: 3px 12px; border-radius: 999px;
+    border: 1px solid var(--blue-bd); background: var(--blue-bg); color: var(--blue);
+    font-family: Consolas, monospace;
+  }
+  .badge.purple { border-color: var(--purple-bd); background: var(--purple-bg); color: var(--purple); }
+  .badge.green  { border-color: var(--green-bd);  background: var(--green-bg);  color: var(--green); }
+  .badge.orange { border-color: var(--orange-bd); background: var(--orange-bg); color: var(--orange); }
+
+  .steps { display: flex; justify-content: center; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
+  .step-pill {
+    font-size: 11px; padding: 4px 10px; border-radius: 999px; cursor: pointer;
+    border: 1.5px solid var(--line); background: var(--card); color: var(--ink-2);
+    transition: all .2s; user-select: none; white-space: nowrap;
+  }
+  .step-pill:hover { border-color: var(--purple); color: var(--purple); }
+  .step-pill.done { border-color: var(--green-bd); background: var(--green-bg); color: var(--green); }
+  .step-pill.active {
+    border-color: var(--purple); background: var(--purple); color: #fff;
+    box-shadow: 0 4px 12px rgba(139,92,246,.35);
+  }
+
+  .stage { display: grid; grid-template-columns: 1.15fr .85fr; gap: 16px; margin-bottom: 16px; }
+  @media (max-width: 860px) { .stage { grid-template-columns: 1fr; } }
+
+  .card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 18px; box-shadow: 0 2px 10px rgba(17,24,39,.05);
+  }
+  .card h3 {
+    font-size: 13px; color: var(--ink-2); font-weight: 600;
+    text-transform: uppercase; letter-spacing: .8px; margin-bottom: 14px;
+  }
+  .card h3 .file { color: var(--ink-3); text-transform: none; letter-spacing: 0; font-weight: 400; }
+
+  /* ---------- 对象 + mark word 状态 ---------- */
+  .obj-row { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
+  .obj-box {
+    display: flex; align-items: center; gap: 8px;
+    border: 2px dashed var(--blue-bd); background: var(--blue-bg); color: var(--blue);
+    padding: 8px 16px; border-radius: 12px; font-family: Consolas, monospace; font-size: 14px;
+  }
+  .obj-box .arrow { font-size: 18px; }
+  .mark-badge {
+    font-family: Consolas, monospace; font-size: 12.5px; padding: 4px 12px; border-radius: 8px;
+    border: 1.5px solid var(--line); background: var(--bg); color: var(--ink-2);
+    transition: all .35s;
+  }
+  .mark-badge.unlocked { background: var(--green-bg); border-color: var(--green-bd); color: var(--green); }
+  .mark-badge.fast     { background: var(--blue-bg);  border-color: var(--blue-bd);  color: var(--blue); }
+  .mark-badge.monitor  { background: var(--purple-bg);border-color: var(--purple-bd);color: var(--purple); }
+
+  /* ---------- ObjectMonitor 结构 ---------- */
+  .monitor-box {
+    border: 2px solid var(--purple); border-radius: 14px; background: var(--purple-bg);
+    padding: 14px; margin-bottom: 14px; position: relative;
+    opacity: 0; transform: scale(.92); transition: all .45s ease;
+  }
+  .monitor-box.show { opacity: 1; transform: scale(1); }
+  .monitor-box.pop { animation: popBox .5s ease; }
+  @keyframes popBox { 0% { transform: scale(.85); } 60% { transform: scale(1.04); } 100% { transform: scale(1); } }
+  .monitor-title {
+    font-size: 12px; font-weight: 700; color: var(--purple); letter-spacing: .6px;
+    margin-bottom: 10px; font-family: Consolas, monospace;
+  }
+  .monitor-title span { color: var(--ink-3); font-weight: 400; }
+
+  .owner-row { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+  .owner-label { font-size: 11px; color: var(--ink-2); font-weight: 700; letter-spacing: .5px; }
+  .owner-slot {
+    flex: 1; min-height: 34px; border: 1.5px dashed var(--purple-bd); border-radius: 9px;
+    background: #fff; display: flex; align-items: center; justify-content: center;
+    font-size: 12.5px; color: var(--ink-3); font-family: Consolas, monospace;
+    transition: all .3s;
+  }
+  .owner-slot.has { border-style: solid; border-color: var(--purple); background: var(--purple-bg); color: var(--purple); font-weight: 700; }
+
+  .queues { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+  @media (max-width: 560px) { .queues { grid-template-columns: 1fr; } }
+  .queue { border-radius: 10px; padding: 8px 10px; background: #fff; min-height: 66px; }
+  .queue .q-name { font-size: 10.5px; font-weight: 700; letter-spacing: .4px; margin-bottom: 6px; display: flex; align-items: center; gap: 5px; }
+  .queue .q-name code { font-size: 10px; color: var(--ink-3); font-weight: 400; }
+  .queue .q-list { display: flex; flex-direction: column; gap: 5px; min-height: 30px; }
+  .queue.cxq      { border: 1.5px solid var(--blue-bd);   }
+  .queue.cxq .q-name      { color: var(--blue); }
+  .queue.entry    { border: 1.5px solid var(--green-bd);  }
+  .queue.entry .q-name    { color: var(--green); }
+  .queue.wait     { border: 1.5px solid var(--orange-bd); }
+  .queue.wait .q-name     { color: var(--orange); }
+
+  .thread-chip {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 11px; font-weight: 700; font-family: Consolas, monospace;
+    padding: 3px 10px; border-radius: 999px; align-self: flex-start;
+    transition: all .3s;
+  }
+  .thread-chip.t1 { background: var(--blue-bg); color: var(--blue); border: 1px solid var(--blue-bd); }
+  .thread-chip.t2 { background: var(--purple-bg); color: var(--purple); border: 1px solid var(--purple-bd); }
+  .thread-chip.flash { animation: chipFlash .8s ease 2; }
+  @keyframes chipFlash {
+    0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(245,158,11,0); }
+    50% { transform: scale(1.12); box-shadow: 0 0 0 6px rgba(245,158,11,.25); }
+  }
+  .thread-chip.green-flash { animation: chipGreen .8s ease 2; }
+  @keyframes chipGreen {
+    0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(16,185,129,0); }
+    50% { transform: scale(1.12); box-shadow: 0 0 0 6px rgba(16,185,129,.3); }
+  }
+
+  /* ---------- 线程泳道 ---------- */
+  .threads { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  @media (max-width: 560px) { .threads { grid-template-columns: 1fr; } }
+  .thr {
+    border-radius: 10px; padding: 8px 12px; font-size: 12.5px; background: var(--bg);
+    border: 1.5px solid var(--line); display: flex; align-items: center; gap: 10px;
+    transition: all .35s;
+  }
+  .thr .tname { font-family: Consolas, monospace; font-weight: 700; }
+  .thr.t1-line .tname { color: var(--blue); }
+  .thr.t2-line .tname { color: var(--purple); }
+  .thr .tstate {
+    font-size: 11px; padding: 2px 10px; border-radius: 999px; background: var(--card);
+    border: 1px solid var(--line); color: var(--ink-2); font-family: Consolas, monospace;
+    transition: all .35s; margin-left: auto; white-space: nowrap;
+  }
+  .thr .tstate.run { background: var(--blue-bg); border-color: var(--blue-bd); color: var(--blue); }
+  .thr .tstate.wait { background: var(--orange-bg); border-color: var(--orange-bd); color: var(--orange); }
+  .thr .tstate.block { background: var(--red-bg); border-color: #fecaca; color: var(--red); }
+  .thr .tstate.done { background: var(--green-bg); border-color: var(--green-bd); color: var(--green); }
+
+  /* ---------- 代码面板 ---------- */
+  .code-panel {
+    background: var(--code-bg); border-radius: 12px; overflow: hidden;
+    font-family: Consolas, "Courier New", monospace; font-size: 12.5px;
+  }
+  .code-head {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 8px 14px; background: rgba(255,255,255,.06); color: #9ca3af; font-size: 11px;
+  }
+  .code-head .file { color: var(--green); }
+  .code-body { padding: 12px 14px; overflow-x: auto; }
+  .code-body pre { color: var(--code-ink); }
+  .code-body .ln { display: inline-block; width: 34px; color: #4b5563; user-select: none; }
+  .code-body .hl { background: rgba(139,92,246,.28); color: #ddd6fe; display: inline-block; width: 100%; border-radius: 4px; padding: 0 2px; }
+  .code-body .cm { color: #6b7280; }
+  .code-body .kw { color: #93c5fd; }
+
+  /* ---------- 控件 ---------- */
+  .controls {
+    display: flex; justify-content: center; align-items: center; gap: 10px;
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 12px 16px; margin-bottom: 16px; box-shadow: 0 2px 10px rgba(17,24,39,.05);
+  }
+  .btn {
+    border: 1.5px solid var(--line); background: #fff; color: var(--ink);
+    font-size: 14px; padding: 7px 16px; border-radius: 10px; cursor: pointer;
+    transition: all .15s; min-width: 44px; font-family: inherit;
+  }
+  .btn:hover:not(:disabled) { border-color: var(--purple); color: var(--purple); }
+  .btn:disabled { opacity: .4; cursor: not-allowed; }
+  .btn.primary { background: var(--purple); border-color: var(--purple); color: #fff; font-weight: 600; }
+  .btn.primary:hover:not(:disabled) { background: #7c3aed; color: #fff; }
+  .btn.reset { color: var(--ink-2); }
+  .prog { flex: 1; max-width: 320px; height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; }
+  .prog i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--purple), var(--orange)); transition: width .3s; }
+  .step-count { font-size: 13px; color: var(--ink-2); font-family: Consolas, monospace; white-space: nowrap; }
+
+  /* ---------- 解说区 ---------- */
+  .explain {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 18px 20px; margin-bottom: 16px; box-shadow: 0 2px 10px rgba(17,24,39,.05);
+    min-height: 96px;
+  }
+  .explain .tag {
+    display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: 1px;
+    padding: 2px 10px; border-radius: 6px; margin-bottom: 8px;
+  }
+  .explain .tag.blue   { background: var(--blue-bg);   color: var(--blue); }
+  .explain .tag.orange { background: var(--orange-bg); color: var(--orange); }
+  .explain .tag.purple { background: var(--purple-bg); color: var(--purple); }
+  .explain .tag.green  { background: var(--green-bg);  color: var(--green); }
+  .explain .tag.red    { background: var(--red-bg);    color: var(--red); }
+  .explain p { font-size: 14px; color: var(--ink); }
+  .explain .kw2 { font-family: Consolas, monospace; background: var(--bg); padding: 0 5px; border-radius: 4px; color: var(--purple); font-size: 13px; }
+  .explain .hl2 { color: var(--orange); font-weight: 700; }
+  .explain .ok2 { color: var(--green); font-weight: 700; }
+
+  /* ---------- 参考区 ---------- */
+  .ref-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  @media (max-width: 860px) { .ref-grid { grid-template-columns: 1fr; } }
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--ink-2); font-weight: 600; background: var(--bg); }
+  td.mono { font-family: Consolas, monospace; font-size: 12px; }
+  tr:last-child td { border-bottom: none; }
+  a { color: var(--purple); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .toast {
+    position: fixed; left: 50%; bottom: 30px; transform: translateX(-50%) translateY(80px);
+    background: var(--ink); color: #fff; font-size: 13px; padding: 9px 20px; border-radius: 999px;
+    opacity: 0; transition: all .3s; z-index: 99; pointer-events: none;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  footer { text-align: center; color: var(--ink-3); font-size: 12px; margin-top: 10px; }
+  footer a { color: var(--ink-3); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1><span class="mono">Object.wait() / notify()</span> 锁膨胀 · ObjectMonitor 交互动画</h1>
+    <p class="sub">wait 为什么强制膨胀？线程如何在 WaitSet / EntryList 之间流转 —— 逐步播放</p>
+    <div class="badges">
+      <span class="badge">JDK 28-internal</span>
+      <span class="badge purple">synchronizer.cpp:545</span>
+      <span class="badge green">objectMonitor.cpp</span>
+      <span class="badge orange">配套文档 06-wait-notify.md</span>
+    </div>
+  </header>
+
+  <!-- step pills -->
+  <nav class="steps" id="pills"></nav>
+
+  <!-- stage -->
+  <section class="stage">
+    <div class="card">
+      <h3>对象与 ObjectMonitor <span class="file">Owner / cxq / EntryList / WaitSet</span></h3>
+
+      <div class="obj-row">
+        <div class="obj-box">
+          <span>LOCK</span>
+          <span class="arrow">→</span>
+          <span>0x000000071234</span>
+        </div>
+        <span class="mark-badge unlocked" id="markBadge">mark word: unlocked (lock=01)</span>
+      </div>
+
+      <!-- ObjectMonitor 结构 -->
+      <div class="monitor-box" id="monitorBox">
+        <div class="monitor-title">ObjectMonitor <span>// 重量级锁 · 唯一有等待队列的形态</span></div>
+        <div class="owner-row">
+          <span class="owner-label">Owner</span>
+          <div class="owner-slot" id="ownerSlot">— 无持有者 —</div>
+        </div>
+        <div class="queues">
+          <div class="queue cxq">
+            <div class="q-name">cxq <code>竞争失败栈</code></div>
+            <div class="q-list" id="cxqList"></div>
+          </div>
+          <div class="queue entry">
+            <div class="q-name">_EntryList <code>唤醒后等锁</code></div>
+            <div class="q-list" id="entryList"></div>
+          </div>
+          <div class="queue wait">
+            <div class="q-name">_WaitSet <code>wait 挂起</code></div>
+            <div class="q-list" id="waitList"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 线程泳道 -->
+      <div class="threads">
+        <div class="thr t1-line" id="thr1">
+          <span class="tname">T1</span>
+          <span style="font-size:11px;color:var(--ink-2)">消费者 · 执行 wait</span>
+          <span class="tstate" id="t1state">READY</span>
+        </div>
+        <div class="thr t2-line" id="thr2">
+          <span class="tname">T2</span>
+          <span style="font-size:11px;color:var(--ink-2)">生产者 · 执行 notify</span>
+          <span class="tstate" id="t2state">READY</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>真实源码 <span class="file">当前执行点</span></h3>
+      <div class="code-panel">
+        <div class="code-head">
+          <span class="file" id="codeFile">—</span>
+          <span id="codeTag">初始状态</span>
+        </div>
+        <div class="code-body"><pre id="codeBody"></pre></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- controls -->
+  <section class="controls">
+    <button class="btn" id="btnPrev" title="上一步 (←)">⏮ 上一步</button>
+    <button class="btn primary" id="btnPlay" title="播放/暂停 (Space)">▶ 播放</button>
+    <button class="btn" id="btnNext" title="下一步 (→)">下一步 ⏭</button>
+    <button class="btn reset" id="btnReset" title="重置 (R)">⟳ 重置</button>
+    <div class="prog"><i id="progBar"></i></div>
+    <span class="step-count" id="stepCount">0 / 7</span>
+  </section>
+
+  <!-- explain -->
+  <section class="explain">
+    <span class="tag purple" id="exTag">初始状态</span>
+    <p id="exText"></p>
+  </section>
+
+  <!-- reference -->
+  <section class="ref-grid">
+    <div class="card">
+      <h3>关键源码锚点（可在 IDEA 中跳转核对）</h3>
+      <table>
+        <tr><th>动作</th><th>文件:行号</th><th>代码</th></tr>
+        <tr><td>wait 入口</td><td class="mono">Object.java:453-469</td><td class="mono">wait(long) → 虚拟线程分支 → wait0</td></tr>
+        <tr><td>唯一 native</td><td class="mono">Object.java:471-472</td><td class="mono">private final native void wait0(long)</td></tr>
+        <tr><td>改名真相</td><td class="mono">vmSymbols.hpp:462</td><td class="mono">template(wait_name, "wait0")</td></tr>
+        <tr><td>JVM 入口</td><td class="mono">jvm.cpp:841-844</td><td class="mono">JVM_MonitorWait → ObjectSynchronizer::wait</td></tr>
+        <tr><td>强制膨胀</td><td class="mono">synchronizer.cpp:545 / 551</td><td class="mono">"must use heavy weight monitor to handle wait()"</td></tr>
+        <tr><td>notify 快速路径</td><td class="mono">synchronizer.cpp:582-585</td><td class="mono">fast-locked → 无 waiter 直接返回</td></tr>
+        <tr><td>等待队列</td><td class="mono">objectMonitor.cpp:1657</td><td class="mono">wait：挂入 _WaitSet + park</td></tr>
+        <tr><td>唤醒</td><td class="mono">objectMonitor.cpp:2032 / 2060</td><td class="mono">notify：_WaitSet → _EntryList</td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <h3>为什么 wait 必须膨胀？（synchronizer.cpp:545）</h3>
+      <p style="font-size:13px;color:var(--ink-2);margin-top:4px">
+        注释原话：<span class="mono" style="color:var(--purple)">"must use heavy weight monitor to handle wait()"</span>。
+      </p>
+      <ul style="font-size:13px;color:var(--ink);padding-left:18px;margin-top:8px;line-height:1.9">
+        <li><b>轻量锁</b>（lock=00）：mark word + 栈帧 Lock Record，<b>没有挂起线程的地方</b>——线程只能自旋。</li>
+        <li><b>重量级锁</b>（lock=10）：mark word 指向 ObjectMonitor，内部有 Owner / cxq / _EntryList / _WaitSet 完整队列，能 park 线程。</li>
+        <li>所以 wait 语义（挂起等待 + 可被唤醒）<b>只有膨胀后才有实现载体</b>。</li>
+        <li>notify 的快速路径反过来利用这一点：对象还是快速锁 → 有 wait 早膨胀了 → 必然没 waiter → 直接 return。</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="card" style="margin-bottom:16px">
+    <h3>验证实验</h3>
+    <table>
+      <tr><th>命令</th><th>观察</th></tr>
+      <tr><td class="mono">java -Xlog:monitorinflation W</td><td>可见 <span class="mono">inflate cause=wait</span> 日志 —— 实证 wait 触发膨胀</td></tr>
+      <tr><td class="mono">java -Xlog:monitorinflation=debug W</td><td>可看到 <span class="mono">notify</span> 的 <span class="mono">_WaitSet</span> 摘除动作</td></tr>
+    </table>
+  </section>
+
+  <footer>
+    配套文档：<a href="06-wait-notify.md">06-wait-notify.md</a> · 返回 <a href="README.md">Object 系列索引</a> ·
+    操作提示：Space 播放/暂停，← → 步进，R 重置
+  </footer>
+
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+"use strict";
+
+/* ================= 步骤数据 ================= */
+
+const STEPS = [
+  { // 1 初始状态
+    tag: "blue", label: "① 初始状态",
+    desc: "对象 <span class='kw2'>LOCK</span> 刚分配，mark word 处于 <span class='kw2'>unlocked</span>（lock=01）。线程 <span class='kw2'>T1</span>、<span class='kw2'>T2</span> 就绪，都还没碰这把锁。",
+    state: { mark: "unlocked", owner: null, wait: [], entry: [], cxq: [], t1: "READY", t2: "READY" },
+    code: { file: "src/java.base/share/classes/java/lang/Object.java:419-421", tag: "JAVA · 入口", lines: [
+      ["", "public final void wait() throws InterruptedException {"],
+      ["", "    wait(0L);"],
+      ["", "}"],
+      ["", "// T1 与 T2 将围绕这把锁展开竞争"],
+    ], hl: -1 },
+    action: null,
+  },
+  { // 2 T1 进入 synchronized
+    tag: "blue", label: "② T1 持有轻量锁",
+    desc: "<span class='kw2'>T1</span> 执行 <span class='kw2'>synchronized(LOCK)</span> 进入临界区：无竞争时走<b>轻量级锁</b>路径 —— mark word 变成 <span class='kw2'>fast-locked</span>（lock=00），锁记录放进 T1 栈帧的 Lock Record。<br>此时 <span class='ok2'>还没有 ObjectMonitor</span>。",
+    state: { mark: "fast", owner: null, wait: [], entry: [], cxq: [], t1: "LOCK", t2: "READY" },
+    code: { file: "（概念）JVM 快速上锁路径", tag: "fast-locked", lines: [
+      ["", "// 轻量级锁：无竞争时不建 monitor"],
+      ["", "// mark word: lock=00 → 指向栈帧 Lock Record"],
+      ["", "// T1 栈帧: Lock Record[obj → displaced mark]"],
+      ["", "// 注意：这种形态没有等待队列，无法 park 线程"],
+    ], hl: -1 },
+    action: "lock",
+  },
+  { // 3 T1 调 wait()
+    tag: "blue", label: "③ T1 调 wait()",
+    desc: "<span class='kw2'>T1</span> 在临界区内执行 <span class='kw2'>LOCK.wait(500)</span>。<span class='kw2'>wait(0L)</span> 是纯包装；真正干活的是 <span class='kw2'>wait0</span>。<br>注意 <span class='kw2'>wait(long)</span> 里的虚拟线程分支：普通平台线程（T1 是）直接走 <span class='kw2'>wait0</span>。",
+    state: { mark: "fast", owner: null, wait: [], entry: [], cxq: [], t1: "LOCK", t2: "READY" },
+    code: { file: "src/java.base/share/classes/java/lang/Object.java:453-469", tag: "JAVA · wait(long)", lines: [
+      ["", "public final void wait(long timeoutMillis) throws InterruptedException {"],
+      ["", "    if (timeoutMillis < 0) { throw ...; }"],
+      ["", "    if (Thread.currentThread() instanceof VirtualThread vthread) {"],
+      ["", "        // 虚拟线程：中断需单独清除（462-464）"],
+      ["", "        wait0(timeoutMillis);"],
+      ["", "    } else {"],
+      ["", "        wait0(timeoutMillis);   // ← T1 走这里"],
+      ["", "    }"],
+      ["", "}"],
+    ], hl: 7 },
+    action: null,
+  },
+  { // 4 JVM 入口
+    tag: "purple", label: "④ JVM 入口",
+    desc: "<span class='kw2'>wait0</span> 是 native，由 VM 静态注册绑定到 <span class='kw2'>JVM_MonitorWait</span>（<span class='kw2'>javaClasses.cpp:96-101</span>，注册符号名是 <span class='kw2'>\"wait0\"</span>，见 <span class='kw2'>vmSymbols.hpp:462</span>）。<br>入口是个薄壳：解析出 oop 后立刻转发给 <span class='kw2'>ObjectSynchronizer::wait</span>。",
+    state: { mark: "fast", owner: null, wait: [], entry: [], cxq: [], t1: "LOCK", t2: "READY" },
+    code: { file: "src/hotspot/share/prims/jvm.cpp:841-844", tag: "JNI 入口", lines: [
+      ["", "JVM_ENTRY(void, JVM_MonitorWait(JNIEnv* env, jobject handle, jlong ms))"],
+      ["", "  Handle obj(THREAD, JNIHandles::resolve_non_null(handle));"],
+      ["", "  ObjectSynchronizer::wait(obj, ms, CHECK);"],
+      ["", "JVM_END"],
+    ], hl: 2 },
+    action: null,
+  },
+  { // 5 owner 校验
+    tag: "red", label: "⑤ 校验 owner",
+    desc: "进入 <span class='kw2'>ObjectSynchronizer::wait</span> 第一件事：<span class='kw2'>CHECK_THROW_NOSYNC_IMSE_0(obj)</span> —— 当前线程必须是锁的 owner，否则抛 <span class='kw2'>IllegalMonitorStateException</span>（就是 javadoc 说的“wait 必须持有 monitor”）。<br>T1 持着锁，<span class='ok2'>校验通过</span>。",
+    state: { mark: "fast", owner: null, wait: [], entry: [], cxq: [], t1: "LOCK", t2: "READY" },
+    code: { file: "src/hotspot/share/runtime/synchronizer.cpp:547-551", tag: "synchronizer.cpp", lines: [
+      ["", "// NOTE: must use heavy weight monitor to handle wait()"],
+      ["", "int ObjectSynchronizer::wait(Handle obj, jlong millis, TRAPS) {"],
+      ["", "  JavaThread* current = THREAD;"],
+      ["", "  CHECK_THROW_NOSYNC_IMSE_0(obj);   // ① 非 owner → 异常"],
+      ["", "  if (millis < 0) { ... }"],
+      ["", "  ObjectMonitor* monitor;"],
+      ["", "  monitor = ObjectSynchronizer::inflate_locked_or_imse("],
+      ["", "      obj(), inflate_cause_wait, CHECK_0);   // ② 膨胀"],
+    ], hl: 3 },
+    action: null,
+  },
+  { // 6 膨胀
+    tag: "orange", label: "⑥ 锁膨胀！",
+    desc: "545 行注释就是原理：<span class='hl2'>“must use heavy weight monitor to handle wait()”</span> —— 轻量锁的 mark word 里<b>没有挂起线程的地方</b>，只有 ObjectMonitor 有等待队列。<br><span class='kw2'>inflate_locked_or_imse</span> 把对象头换成指向 <span class='kw2'>ObjectMonitor</span> 的指针（lock=10），<span class='ok2'>ObjectMonitor 诞生</span>：Owner / cxq / _EntryList / _WaitSet 全部就位。",
+    state: { mark: "monitor", owner: "T1", wait: [], entry: [], cxq: [], t1: "LOCK", t2: "READY" },
+    code: { file: "src/hotspot/share/runtime/synchronizer.cpp:545-556", tag: "synchronizer.cpp · inflate", lines: [
+      ["", "// NOTE: must use heavy weight monitor to handle wait()"],
+      ["", "ObjectMonitor* monitor = ObjectSynchronizer::inflate_locked_or_imse("],
+      ["", "    obj(), inflate_cause_wait, CHECK_0);"],
+      ["", "// 膨胀后 mark word: lock=10 → 指向 monitor"],
+      ["", "// 原 fast-locked 的 Lock Record 被“吸收”进 monitor"],
+    ], hl: 1 },
+    action: "inflate",
+  },
+  { // 7 挂起
+    tag: "orange", label: "⑦ T1 挂入 _WaitSet",
+    desc: "<span class='kw2'>monitor->wait(millis, true, THREAD)</span>（<span class='kw2'>objectMonitor.cpp:1657</span>）：把 T1 包成 <span class='kw2'>ObjectWaiter</span> 挂进 <span class='kw2'>_WaitSet</span> 链表 → 释放 monitor（<span class='kw2'>exit(true)</span>，Owner 清空）→ <span class='kw2'>park</span> 挂起。<br><span class='hl2'>T1 状态变成 WAITING</span>，锁被让出来。",
+    state: { mark: "monitor", owner: null, wait: ["T1"], entry: [], cxq: [], t1: "WAIT", t2: "READY" },
+    code: { file: "src/hotspot/share/runtime/objectMonitor.cpp:1657", tag: "objectMonitor.cpp · wait", lines: [
+      ["", "void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {"],
+      ["", "  ..."],
+      ["", "  // 把当前线程包成 ObjectWaiter"],
+      ["", "  ObjectWaiter node(current);"],
+      ["", "  ... AddWaiter(&node);          // 挂进 _WaitSet"],
+      ["", "  exit(true, THREAD);            // 释放 monitor"],
+      ["", "  ... park 挂起，等待被唤醒 ..."],
+    ], hl: 5 },
+    action: "park",
+  },
+  { // 8 T2 抢锁
+    tag: "purple", label: "⑧ T2 获得锁",
+    desc: "锁被让出后，<span class='kw2'>T2</span> 执行 <span class='kw2'>synchronized(LOCK)</span>：此时对象已是 monitor 形态，T2 直接竞争 <span class='kw2'>ObjectMonitor</span> 成功，<span class='ok2'>Owner = T2</span>。<br>注意：T1 在 <span class='kw2'>_WaitSet</span> 里继续沉睡，不参与锁竞争。",
+    state: { mark: "monitor", owner: "T2", wait: ["T1"], entry: [], cxq: [], t1: "WAIT", t2: "LOCK" },
+    code: { file: "（概念）monitor 形态下的 synchronized", tag: "T2 进入临界区", lines: [
+      ["", "// 对象已膨胀为 monitor"],
+      ["", "// T2: ObjectMonitor::enter() 成功 → Owner = T2"],
+      ["", "// T1: 仍在 _WaitSet 中 park，不参与竞争"],
+    ], hl: -1 },
+    action: "t2lock",
+  },
+  { // 9 T2 notify
+    tag: "blue", label: "⑨ T2 调 notify()",
+    desc: "<span class='kw2'>T2</span> 在临界区执行 <span class='kw2'>LOCK.notify()</span>。Java 层声明：<span class='kw2'>public final native void notify()</span>，绑定 <span class='kw2'>JVM_MonitorNotify</span>（<span class='kw2'>jvm.cpp:847-850</span>），转发给 <span class='kw2'>ObjectSynchronizer::notify</span>。",
+    state: { mark: "monitor", owner: "T2", wait: ["T1"], entry: [], cxq: [], t1: "WAIT", t2: "LOCK" },
+    code: { file: "src/hotspot/share/prims/jvm.cpp:847-850", tag: "JNI 入口", lines: [
+      ["", "JVM_ENTRY(void, JVM_MonitorNotify(JNIEnv* env, jobject handle))"],
+      ["", "  Handle obj(THREAD, JNIHandles::resolve_non_null(handle));"],
+      ["", "  ObjectSynchronizer::notify(obj, CHECK);"],
+      ["", "JVM_END"],
+    ], hl: 2 },
+    action: null,
+  },
+  { // 10 快速路径
+    tag: "green", label: "⑩ 快速路径检查",
+    desc: "<span class='kw2'>ObjectSynchronizer::notify</span> 先读 mark word：<span class='kw2'>is_fast_locked()</span>？此刻是 monitor 形态（lock=10），<b>不是</b>快速锁 → 无法走“直接返回”的捷径。<br>注释说得妙：<span class='kw2'>“Not inflated so there can't be any waiters to notify”</span> —— 反过来，膨胀了说明<b>可能</b>有 waiter，必须正经处理。",
+    state: { mark: "monitor", owner: "T2", wait: ["T1"], entry: [], cxq: [], t1: "WAIT", t2: "LOCK" },
+    code: { file: "src/hotspot/share/runtime/synchronizer.cpp:577-588", tag: "synchronizer.cpp · notify", lines: [
+      ["", "void ObjectSynchronizer::notify(Handle obj, TRAPS) {"],
+      ["", "  markWord mark = obj->mark();"],
+      ["", "  if ((mark.is_fast_locked() && current->lock_stack().contains(obj()))) {"],
+      ["", "    // Not inflated so there can't be any waiters to notify."],
+      ["", "    return;                     // ← 本次不满足（已是 monitor）"],
+      ["", "  }"],
+      ["", "  ObjectMonitor* monitor = ObjectSynchronizer::inflate_locked_or_imse("],
+      ["", "      obj(), inflate_cause_notify, CHECK);"],
+      ["", "  monitor->notify(CHECK);     // 下钻"],
+    ], hl: 2 },
+    action: null,
+  },
+  { // 11 摘除 waiter
+    tag: "green", label: "⑪ WaitSet → EntryList",
+    desc: "<span class='kw2'>ObjectMonitor::notify</span>（<span class='kw2'>objectMonitor.cpp:2032</span>）：从 <span class='kw2'>_WaitSet</span> 摘下一个 waiter（T1）→ <span class='ok2'>转进 _EntryList</span>（等待重新竞争锁的队列）。<br><span class='kw2'>notify 只搬一个</span>；notifyAll 则是把 _WaitSet 全部清空搬走（2060）。",
+    state: { mark: "monitor", owner: "T2", wait: [], entry: ["T1"], cxq: [], t1: "WAIT", t2: "LOCK" },
+    code: { file: "src/hotspot/share/runtime/objectMonitor.cpp:2032", tag: "objectMonitor.cpp · notify", lines: [
+      ["", "void ObjectMonitor::notify(TRAPS) {"],
+      ["", "  ..."],
+      ["", "  ObjectWaiter* iterator = DequeueWaiter();   // 从 _WaitSet 摘"],
+      ["", "  if (iterator != nullptr) {"],
+      ["", "    ... policy ..."],
+      ["", "    iterator->state = ObjectWaiter::TS_ENTER;  // 转入等锁态"],
+      ["", "    _EntryList->prepend(iterator);             // ← 进 _EntryList"],
+      ["", "  }"],
+    ], hl: 6 },
+    action: "notify",
+  },
+  { // 12 唤醒
+    tag: "green", label: "⑫ T1 重竞争锁",
+    desc: "T2 退出临界区（<span class='kw2'>exit</span>，Owner 清空）后，T1 从 <span class='kw2'>_EntryList</span> 竞争到 monitor —— <span class='ok2'>Owner = T1</span>，<span class='kw2'>wait</span> 返回。<br>T1 继续执行临界区代码，打印 <span class='kw2'>\"woke up\"</span>。<span class='hl2'>这就是 wait/notify 的完整闭环</span>：等待队列（_WaitSet）→ 唤醒队列（_EntryList）→ 重新持锁。",
+    state: { mark: "monitor", owner: "T1", wait: [], entry: [], cxq: [], t1: "LOCK", t2: "DONE" },
+    code: { file: "src/hotspot/share/runtime/objectMonitor.cpp:1657（wait 返回路径）", tag: "唤醒 · 重入", lines: [
+      ["", "// 被唤醒后：ObjectMonitor::wait 的 reenter 阶段"],
+      ["", "// 1. 从 park 返回"],
+      ["", "// 2. 竞争锁：ObjectMonitor::enter() 重新成为 owner"],
+      ["", "// 3. wait 返回 → T1 继续临界区代码 → \"woke up\""],
+    ], hl: -1 },
+    action: "wake",
+  },
+];
+
+/* ================= 渲染 ================= */
+
+let idx = 0;
+let playing = false;
+let timer = null;
+const STEP_MS = 3400;
+
+const $ = id => document.getElementById(id);
+const pillsEl = $("pills"), markBadge = $("markBadge"), monitorBox = $("monitorBox");
+const ownerSlot = $("ownerSlot"), cxqList = $("cxqList"), entryList = $("entryList"), waitList = $("waitList");
+const thr1 = $("thr1"), thr2 = $("thr2"), t1state = $("t1state"), t2state = $("t2state");
+const codeBody = $("codeBody"), codeFile = $("codeFile"), codeTag = $("codeTag");
+const exTag = $("exTag"), exText = $("exText");
+const stepCount = $("stepCount"), progBar = $("progBar");
+const btnPlay = $("btnPlay"), btnPrev = $("btnPrev"), btnNext = $("btnNext");
+const toastEl = $("toast");
+
+function chipHTML(name, cls) {
+  return "<span class='thread-chip " + cls + "'>" + name + "</span>";
+}
+
+function renderState(s, anim) {
+  // mark word 徽章
+  const markMap = {
+    unlocked: ["mark-badge unlocked", "mark word: unlocked (lock=01)"],
+    fast:     ["mark-badge fast",     "mark word: fast-locked (lock=00)"],
+    monitor:  ["mark-badge monitor",  "mark word: monitor (lock=10 → ObjectMonitor)"],
+  };
+  const mb = markMap[s.mark];
+  markBadge.className = mb[0];
+  markBadge.textContent = mb[1];
+
+  // ObjectMonitor 显隐
+  monitorBox.classList.toggle("show", s.mark === "monitor");
+  if (anim === "inflate") {
+    monitorBox.classList.remove("pop");
+    void monitorBox.offsetWidth;   // 重启动画
+    monitorBox.classList.add("pop");
+  }
+
+  // Owner
+  if (s.owner) {
+    ownerSlot.className = "owner-slot has";
+    ownerSlot.innerHTML = s.owner + "（持有锁）";
+  } else {
+    ownerSlot.className = "owner-slot";
+    ownerSlot.textContent = "— 无持有者 —";
+  }
+
+  // 三个队列
+  cxqList.innerHTML    = s.cxq.map(t => chipHTML(t, t === "T1" ? "t1" : "t2")).join("");
+  entryList.innerHTML  = s.entry.map(t => chipHTML(t, t === "T1" ? "t1" : "t2")).join("");
+  waitList.innerHTML   = s.wait.map(t => chipHTML(t, t === "T1" ? "t1" : "t2")).join("");
+
+  // 线程状态
+  const stateMap = {
+    "READY": ["", "READY"],
+    "LOCK":  ["run",  "RUNNABLE · 持锁"],
+    "WAIT":  ["wait", "WAITING"],
+    "BLOCK": ["block","BLOCKED"],
+    "DONE":  ["done", "DONE"],
+  };
+  t1state.className = "tstate " + stateMap[s.t1][0];
+  t1state.textContent = stateMap[s.t1][1];
+  t2state.className = "tstate " + stateMap[s.t2][0];
+  t2state.textContent = stateMap[s.t2][1];
+
+  // 动画
+  thr1.classList.remove("flash", "green-flash");
+  thr2.classList.remove("flash", "green-flash");
+  if (anim === "park")  { thr1.classList.add("flash"); }
+  if (anim === "notify"){ thr1.classList.add("green-flash"); }
+  if (anim === "wake")  { thr1.classList.add("green-flash"); }
+}
+
+function renderCode() {
+  const c = STEPS[idx].code;
+  codeFile.textContent = c.file;
+  codeTag.textContent = c.tag;
+  let html = "";
+  c.lines.forEach((ln, i) => {
+    const cls = i === c.hl ? "hl" : "";
+    let text = ln[1];
+    if (/^\/\//.test(text.trim()) || /^\/\*/.test(text.trim())) text = "<span class='cm'>" + text + "</span>";
+    html += "<span class='ln'>" + ln[0] + "</span><span class='" + cls + "'>" + text + "</span>\n";
+  });
+  codeBody.innerHTML = html;
+}
+
+function renderExplain() {
+  const s = STEPS[idx];
+  exTag.className = "tag " + s.tag;
+  exTag.textContent = s.label;
+  exText.innerHTML = s.desc;
+}
+
+function renderPills() {
+  pillsEl.innerHTML = "";
+  STEPS.forEach((s, i) => {
+    const b = document.createElement("span");
+    b.className = "step-pill" + (i === idx ? " active" : (i < idx ? " done" : ""));
+    b.textContent = s.label;
+    b.onclick = () => goTo(i);
+    pillsEl.appendChild(b);
+  });
+}
+
+function render(anim) {
+  renderPills();
+  renderState(STEPS[idx].state, anim || null);
+  renderCode();
+  renderExplain();
+  stepCount.textContent = (idx + 1) + " / " + STEPS.length;
+  progBar.style.width = ((idx + 1) / STEPS.length * 100) + "%";
+  btnPrev.disabled = idx === 0;
+  btnNext.disabled = idx === STEPS.length - 1;
+}
+
+function goTo(i, anim) {
+  idx = Math.max(0, Math.min(STEPS.length - 1, i));
+  render(anim);
+}
+
+function step(delta) {
+  stop();
+  goTo(idx + delta);
+}
+
+function play() {
+  if (playing) { stop(); return; }
+  if (idx === STEPS.length - 1) goTo(0);
+  playing = true;
+  btnPlay.textContent = "⏸ 暂停";
+  const tick = () => {
+    if (idx < STEPS.length - 1) {
+      const s = STEPS[idx + 1];
+      const anim = s.action === "inflate" ? "inflate"
+        : s.action === "park" ? "park"
+        : s.action === "notify" ? "notify"
+        : s.action === "wake" ? "wake"
+        : null;
+      goTo(idx + 1, anim);
+      timer = setTimeout(tick, STEP_MS);
+    } else {
+      stop();
+      toast("播放完毕 —— wait/notify 完整闭环 12 步 🎬");
+    }
+  };
+  timer = setTimeout(tick, 900);
+}
+
+function stop() {
+  playing = false;
+  btnPlay.textContent = "▶ 播放";
+  if (timer) { clearTimeout(timer); timer = null; }
+}
+
+function toast(msg) {
+  toastEl.textContent = msg;
+  toastEl.classList.add("show");
+  setTimeout(() => toastEl.classList.remove("show"), 2400);
+}
+
+/* ================= 事件 ================= */
+
+btnPlay.onclick = play;
+btnNext.onclick = () => step(1);
+btnPrev.onclick = () => step(-1);
+btnReset.onclick = () => { stop(); goTo(0); };
+
+document.addEventListener("keydown", e => {
+  if (e.code === "Space") { e.preventDefault(); play(); }
+  else if (e.code === "ArrowRight") step(1);
+  else if (e.code === "ArrowLeft") step(-1);
+  else if (e.code === "KeyR") { stop(); goTo(0); }
+});
+
+render(null);
+</script>
+</body>
+</html>

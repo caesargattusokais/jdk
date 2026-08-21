@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>03 · 方法调用全链路：解释器 invoke 模板交互动画</title>
+<style>
+  :root{
+    --blue:#3b82f6; --purple:#8b5cf6; --orange:#f59e0b; --green:#10b981;
+    --bg:#f6f7fb; --card:#FFFFFF; --ink:#1f2937; --sub:#6b7280; --line:#e5e7eb;
+    --shadow:0 2px 6px rgba(17,24,39,.05);
+
+    --blue-bg:#eff6ff; --blue-bd:#bfdbfe;
+    --purple-bg:#f5f3ff; --purple-bd:#ddd6fe;
+    --orange-bg:#fffbeb; --orange-bd:#fde68a;
+    --green-bg:#ecfdf5; --green-bd:#a7f3d0;
+    --red:#ef4444; --red-bg:#fef2f2; --red-bd:#fecaca;
+    --ink-2:#6b7280; --ink-3:#9ca3af;
+    --code-bg:#111827; --code-ink:#e5e7eb;
+  }
+  header{text-align:center;margin-bottom:18px}
+  header h1{font-size:25px;letter-spacing:.5px}
+  header h1 .mono{font-family:Consolas,monospace;color:var(--blue)}
+  header .sub{color:var(--ink-2);font-size:13.5px;margin-top:6px}
+  .badges{margin-top:12px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+  header .badge{font-size:12px;padding:3px 12px;border-radius:999px;border:1px solid var(--blue-bd);
+    background:var(--blue-bg);color:var(--blue);font-family:Consolas,monospace}
+  header .badge.purple{border-color:var(--purple-bd);background:var(--purple-bg);color:var(--purple)}
+  header .badge.green{border-color:var(--green-bd);background:var(--green-bg);color:var(--green)}
+  header .badge.orange{border-color:var(--orange-bd);background:var(--orange-bg);color:var(--orange)}
+  header .badge.red{border-color:var(--red-bd);background:var(--red-bg);color:var(--red)}
+
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{background:var(--bg); color:var(--ink); font-family:'Segoe UI','Microsoft YaHei',sans-serif; padding:18px;}
+  .wrap{max-width:1180px; margin:0 auto;}
+
+  h1{font-size:22px; margin-bottom:4px;}
+  .sub{font-size:13px; color:var(--sub); margin-bottom:14px;}
+  .steps{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:16px; justify-content:center;}
+  .step-pill{font-size:11.5px; padding:5px 11px; border-radius:999px; cursor:pointer; border:1.5px solid var(--line); background:var(--card); color:var(--sub); display:flex; align-items:center; justify-content:center; transition:all .2s; user-select:none; white-space:nowrap; min-width:30px;}
+  .step-pill.active{border-color:var(--blue); background:var(--blue); color:#fff; box-shadow:0 4px 12px rgba(59,130,246,.35);}
+  .step-pill.done{border-color:var(--green); background:var(--green); color:#fff;}
+
+  .grid{display:grid; grid-template-columns:300px 1fr 310px; gap:12px; margin-bottom:12px;}
+  .panel{background:var(--card); border-radius:12px; padding:14px; box-shadow:var(--shadow);}
+  .panel h2{font-size:14px; margin-bottom:10px; padding-left:8px; border-left:4px solid var(--green);}
+  .panel.p2 h2{border-color:var(--orange);}
+  .panel.p3 h2{border-color:var(--blue);}
+
+  .face{display:flex; align-items:center; gap:8px; padding:10px 12px; border-radius:10px; margin-bottom:8px;
+        background:#eff6ff; cursor:pointer; transition:all .3s; border:1.5px solid transparent;}
+  .face .num{width:26px; height:26px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:bold; color:#fff; font-size:13px;}
+  .face .tt{font-size:13px; font-weight:bold;}
+  .face .ds{font-size:11px; color:var(--sub); margin-top:2px;}
+  .face.f1 .num{background:var(--orange);} .face.f2 .num{background:var(--blue);} .face.f3 .num{background:var(--purple);} .face.f4 .num{background:var(--green);}
+  .face.on{border-color:var(--orange); background:#fffbeb; box-shadow:var(--shadow);}
+  .face.f1.on{border-color:var(--orange);}
+  .face.f2.on{border-color:var(--blue);}
+  .face.f3.on{border-color:var(--purple); background:#f5f3ff;}
+  .face.f4.on{border-color:var(--green); background:#ecfdf5;}
+  .note{margin-top:10px; font-size:11.5px; color:var(--sub); background:#f3f4f6; border-radius:8px; padding:7px 9px;}
+
+  .stageBox{background:#111827; border-radius:10px; padding:10px 12px; font-family:Consolas,monospace; font-size:12px; line-height:1.75; color:#e5e7eb; min-height:220px; white-space:pre;}
+  .stageBox .hl{background:#4a3410; border-radius:3px; color:#fbbf24;}
+  .stageBox .dim{color:#64748b;}
+  .stageBox .grn{color:#a7f3d0;}
+  .stageBox .org{color:#fde68a;}
+  .stageBox .pur{color:#ddd6fe;}
+  .stageBox .blu{color:#bfdbfe;}
+  .stageBox .red{color:#fca5a5;}
+  .vrow{display:flex; align-items:center; gap:6px; padding:2px 0; font-size:11.5px; font-family:Consolas,monospace;}
+  .vslot{display:inline-block; min-width:64px; text-align:center; border-radius:6px; padding:2px 8px; font-size:11px; background:#1f2937; color:#d1d5db;}
+  .vslot.hot{background:#4a3410; color:#fbbf24;}
+  .vslot.empty{background:#374151; color:#6b7280; border:1px dashed #4b5563;}
+  .detail{margin-top:8px; font-size:12px; color:#4b5563; background:#f3f4f6; border-radius:8px; padding:7px 9px; min-height:34px;}
+
+  .src{background:#111827; border-radius:12px; padding:12px 14px; box-shadow:var(--shadow); margin-bottom:12px;}
+  .src h2{font-size:13px; color:#9ca3af; margin-bottom:8px;}
+  .src .code{font-family:Consolas,monospace; font-size:12px; line-height:1.7; white-space:pre; overflow-x:auto; color:#e5e7eb;}
+  .src .code .hl{background:#4a3410; border-radius:3px; color:#fbbf24;}
+  .src .code .dim{color:#64748b;}
+  .src .code .grn{color:#a7f3d0;}
+  .src .code .org{color:#fde68a;}
+  .src .code .pur{color:#ddd6fe;}
+  .src .code .blu{color:#bfdbfe;}
+  .scene{margin-top:8px; font-size:11px; color:#6b7280; background:#f3f4f6; border-radius:8px; padding:6px 8px;}
+
+  .ctl{display:flex; align-items:center; gap:10px; justify-content:center; padding:10px; background:var(--card); border-radius:12px; box-shadow:var(--shadow);}
+  .btn{width:44px; height:44px; border-radius:50%; border:none; background:var(--blue); color:#fff; font-size:16px; cursor:pointer; transition:all .15s; font-weight:bold;}
+  .btn:hover{transform:scale(1.08);}
+  .btn.green{background:var(--green);}
+  .btn.orange{background:var(--orange); width:52px; height:52px;}
+  .hint{font-size:12px; color:var(--sub);}
+  .stepDesc{font-size:14px; font-weight:normal; line-height:1.85; color:#334155; background:#eff6ff; border-radius:9px; padding:11px 16px; margin-bottom:12px; border-left:4px solid var(--blue);}
+  .stepDesc b{color:var(--blue); font-weight:600;}
+  .stepDesc code{color:#7c3aed; font-family:Consolas,monospace; background:rgba(139,92,246,.10); padding:0 5px; border-radius:4px; font-size:12.5px;}
+  .kbd{display:inline-block; border:1px solid var(--line); border-radius:4px; padding:0 6px; background:#fff; font-size:11px; color:#4b5563;}
+
+  @media(max-width:1000px){.grid{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1><span class="mono">invoke 模板</span> · 方法调用全链路第三站：解释器怎么把方法调起来</h1>
+    <div class="sub">templateTable_x86.cpp · invokevirtual（:3479）· load_method_entry（interp_masm_x86.cpp:1855）· lookup_virtual_method（macroAssembler_x86.cpp:4035）· JDK 28</div>
+    <div class="badges">
+      <span class="badge orange">模板入口</span>
+      <span class="badge">热路径寻址</span>
+      <span class="badge purple">vtable 分派</span>
+      <span class="badge green">interface 三分支</span>
+      <span class="badge red">最后一跳</span>
+    </div>
+  </header>
+
+  <div class="steps" id="pills"></div>
+  <div class="stepDesc" id="stepDesc">点击 ▶ 开始播放，Space 播放/暂停，← → 步进，R 重置</div>
+
+  <div class="grid">
+    <!-- 左：四关卡导航 -->
+    <div class="panel p1">
+      <h2>四关卡导航</h2>
+      <div class="face f1" id="face1"><span class="num">1</span><div><div class="tt">模板入口</div><div class="ds">invoke 家族 4 入口 :3479</div></div></div>
+      <div class="face f2" id="face2"><span class="num">2</span><div><div class="tt">热路径寻址</div><div class="ds">load_method_entry :1855</div></div></div>
+      <div class="face f3" id="face3"><span class="num">3</span><div><div class="tt">vtable 分派</div><div class="ds">invokevirtual_helper :3435</div></div></div>
+      <div class="face f4" id="face4"><span class="num">4</span><div><div class="tt">interface 三分支</div><div class="ds">invokeinterface :3539</div></div></div>
+      <div class="note" id="fnote">当前：关卡 ①<br>模板入口</div>
+    </div>
+
+    <!-- 中：舞台 -->
+    <div class="panel p2">
+      <h2>机制舞台</h2>
+      <div class="stageBox" id="stage">// 当前关卡机制</div>
+      <div class="detail" id="detail">—</div>
+    </div>
+
+    <!-- 右：源码 -->
+    <div class="panel p3">
+      <h2>源码证据</h2>
+      <div class="src">
+        <div class="code" id="src">// 源码面板</div>
+      </div>
+      <div class="scene" id="scene">—</div>
+    </div>
+  </div>
+
+  <!-- 控制 -->
+  <div class="ctl">
+    <button class="btn" id="btnPrev" title="上一步">◀</button>
+    <button class="btn orange" id="btnPlay" title="播放/暂停 (Space)">▶</button>
+    <button class="btn" id="btnNext" title="下一步">▶</button>
+    <button class="btn green" id="btnReset" title="重置 (R)">↺</button>
+    <span class="hint"><span class="kbd">Space</span> 播放/暂停 · <span class="kbd">←</span> <span class="kbd">→</span> 步进 · <span class="kbd">R</span> 重置 · 点击步骤胶囊跳转</span>
+  </div>
+
+</div>
+
+<script>
+(() => {
+  const S = {
+    face1: document.getElementById('face1'),
+    face2: document.getElementById('face2'),
+    face3: document.getElementById('face3'),
+    face4: document.getElementById('face4'),
+    fnote: document.getElementById('fnote'),
+    stage: document.getElementById('stage'),
+    detail: document.getElementById('detail'),
+    src: document.getElementById('src'),
+    scene: document.getElementById('scene'),
+    desc: document.getElementById('stepDesc'),
+    pills: document.getElementById('pills'),
+  };
+  const COL = { blue:'#3b82f6', purple:'#8b5cf6', orange:'#f59e0b', green:'#10b981' };
+
+  function faces(n){
+    S.face1.className='face f1'+(n===1?' on':'');
+    S.face2.className='face f2'+(n===2?' on':'');
+    S.face3.className='face f3'+(n===3?' on':'');
+    S.face4.className='face f4'+(n===4?' on':'');
+  }
+  function stage(html){ S.stage.innerHTML = html; }
+  function src(html){ S.src.innerHTML = html; }
+  function scene(txt){ S.scene.innerHTML = txt; }
+
+  const steps = [
+    // 0 白话速览（先讲人话，再上源码）
+    { d:`<span style="display:inline-block;background:#dbeafe;color:#1d4ed8;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">白话速览</span> 这一站在演什么：<b>老实人怎么干活</b>。
+<b>比喻</b>：有个老实人（解释器）照<b>说明书</b>一步步干活：每次喊「会计」都<b>翻名册</b>找老王，还顺手在<b>小本上画正字</b>记录谁被喊得多——慢，但永远不会错。
+<b>技术对照</b>：老实人 = 解释器；说明书 = <code>template</code> 模板；翻名册 = vtable 查找；画正字 = Profile 计数。
+<b>记住一句</b>：老实人画的每个正字，都是后面 C2 配速算卡的依据。
+下面每一步都会用术语讲同一件事，忘了就把比喻拉回来。`,
+      fn:()=>{
+        faces(1); S.fnote.innerHTML='当前：白话速览<br>先讲人话';
+        stage(`<span class="blu">白话速览 · 老实人翻名册</span>\n<span class="dim">比喻：照说明书 → 翻名册 → 画正字</span>\n<span class="dim">技术：模板 → 查表 → Profile 计数</span>\n<span class="dim">四关：①模板入口 ②热路径寻址</span>\n<span class="dim">      ③vtable 分派 ④interface 分支</span>\n<span class="grn">一句话：慢，但永远对</span>`);
+        S.detail.textContent='这一站把 invokevirtual 一条字节码拆到 CPU 指令级，看老实人几纳秒跑完。';
+        src(`<span class="dim">// 术语对照（人话 → 黑话）</span>\n<span class="blu">老实人</span>      → <span class="grn">解释器 interpreter</span>\n<span class="blu">说明书</span>      → <span class="grn">template 模板</span>\n<span class="blu">翻名册</span>      → <span class="grn">vtable 查找</span>\n<span class="blu">画正字</span>      → <span class="grn">Profile 计数器</span>`);
+        scene('白话速览：<b>老实人怎么干活</b>');
+      }},
+    // 0 初始
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：这一站把「老实人翻名册」拆到 CPU 指令级：拿到一条 invoke 字节码，几纳秒内到底执行哪几步。
+前两站答了"<b>指向谁</b>"（01 linkResolver 解析）和"<b>去哪查</b>"（02 vtable/itable 建表），这一站看"<b>怎么执行</b>"——解释器拿到一条 invoke 字节码，几纳秒内把它跑起来。
+<b>① 模板入口</b>：invoke 家族 4 个模板（:3479）
+<b>② 热路径寻址</b>：字节码 u2 index → ResolvedMethodEntry（:1855）
+<b>③ vtable 分派</b>：final 直接跳 / 查表一次读（:3435）
+<b>④ interface 三分支</b>：Object / private / 常规 itable（:3539）
+核心问题：<code>invokevirtual #12</code> 这条字节码，CPU 到底执行了哪几步？`,
+      fn:()=>{
+        faces(1); S.fnote.innerHTML='当前：关卡 ①<br>模板入口';
+        stage(`<span class="org">关卡 ① 模板入口（templateTable_x86.cpp）</span>\n<span class="dim">invokevirtual   :3479</span>\n<span class="dim">invokespecial   :3496</span>\n<span class="dim">invokestatic    :3515</span>\n<span class="dim">invokeinterface :3539</span>\n<span class="dim">┌────────────────────────────────────┐</span>\n<span class="blu">│ ① load_resolved_method_entry_*     │ 读 flags + Method*/index</span>\n<span class="blu">│ ② prepare_invoke                   │ 取 receiver + 压返回地址</span>\n<span class="blu">│ ③ 分派跳转                          │ 直接跳 / 查表 / 扫描</span>\n<span class="dim">└────────────────────────────────────┘</span>\n<span class="grn">四个入口共用同一段三段式骨架</span>`);
+        S.detail.textContent='模板 = 类字节码的机器码"章"，invoke* 四兄弟共享三段式：读缓存 → 准备 → 分派。';
+        src(`<span class="dim">// templateTable_x86.cpp:3479（invokevirtual 全文）</span>\nvoid TemplateTable::invokevirtual(int byte_no) {\n  transition(vtos, vtos);\n  assert(byte_no == f2_byte, "use this argument");\n\n  <span class="grn">load_resolved_method_entry_virtual(rcx,  // ResolvedMethodEntry*</span>\n<span class="grn">                                     rbx,  // Method 或 itable index</span>\n<span class="grn">                                     rdx); // Flags</span>\n  <span class="grn">prepare_invoke(rcx, rcx, rdx);  // receiver, flags</span>\n\n  <span class="grn">invokevirtual_helper(rbx, rcx, rdx);</span>  <span class="dim">← 三段式</span>\n}`);
+      scene('场景 0：<b>四关卡总览</b>');
+      }},
+    // 1 模板是什么
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：老实人快的第一个秘密：每条字节码的「翻译」只做一次（类加载时生成机器码段），执行时直接跑，不用每次现翻。
+<b>模板（template）</b>是解释器快的第一个秘密：字节码的"翻译"只做一次，执行时直接跑机器码。
+<b>① 问题</b>：纯解释循环每次都要 decode 字节码再 switch 分发，太慢
+<b>② 方案</b>：类加载时，解释器生成器把每条字节码生成一段机器码（codelet）——翻译一次
+<b>③ 模板表</b>：<code>_table[opcode]</code> 指向每段 codelet 的入口，解释器按操作码跳进去直接跑
+<b>④ templateTable_x86.cpp</b>：这些模板的 x86 实现——本站主角
+<b>⑤ 热循环</b>：<code>dispatch_next</code> 取下一条字节码 → 查模板表 → 跳到对应 codelet → 跑完再 dispatch`,
+      fn:()=>{
+        faces(1);
+        stage(`<span class="org">解释器执行模型</span>\n<span class="blu">字节码流: [invokevirtual #12] [getfield #5] [ireturn] ...</span>\n<span class="dim">             │           │           │</span>\n<span class="grn">模板表:    ▼           ▼           ▼</span>\n<span class="dim">  codelet(invokevirtual)  codelet(getfield)  codelet(ireturn)</span>\n<span class="dim">  ├ 机器码段1            ├ 机器码段2        ├ 机器码段3</span>\n<span class="org">翻译一次 · 执行无数次 —— 这就是模板解释器</span>\n<span class="dim">dispatch_next：取操作码 → 查表 → 跳进 codelet</span>`);
+        S.detail.textContent='模板解释器 = 每个操作码一段预生成机器码，执行循环只是"查表 + 跳转"。';
+        src(`<span class="dim">// 概念：模板表（BytecodeInterpreter 的加速版）</span>\n<span class="grn">// codelet = 一段机器码，类加载时由 TemplateTable::generate_xxx 生成</span>\n<span class="dim">// 执行循环（简化）：</span>\n<span class="dim">//   dispatch_next() {</span>\n<span class="dim">//     opcode = *bcp;                 // 读下一条字节码</span>\n<span class="dim">//     jmp *_table[opcode];           // 跳到模板 codelet 入口</span>\n<span class="dim">//   }</span>\n<span class="org">// 模板生成：TemplateTable::def(Bytecodes::_invokevirtual, ...)</span>\n<span class="org">//            → TemplateTable::invokevirtual() 用汇编器生成机器码</span>`);
+        scene('场景 1：<b>模板解释器</b>');
+      }},
+    // 2 四个入口
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：invoke 家族四个模板（virtual/special/static/interface）共用同一段三段式骨架：读缓存 → 取 receiver → 分派跳转。
+invoke 家族有<b>四个模板</b>，各管一种调用语义，行号相邻。
+<b>① invokevirtual</b>（:3479）：多态调用，按接收者<b>实际类</b>查 vtable
+<b>② invokespecial</b>（:3496）：构造器 / private / super 调用——<b>静态绑定</b>，直接调
+<b>③ invokestatic</b>（:3515）：静态方法，<b>无 receiver</b>，直接调 + 类初始化检查
+<b>④ invokeinterface</b>（:3539）：接口调用，按接口查 itable（3 种形态见关卡④）
+<b>⑤ 共同骨架</b>：全部 <code>load_resolved_method_entry_*</code> → <code>prepare_invoke</code> → 分派跳转`,
+      fn:()=>{
+        faces(1);
+        stage(`<span class="org">四个模板 · 三种分派</span>\n<span class="blu">invokevirtual   → vtable 查表（多态）</span>\n<span class="pur">invokespecial   → 直接调（构造/private/super）</span>\n<span class="pur">invokestatic    → 直接调（无 receiver）</span>\n<span class="grn">invokeinterface → itable 扫描 / 特例（3 形态）</span>\n<span class="dim">┌────────────────────────────────┐</span>\n<span class="dim">│ 读缓存 → 取 receiver → 分派      │ ← 四兄弟共用</span>\n<span class="dim">│ load_resolved_method_entry_*    │</span>\n<span class="dim">│ prepare_invoke                  │</span>\n<span class="dim">│ 分派跳转                         │</span>\n<span class="dim">└────────────────────────────────┘</span>\n<span class="org">差异只在第三段：查表方式不同</span>`);
+        S.detail.textContent='四个入口共享三段式，差异集中在第三段的分派策略。';
+        src(`<span class="dim">// templateTable_x86.cpp 四个入口（原文开头）</span>\n<span class="org">:3479</span>  void TemplateTable::invokevirtual(int byte_no) {\n<span class="org">:3496</span>  void TemplateTable::invokespecial(int byte_no) {\n<span class="org">:3515</span>  void TemplateTable::invokestatic(int byte_no) {\n<span class="org">:3539</span>  void TemplateTable::invokeinterface(int byte_no) {\n\n<span class="dim">// invokespecial 特例（:3507-3512）——直接调</span>\n  <span class="grn">__ verify_oop(rcx);</span>\n  <span class="grn">__ null_check(rcx);</span>   <span class="dim">← NPE 检查</span>\n  <span class="grn">__ jump_from_interpreted(rbx, rax);</span>  <span class="dim">← Method* 已在 rbx，直接跳</span>`);
+        scene('场景 2：<b>四个入口</b>');
+      }},
+    // 3 ResolvedMethodEntry
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：小本本上的「卡槽」叫 RME：存 Method* 或查表号、标志位、参数数、解析状态——一条字节码的全部情报。
+缓存项叫 <b>ResolvedMethodEntry（RME）</b>——JDK 28 里取代老 ConstantPoolCacheEntry 的调用缓存。
+<b>① _method</b>：非虚调用 / final 方法的 Method*（直接跳时用）
+<b>② union</b>：<code>_interface_klass</code>（interface）/ <code>_resolved_references_index</code>（appendix）/ <code>_table_index</code>（vtable/itable 号）——互斥
+<b>③ _flags</b>：6 个位——<code>is_vfinal</code>(位0) 是关键：Method* 还是 index
+<b>④ _bytecode1/2</b>：记录已解析的字节码（f1/f2 双槽，防 invokevirtual+invokespecial 共享条目误判）
+<b>⑤ _num_parameters/_tos_state</b>：取 receiver 与选返回地址表用`,
+      fn:()=>{
+        faces(1);
+        stage(`<span class="org">ResolvedMethodEntry 结构（resolvedMethodEntry.hpp:68）</span>\n<span class="blu">Method* _method          ← 非虚/final 的 Method*</span>\n<span class="pur">union {</span>\n<span class="pur">  InstanceKlass* _interface_klass;   ← interface/static</span>\n<span class="pur">  u2 _resolved_references_index;     ← invokehandle appendix</span>\n<span class="pur">  u2 _table_index;                   ← vtable/itable 号</span>\n<span class="pur">} _entry_specific;</span>\n<span class="org">u2 _cpool_index   u2 _number_of_parameters</span>\n<span class="org">u1 _tos_state     u1 _flags</span>\n<span class="org">u1 _bytecode1     u1 _bytecode2</span>\n<span class="grn">flags 位0 is_vfinal：1=Method*（直接跳）0=index（查表）</span>`);
+        S.detail.textContent='RME 是调用缓存的"卡槽"：Method* 或 index、flags、参数数、解析状态全在里头。';
+        src(`<span class="dim">// oops/resolvedMethodEntry.hpp:68-94（结构截取）</span>\nclass ResolvedMethodEntry {\n  <span class="grn">Method* _method;</span>  <span class="dim">// Method for non virtual calls, adapter method for</span>\n                     <span class="dim">// invokevirtual, final method for virtual</span>\n  union {
+    InstanceKlass* _interface_klass; <span class="dim">// for interface and static</span>\n    u2 _resolved_references_index;  <span class="dim">// appendix oop for invokehandle</span>\n    <span class="grn">u2 _table_index;</span>            <span class="dim">// vtable/itable index for virtual/interface</span>\n  } _entry_specific;
+  u2 _cpool_index;  <span class="dim">// Constant pool index</span>\n  u2 _number_of_parameters;  <span class="dim">// Number of arguments</span>\n  u1 _tos_state;  u1 _flags;  u1 _bytecode1, _bytecode2;`);
+        scene('场景 3：<b>ResolvedMethodEntry</b>');
+      }},
+    // 4 热路径寻址入口
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：热路径第一步是纯算术：5 条汇编把字节码里的编号（#12）算成卡槽地址——零分支、零查找。
+关卡②：热路径第一步 <code>load_method_entry</code>——<b>5 条汇编</b>把字节码 u2 index 变成 RME 指针。
+<b>① 帧取缓存</b>：解释器帧里存着 <code>ConstantPoolCache</code> 指针（rbp + cache_offset）
+<b>② 读索引</b>：<code>get_cache_index_at_bcp</code> 从字节码流读 u2 index（编译期写死）
+<b>③ 定位数组</b>：CPCache 的 <code>method_entries</code> 数组基址
+<b>④ 缩放</b>：<code>index × sizeof(ResolvedMethodEntry)</code>——数组元素寻址
+<b>⑤ 汇合</b>：基址 + 偏移 → RME 指针，交给后面的 flags 判断`,
+      fn:()=>{
+        faces(2); S.fnote.innerHTML='当前：关卡 ②<br>热路径寻址';
+        stage(`<span class="org">热路径寻址（interp_masm_x86.cpp:1855）</span>\n<span class="blu">解释器帧 rbp ──cache_offset──▶ ConstantPoolCache</span>\n<span class="blu">字节码 #12 ──get_cache_index──▶ u2 index = 12</span>\n<span class="blu">12 × sizeof(RME) ────────────▶ 偏移量</span>\n<span class="grn">基址 + 偏移 ─────────────────▶ ResolvedMethodEntry*</span>\n<span class="dim">5 条汇编 · 零分支 · 零查找 —— 多态第一个成本 ≈ 0</span>\n<span class="org">热路径：每一行都是地址计算，没有条件跳转</span>`);
+        S.detail.textContent='寻址 = 帧取 CPCache + bcp 读 index + 数组寻址，5 条汇编全是算术。';
+        src(`<span class="dim">// cpu/x86/interp_masm_x86.cpp:1855-1863（load_method_entry 原文）</span>\nvoid InterpreterMacroAssembler::load_method_entry(\n    Register cache, Register index, int bcp_offset) {\n  <span class="dim">// Get index out of bytecode pointer</span>\n  <span class="grn">movptr(cache, Address(rbp, frame::interpreter_frame_cache_offset * wordSize));</span>\n  <span class="grn">get_cache_index_at_bcp(index, bcp_offset, sizeof(u2));</span>\n\n  <span class="grn">movptr(cache, Address(cache, ConstantPoolCache::method_entries_offset()));</span>\n  <span class="grn">imull(index, index, sizeof(ResolvedMethodEntry));</span> <span class="dim">// 缩放</span>\n  <span class="grn">lea(cache, Address(cache, index, Address::times_1,</span>\n<span class="grn">                   Array&lt;ResolvedMethodEntry&gt;::base_offset_in_bytes()));</span>
+`);
+        scene('场景 4：<b>热路径寻址</b>');
+      }},
+    // 5 冷热分岔
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：读卡槽上的「已解析标记」比对一次：匹配就直行（热路径）；不匹配说明是第一次执行，调回 VM 跑 01 站解析链。
+拿到 RME 后，<code>resolve_cache_and_index_for_method</code> 做<b>一次比对</b>决定冷热路径（:2301）。
+<b>① 比对</b>：读 RME 的 <code>_bytecode1/2</code> 与当前操作码是否相等（f1 读 bytecode1，f2 读 bytecode2）
+<b>② 热路径</b>：相等 → <code>jcc equal, L_done</code> 直接跳过——已解析，几纳秒
+<b>③ 冷路径</b>：不等 → 首次执行 → <code>InterpreterRuntime::resolve_from_cache</code>（:2343）
+<b>④ 解析完</b>：结果写回 RME（01 站的 set_common）→ 重新 load_method_entry
+<b>⑤ 双字节码</b>：invokevirtual 用 f2 槽、其他用 f1 槽——两者可共享常量池条目`,
+      fn:()=>{
+        faces(2);
+        stage(`<span class="org">冷热路径分岔（templateTable_x86.cpp:2301）</span>\n<span class="blu">load_method_entry(cache, index)  ← 5 条汇编拿 RME</span>\n<span class="dim">cmpl(temp, code)   ← 读 _bytecode1/2 比对</span>\n<span class="grn">jcc(equal, L_done) ← ✅ 已解析 → 热路径直行</span>\n<span class="red">❌ 未解析 → InterpreterRuntime::resolve_from_cache</span>\n<span class="red">        → linkResolver 全链路（01 站）</span>\n<span class="red">        → 写回 _method/_table_index/_flags/_bytecode</span>\n<span class="dim">热路径：1 次 cmp + 1 次条件跳转 · 冷路径：整条解析链</span>`);
+        S.detail.textContent='一条 cmp 分岔：已解析直行，未解析调回 VM 跑 01 站解析链。';
+        src(`<span class="dim">// templateTable_x86.cpp:2313-2348（resolve_cache_and_index 截取）</span>\n  <span class="grn">load_method_entry(cache, index);</span>\n  switch(byte_no) {
+    case f1_byte: <span class="grn">load_unsigned_byte(temp, Address(cache, ResolvedMethodEntry::bytecode1_offset()));</span> break;
+    case f2_byte: <span class="grn">load_unsigned_byte(temp, Address(cache, ResolvedMethodEntry::bytecode2_offset()));</span> break;
+  }
+  <span class="grn">cmpl(temp, code);</span>  <span class="dim">// have we resolved this bytecode?</span>
+  ...
+  <span class="grn">jcc(Assembler::equal, L_done);</span>  <span class="dim">← 热路径</span>
+  <span class="dim">// resolve first time through</span>
+  <span class="red">address entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_from_cache);</span>
+  <span class="red">call_VM_preemptable(noreg, entry, temp);</span>  <span class="dim">← 冷路径 → 01 站</span>`);
+        scene('场景 5：<b>冷热分岔</b>');
+      }},
+    // 6 clinit_barrier
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：静态调用多一道「类初始化检查」：类还没初始化就先跑 <clinit>，绝大多数情况已初始化、屏障直通零开销。
+invokestatic 多一道<b>类初始化屏障</b>（clinit_barrier）——静态调用前必须确认类已初始化。
+<b>① 为什么</b>：静态方法调用 = 触碰类的静态状态 → 必须先跑 <code>&lt;clinit&gt;</code>（05 篇的状态机）
+<b>② 位置</b>：:2327-2336，只在 <code>invokestatic</code> 分支（bytecode() == _invokestatic）
+<b>③ 做法</b>：取 method → <code>load_method_holder</code> 拿所属类 → <code>clinit_barrier(klass)</code> 检查
+<b>④ 快速路径</b>：类已初始化（绝大多数）→ 屏障直通，零开销
+<b>⑤ 慢速路径</b>：未初始化 → 走 VM 初始化流程，然后回到解析`,
+      fn:()=>{
+        faces(2);
+        stage(`<span class="org">invokestatic 的类初始化屏障（:2327-2336）</span>\n<span class="blu">invokestatic Foo.bar()</span>\n<span class="dim">  └─ 已解析？</span>\n<span class="dim">      └─ ✅ 取 Method → load_method_holder → klass</span>\n<span class="grn">      clinit_barrier(klass)</span>\n<span class="grn">        ├─ 已初始化 → 直通（快路径，零开销）</span>\n<span class="red">        └─ 未初始化 → 触发 &lt;clinit&gt;（慢路径）</span>\n<span class="dim">呼应 05 篇：class init 状态机（uninitialized→initializing→initialized）</span>\n<span class="org">只有静态调用需要——实例方法构造时类必然已初始化</span>`);
+        S.detail.textContent='静态调用 = 触碰静态状态，所以 invokestatic 独享类初始化屏障。';
+        src(`<span class="dim">// templateTable_x86.cpp:2327-2336（原文截取）</span>\n  <span class="dim">// Class initialization barrier for static methods</span>\n  if (bytecode() == Bytecodes::_invokestatic) {
+    assert(VM_Version::supports_fast_class_init_checks(), "sanity");
+    <span class="grn">movptr(method, Address(cache, ResolvedMethodEntry::method_offset()));</span>
+    <span class="grn">load_method_holder(klass, method);</span>
+    <span class="grn">clinit_barrier(klass, &amp;L_done, nullptr);</span>  <span class="dim">← 类初始化检查</span>
+  } else {
+    <span class="grn">jcc(Assembler::equal, L_done);</span>
+  }`);
+        scene('场景 6：<b>clinit_barrier</b>');
+      }},
+    // 7 prepare_invoke 取 receiver
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：调用前先「抓人」：按参数个数从栈上回退一格取出接收者对象（invokestatic 没有接收者，跳过这步）。
+关卡③：<code>prepare_invoke</code>（:3394）做调用前的两件事——<b>取 receiver</b> + <b>压返回地址</b>。
+<b>① 谁要 receiver</b>：除 <code>invokestatic</code> / <code>invokedynamic</code> 外都要（:3397）——实例方法必须知道"谁"在被调
+<b>② 怎么取</b>：读 RME 的 <code>_num_parameters</code> → <code>argument_address</code> 按参数个数回退一格 = receiver 在栈顶的位置
+<b>③ verify_oop</b>：取出来先校验（调试/校验模式下）
+<b>④ 为什么静态不要</b>：静态方法没有 this——receiver 槽不存在
+<b>⑤ null 检查时机</b>：invokevirtual 里 null 检查发生在分派时（final 分支 :3457）——这里只是"取"`,
+      fn:()=>{
+        faces(3); S.fnote.innerHTML='当前：关卡 ③<br>vtable 分派';
+        stage(`<span class="org">prepare_invoke（:3394）—— 准备调用</span>\n<span class="blu">① 取 receiver（非 static/indy）</span>\n<span class="dim">   _num_parameters = 2  → 栈上回退一格</span>\n<span class="dim">   [arg2][arg1][receiver] ← 这里</span>\n<span class="grn">   movptr(recv, recv_addr) + verify_oop</span>\n<span class="blu">② 压"解释器返回地址"</span>\n<span class="dim">   按 tos_type 查 invoke_return_entry_table（下步细讲）</span>\n<span class="org">invokestatic/indy：跳过 ①，直接压返回地址</span>`);
+        S.detail.textContent='取 receiver：参数数回退一格；静态调用无 receiver 可跳。';
+        src(`<span class="dim">// templateTable_x86.cpp:3394-3416（prepare_invoke 截取）</span>\nvoid TemplateTable::prepare_invoke(Register cache, Register recv, Register flags) {
+  const bool load_receiver = <span class="grn">(code != Bytecodes::_invokestatic) && (code != Bytecodes::_invokedynamic);</span>
+  ...
+  if (load_receiver) {
+    <span class="grn">load_unsigned_short(recv, Address(cache, ResolvedMethodEntry::num_parameters_offset()));</span>
+    const int no_return_pc_pushed_yet = -1;
+    const int receiver_is_at_end      = -1;  <span class="dim">// 回退一格 = receiver</span>
+    Address recv_addr = argument_address(recv, no_return_pc_pushed_yet + receiver_is_at_end);
+    <span class="grn">movptr(recv, recv_addr);</span>
+    <span class="grn">verify_oop(recv);</span>
+  }`);
+        scene('场景 7：<b>取 receiver</b>');
+      }},
+    // 8 压返回地址
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：再「压一个返回标」：不是真正的返回地址，而是回到解释器分发循环的入口——按返回类型选表，ret 后无缝继续。
+第二件事：<b>压"解释器返回地址"</b>——它不是真正的返回地址，而是回到解释器分发循环的入口。
+<b>① 为什么需要</b>：被调方法 <code>ret</code> 时要有地方回——回到解释器取下一条字节码
+<b>② 多张表</b>：<code>invoke_return_entry_table_for(code)</code> 按字节码类型分表，再按 <code>_tos_state</code>（返回类型）选表项
+<b>③ tos_state</b>：栈顶元素类型（vtos/atos/itos/...）——返回后解释器要知道栈顶是什么类型才能继续
+<b>④ 压栈</b>：<code>push(flags)</code> 把入口地址压栈，模拟"call"的返回地址
+<b>⑤ 语义</b>：这就是为什么被调方法返回后能无缝继续——返回地址指向分发循环的对应入口`,
+      fn:()=>{
+        faces(3);
+        stage(`<span class="org">压解释器返回地址（:3418-3427）</span>\n<span class="blu">invoke_return_entry_table_for(code)</span>\n<span class="dim">  ├─ vtos 表：返回 void 后回到的分发点</span>\n<span class="dim">  ├─ atos 表：返回引用后回到的分发点</span>\n<span class="dim">  └─ itos 表：返回 int 后回到的分发点</span>\n<span class="grn">按 _tos_state 查表 → 拿入口地址 → push</span>\n<span class="dim">被调方法 ret ──▶ 落到这个入口</span>\n<span class="dim">              ──▶ 继续解释下一条字节码</span>\n<span class="org">解释器"调用" = 压一个分发入口 + 跳进方法 codelet</span>`);
+        S.detail.textContent='返回地址 = 按返回类型选的分发循环入口，ret 后无缝继续解释。';
+        src(`<span class="dim">// templateTable_x86.cpp:3418-3427（原文截取）</span>\n  <span class="dim">// load return address</span>\n  {
+    const address table_addr = (address) <span class="grn">Interpreter::invoke_return_entry_table_for(code);</span>
+    ExternalAddress table(table_addr);
+    <span class="grn">lea(rscratch1, table);</span>
+    <span class="grn">movptr(flags, Address(rscratch1, flags, Address::times_ptr));</span>
+  }
+  <span class="grn">push(flags);</span>  <span class="dim">← 压栈，模拟调用返回地址</span>`);
+        scene('场景 8：<b>压返回地址</b>');
+      }},
+    // 9 invokevirtual_helper 双分支
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：分派核心一条指令测位：final 方法（Method* 在手）直接跳、免查表；多态才取接收者实际类去查表。
+分派核心 <code>invokevirtual_helper</code>（:3435）：<b>一条汇编</b>判断 final 直接跳还是查表。
+<b>① 读位</b>：<code>andl(rax, 1 &lt;&lt; is_vfinal_shift)</code>——测试 flags 的位0
+<b>② is_vfinal=1</b>：寄存器里<b>直接是 Method*</b>（final/private 方法）→ 直接跳，不查表
+<b>③ 但 final 也要 null 检查</b>（:3457）：final 方法调用 receiver 为 null → NPE
+<b>④ is_vfinal=0</b>：<code>load_klass</code> 取接收者实际类 → profile → 查表
+<b>⑤ 为什么 final 免查表</b>：final 槽位稳定（02 站 :647）→ 链接期就是 Method* → 08 篇"可内联"依据`,
+      fn:()=>{
+        faces(3);
+        stage(`<span class="org">invokevirtual_helper（:3435）</span>\n<span class="dim">andl(rax, 1 << is_vfinal_shift)  ← 测位0</span>\n<span class="grn">✅ is_vfinal=1（final/private）</span>\n<span class="dim">  null_check(recv)       ← NPE</span>\n<span class="dim">  profile_final_call</span>\n<span class="dim">  jump_from_interpreted  ← 直接跳（Method* 在手）</span>\n<span class="org">❌ is_vfinal=0（多态）</span>\n<span class="dim">  load_klass(rax, recv)   ← 接收者实际类</span>\n<span class="dim">  profile_virtual_call    ← 内联缓存计数</span>\n<span class="dim">  lookup_virtual_method   ← vtable 查表（下步）</span>\n<span class="dim">  jump_from_interpreted</span>\n<span class="blu">final 免查表 = 08 篇"可内联"的汇编依据</span>`);
+        S.detail.textContent='一条位测试分岔：final 直接跳（Method* 在手），多态才查表。';
+        src(`<span class="dim">// templateTable_x86.cpp:3443-3476（invokevirtual_helper 截取）</span>\n  <span class="dim">// Test for an invoke of a final method</span>
+  <span class="grn">movl(rax, flags);</span>
+  <span class="grn">andl(rax, (1 &lt;&lt; ResolvedMethodEntry::is_vfinal_shift));</span>
+  <span class="grn">jcc(Assembler::zero, notFinal);</span>  <span class="dim">← is_vfinal=0 → 查表</span>
+  <span class="dim">// It's final, need a null check here!</span>
+  <span class="grn">null_check(recv);</span>
+  <span class="grn">jump_from_interpreted(method, rax);</span>  <span class="dim">← 直接跳</span>
+  bind(notFinal);
+  <span class="grn">load_klass(rax, recv, rscratch1);</span>  <span class="dim">← 接收者实际类</span>
+  <span class="grn">profile_virtual_call(rax, rlocals);</span>
+  <span class="grn">lookup_virtual_method(rax, index, method);</span>  <span class="dim">← 查表</span>`);
+        scene('场景 9：<b>双分支</b>');
+      }},
+    // 10 lookup_virtual_method
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：多态查表 = 一条 movptr：接收者类地址 + 槽号×8 + 偏移，一次内存读——「虚调用≈零成本」的汇编真相。
+<b>多态的真相</b>：<code>lookup_virtual_method</code>（macroAssembler_x86.cpp:4035）——<b>一条 movptr</b>。
+<b>① 基址</b>：<code>Klass::vtable_start_offset()</code>——vtable 紧跟 Klass 头（02 站）
+<b>② 寻址</b>：<code>recv_klass + index × 8</code>——vtableEntry 恰一个指针宽
+<b>③ 取方法</b>：<code>+ vtableEntry::method_offset()</code> → 一次内存读
+<b>④ 为什么成立</b>：02 站讲过 vtable 槽位全继承链共享、覆写建表期已合并——运行时只需寻址
+<b>⑤ 多态成本</b>：一次内存读。<b>这就是"虚方法调用≈零成本"的汇编真相</b>`,
+      fn:()=>{
+        faces(3);
+        stage(`<span class="org">lookup_virtual_method（macroAssembler_x86.cpp:4035）</span>\n<span class="blu">recv_klass = Dog 的 Klass*</span>\n<span class="dim">vtable: [0]=hashCode [1]=equals [2]=toString [3]=Dog.speak [4]=bark</span>\n<span class="grn">Address(recv_klass, index=3, times_ptr, base + method_offset)</span>\n<span class="grn">  = Dog_klass + 3×8 + 偏移</span>\n<span class="grn">movptr(method_result, 该地址)</span>\n<span class="org">            ↓</span>\n<span class="org">[3] = Dog.speak —— 一次内存读，多态完成</span>\n<span class="dim">同样的 index=3，换 Husky 的 klass → Husky.speak（多态！）</span>`);
+        S.detail.textContent='vtable 查表 = recv_klass + index×8 一次 movptr——多态的全部汇编成本。';
+        src(`<span class="dim">// cpu/x86/macroAssembler_x86.cpp:4035-4044（原文全文）</span>\nvoid MacroAssembler::lookup_virtual_method(Register recv_klass,
+                                           RegisterOrConstant vtable_index,
+                                           Register method_result) {
+  const ByteSize base = Klass::vtable_start_offset();
+  assert(vtableEntry::size() * wordSize == wordSize, "adjust scaling");
+  <span class="grn">Address vtable_entry_addr(recv_klass,</span>
+<span class="grn">                            vtable_index, Address::times_ptr,</span>
+<span class="grn">                            base + vtableEntry::method_offset());</span>
+  <span class="grn">movptr(method_result, vtable_entry_addr);</span>  <span class="dim">← 多态全部成本</span>
+}`);
+        scene('场景 10：<b>一条 movptr</b>');
+      }},
+    // 11 invokeinterface 总览
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：接口调用一个入口管三种形态：Object 方法强制走 vtable、private 接口方法直接跳、常规接口方法才扫 itable。
+关卡④：<code>invokeinterface</code>（:3539）比 virtual 复杂——<b>同一入口三种形态</b>，用 flags 分流。
+<b>① forced_virtual</b>：调的是 <code>java.lang.Object</code> 方法（equals/hashCode）→ 强制走 vtable（:3552-3560）
+<b>② vfinal</b>：private 接口方法 → subtype 检查 + 直接跳（:3566-3589）
+<b>③ 常规</b>：接口方法 → itable 线性扫描（:3593-3657）
+<b>④ 为什么三种</b>：接口调用语义杂——Object 方法没有接口实现、private 接口方法静态绑定、普通接口方法才真多态
+<b>⑤ 数据来源</b>：load_resolved_method_entry_interface（:2533）按 flags 填 klass/method/index 三种形态`,
+      fn:()=>{
+        faces(4); S.fnote.innerHTML='当前：关卡 ④<br>interface 三分支';
+        stage(`<span class="org">invokeinterface 三分支（:3539）</span>\n<span class="dim">load_resolved_method_entry_interface（:2533）</span>\n<span class="grn">├─ is_forced_virtual  → Object 方法 → 走 invokevirtual_helper</span>\n<span class="pur">├─ is_vfinal          → private 接口方法 → subtype + 直接跳</span>\n<span class="blu">└─ 常规               → itable 线性扫描</span>\n<span class="dim">为什么 Object 方法要特判？</span>\n<span class="dim">  equals 是 Object 的，接收者类可能根本没实现声明接口</span>\n<span class="dim">  按 itable 语义找 → 找不到 → 必须强制走 vtable</span>\n<span class="org">一条字节码，三种形态——flags 是总开关</span>`);
+        S.detail.textContent='invokeinterface 一个入口管三种形态：Object 方法/private 方法/常规接口方法。';
+        src(`<span class="dim">// templateTable_x86.cpp:2533-2566（load 截取）</span>\nvoid TemplateTable::load_resolved_method_entry_interface(...) {
+  ...
+  Label NotVirtual; Label NotVFinal; Label Done;
+  <span class="grn">testl(flags, 1 &lt;&lt; ResolvedMethodEntry::is_forced_virtual_shift);</span>
+  <span class="grn">jcc(Assembler::zero, NotVirtual);</span>
+  <span class="grn">testl(flags, (1 &lt;&lt; ResolvedMethodEntry::is_vfinal_shift));</span>
+  <span class="grn">jcc(Assembler::zero, NotVFinal);</span>
+  <span class="grn">movptr(method_or_table_index, Address(cache, ResolvedMethodEntry::method_offset()));</span>
+  <span class="grn">jmp(Done);</span>
+  bind(NotVFinal);
+  <span class="grn">load_unsigned_short(method_or_table_index, Address(cache, ResolvedMethodEntry::table_index_offset()));</span>
+  bind(NotVirtual);
+  <span class="grn">movptr(method_or_table_index, Address(cache, ResolvedMethodEntry::method_offset()));</span>
+  <span class="grn">movptr(klass, Address(cache, ResolvedMethodEntry::klass_offset()));</span>`);
+        scene('场景 11：<b>三分支总览</b>');
+      }},
+    // 12 Object 特例
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：分支一：invokeinterface 调的是 Object 的方法（如 equals）——强制转回 vtable 查表，多态语义才正确。
+分支一：<b>is_forced_virtual</b>——invokeinterface 调 Object 的方法，强制走 invokevirtual。
+<b>① 场景</b>：<code>((Runnable)r).equals(obj)</code>——编译器生成 invokeinterface，但 equals 属于 Object
+<b>② 问题</b>：接收者类可能没实现 Runnable 的 itable 槽？不——更本质：equals 的语义是 Object 的 vtable 槽
+<b>③ 解法</b>：解析期发现目标方法属于 Object → 置 forced_virtual → 运行时直接 invokevirtual_helper（:3559）
+<b>④ 结果</b>：像 invokevirtual 一样走 vtable 查表，多态语义完整
+<b>⑤ 注释出处</b>：:3549-3553"Special case of invokeinterface called for virtual method of java.lang.Object"`,
+      fn:()=>{
+        faces(4);
+        stage(`<span class="org">分支①：Object 方法特例（:3552-3560）</span>\n<span class="blu">((Runnable)r).equals(obj)</span>\n<span class="dim">  ↓ javac 生成 invokeinterface</span>\n<span class="dim">  ↓ 解析期：目标方法属于 java.lang.Object</span>\n<span class="grn">  ↓ 置 is_forced_virtual</span>\n<span class="grn">invokeinterface 模板：</span>\n<span class="grn">  testl(flags, forced_virtual)</span>\n<span class="grn">  jcc(zero, notObjectMethod)  ← 是 → 掉进下面</span>\n<span class="blu">  invokevirtual_helper(rbx, rcx, rdx)  ← 走 vtable</span>\n<span class="dim">语义：equals 是虚方法 → 必须按接收者实际类查 vtable</span>`);
+        S.detail.textContent='Object 方法被 invokeinterface 调用时，强制转 vtable 查表——语义才正确。';
+        src(`<span class="dim">// templateTable_x86.cpp:3549-3560（原文截取）</span>\n  <span class="dim">// Special case of invokeinterface called for virtual method of</span>
+  <span class="dim">// java.lang.Object.  See cpCache.cpp for details.</span>
+  Label notObjectMethod;
+  <span class="grn">movl(rlocals, rdx);</span>
+  <span class="grn">andl(rlocals, (1 &lt;&lt; ResolvedMethodEntry::is_forced_virtual_shift));</span>
+  <span class="grn">jcc(Assembler::zero, notObjectMethod);</span>
+  <span class="grn">invokevirtual_helper(rbx, rcx, rdx);</span>  <span class="dim">← 强制走 vtable</span>
+  <span class="dim">// no return from above</span>
+  bind(notObjectMethod);`);
+        scene('场景 12：<b>Object 特例</b>');
+      }},
+    // 13 private 接口方法
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：分支二：接口的 private 方法 = 静态绑定，但要先验「接收者确实实现了该接口」，失败抛 ICCE。
+分支二：<b>is_vfinal</b>——private 接口方法，静态绑定 + 接口实现检查。
+<b>① 场景</b>：Java 9+ 接口可以有 private 方法——调用点是接口内部
+<b>② 形态</b>：is_vfinal=1 → RME 里直接是 Method*（:3569 测试）
+<b>③ subtype 检查</b>：<code>check_klass_subtype</code>（:3576）确认接收者实现了该接口——失败 → <code>no_such_interface</code> → ICCE
+<b>④ 直接跳</b>：检查通过 → <code>jump_from_interpreted</code>（:3589）——private 不需要查表
+<b>⑤ 快路径</b>：subtype 检查就是 06 篇的 <code>super_check_offset</code> 快路径（macroAssembler_x86.cpp:4058）`,
+      fn:()=>{
+        faces(4);
+        stage(`<span class="org">分支②：private 接口方法（:3566-3589）</span>\n<span class="blu">interface Pet { private void helper() {...} }</span>\n<span class="dim">  ↓ is_vfinal 置位 → RME 里是 Method*</span>\n<span class="grn">testl(flags, is_vfinal) → 是</span>\n<span class="dim">load_klass(rlocals, rcx)      ← 接收者类</span>\n<span class="dim">check_klass_subtype(rlocals, rax, ...)</span>\n<span class="grn">  ├─ 通过 → subtype → jump_from_interpreted（直接跳）</span>\n<span class="red">  └─ 失败 → no_such_interface → IncompatibleClassChangeError</span>\n<span class="dim">private 方法 = 静态绑定，但接口实现必须验明正身</span>\n<span class="org">subtype 检查 = 06 篇 super_check_offset 快路径</span>`);
+        S.detail.textContent='private 接口方法：先验接口实现（ICCE 防线），再直接跳——静态绑定。';
+        src(`<span class="dim">// templateTable_x86.cpp:3566-3589（原文截取）</span>\n  <span class="dim">// Check for private method invocation - indicated by vfinal</span>
+  Label notVFinal;
+  <span class="grn">movl(rlocals, rdx);</span>
+  <span class="grn">andl(rlocals, (1 &lt;&lt; ResolvedMethodEntry::is_vfinal_shift));</span>
+  <span class="grn">jcc(Assembler::zero, notVFinal);</span>
+  <span class="dim">// Get receiver klass into rlocals - also a null check</span>
+  <span class="grn">load_klass(rlocals, rcx, rscratch1);</span>
+  Label subtype;
+  <span class="grn">check_klass_subtype(rlocals, rax, rbcp, subtype);</span>
+  <span class="red">// If we get here the typecheck failed → ICCE</span>
+  <span class="red">recvKlass = rdx; mov(recvKlass, rlocals); jmp(no_such_interface);</span>
+  bind(subtype);
+  <span class="grn">jump_from_interpreted(rbx, rdx);</span>  <span class="dim">← 直接跳</span>`);
+        scene('场景 13：<b>private 接口方法</b>');
+      }},
+    // 14 常规 itable 扫描
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：分支三：常规接口方法扫两遍——第一遍验接口存在（失败 ICCE），第二遍取方法（空槽抛 AME）。
+分支三：常规接口方法——<b>扫两遍 itable</b>：先验接口存在，再取方法。
+<b>① 第一遍</b>（:3603）：<code>lookup_interface_method(..., return_method=false)</code> 只做 subtype 检查——接收者确实实现了接口？
+<b>② 失败</b> → <code>no_such_interface</code> → <b>ICCE</b>
+<b>③ 恢复 bcp</b>（:3611）：检查过程破坏了解释器寄存器，先恢复
+<b>④ 第二遍</b>（:3622）：带 itable_index 真正取方法——<code>lookup_interface_method</code> 线性扫描
+<b>⑤ 结果</b>：Method* 在 rbx，null → <code>no_such_method</code> → <b>AbstractMethodError</b>（:3634-3649）`,
+      fn:()=>{
+        faces(4);
+        stage(`<span class="org">分支③：常规接口方法（:3593-3657）</span>\n<span class="blu">load_klass(rdx, rcx)  ← 接收者实际类</span>\n<span class="dim">第一遍：lookup_interface_method(return_method=false)</span>\n<span class="grn">  ├─ 接收者实现了接口？── 是 ──▶ 继续</span>\n<span class="red">  └─ 否 → ICCE</span>\n<span class="dim">restore_bcp() + profile_virtual_call</span>\n<span class="dim">从 Method 拿声明接口 + itable_index（:3615-3618）</span>\n<span class="blu">第二遍：lookup_interface_method(带 index)</span>\n<span class="grn">  ├─ 找到 → rbx = Method* → jump</span>\n<span class="red">  └─ 空槽 → no_such_method → AbstractMethodError</span>\n<span class="org">扫两遍：第一遍验身份（ICCE），第二遍取方法（AME）</span>`);
+        S.detail.textContent='常规接口调用 = 两遍扫描：验接口（ICCE 防线）+ 取方法（AME 防线）。';
+        src(`<span class="dim">// templateTable_x86.cpp:3603-3626（原文截取）</span>\n  <span class="grn">lookup_interface_method(// inputs: rec. class, interface, itable index</span>
+<span class="grn">                           rdx, rax, noreg,</span>
+<span class="grn">                           rbcp, rlocals,</span>
+<span class="grn">                           no_such_interface,</span>
+<span class="grn">                           /*return_method=*/false);</span>  <span class="dim">← 第一遍：验身份</span>
+  <span class="grn">load_method_holder(rax, rbx);</span>  <span class="dim">← 声明接口</span>
+  <span class="grn">movl(rbx, Address(rbx, Method::itable_index_offset()));</span>
+  <span class="grn">subl(rbx, Method::itable_index_max); negl(rbx);</span>  <span class="dim">← 还原 index</span>
+  <span class="grn">lookup_interface_method(rlocals, rax, rbx, rbx, rbcp, no_such_interface);</span>  <span class="dim">← 第二遍</span>`);
+        scene('场景 14：<b>itable 两遍扫描</b>');
+      }},
+    // 15 lookup_interface_method 汇编
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：itable 查表的汇编版就是 02 站 C++ 循环的对应物：遍历 offset 表找接口 → 命中二次寻址取方法 → 哨兵 null 抛 ICCE。
+itable 查表汇编（macroAssembler_x86.cpp:3841）——注释里直接写着 C 循环，就是 02 站 C++ 版的对应物。
+<b>① 起点</b>：vtable 长度 + vtable 基址 → lea 到 itable 头（offset 表）
+<b>② 循环</b>：读 <code>itableOffsetEntry.interface</code> 与目标接口比较——剥皮循环（peel 1/0）展开前两次
+<b>③ 哨兵</b>：interface 为 null → 接收者没实现 → no_such_interface（ICCE）
+<b>④ 命中</b>：读 offset → <code>klass + offset + index×8</code> 二次寻址 → Method*
+<b>⑤ 为什么扫描</b>：每个类实现的接口集合不同 → 必须先找"这个类的该接口 offset 表"，再直取`,
+      fn:()=>{
+        faces(4);
+        stage(`<span class="org">lookup_interface_method（macroAssembler_x86.cpp:3841）</span>\n<span class="dim">for (scan = klass->itable(); scan->interface() != null; scan += step) {</span>\n<span class="dim">  if (scan->interface() == intf) {</span>\n<span class="grn">    result = klass + scan->offset() + index×8;  ← 命中直取</span>\n<span class="dim">  }</span>\n<span class="dim">}</span>\n<span class="dim">itable 布局：</span>\n<span class="blu">[Pet→off1][Fly→off2][null 哨兵] | Pet 方法区 | Fly 方法区</span>\n<span class="red">哨兵 null → 没实现接口 → ICCE</span>\n<span class="org">vtable O(1) vs itable 线性：多接口继承的代价</span>\n<span class="dim">汇编形态：peel 剥皮循环（前两次展开，免循环头）</span>`);
+        S.detail.textContent='itable 扫描 = 遍历 offset 表找接口 → 二次寻址取方法；哨兵 null → ICCE。';
+        src(`<span class="dim">// macroAssembler_x86.cpp:3856-3911（lookup_interface_method 截取）</span>\n  <span class="dim">// Compute start of first itableOffsetEntry (which is at the end of vtable)</span>
+  <span class="grn">movl(scan_temp, Address(recv_klass, Klass::vtable_length_offset()));</span>
+  <span class="grn">lea(scan_temp, Address(recv_klass, scan_temp, times_vte_scale, vtable_base));</span>
+  <span class="dim">// for (scan = klass->itable(); scan->interface() != nullptr; scan += step) {</span>
+  <span class="dim">//   if (scan->interface() == intf) { result = klass + scan->offset() + idx; } }</span>
+  for (int peel = 1; peel >= 0; peel--) {
+    <span class="grn">movptr(method_result, Address(scan_temp, itableOffsetEntry::interface_offset()));</span>
+    <span class="grn">cmpptr(intf_klass, method_result);</span>
+    ...
+    <span class="grn">testptr(method_result, method_result);</span>
+    <span class="red">jcc(Assembler::zero, L_no_such_interface);</span>  <span class="dim">← 哨兵 → ICCE</span>
+  }
+  bind(found_method);
+  <span class="grn">movl(scan_temp, Address(scan_temp, itableOffsetEntry::offset_offset()));</span>
+  <span class="grn">movptr(method_result, Address(recv_klass, scan_temp, Address::times_1));</span>`);
+        scene('场景 15：<b>itable 扫描汇编</b>');
+      }},
+    // 16 最后一跳 + 闭环
+    { d:`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500">人话</span> <b>这一步在干嘛</b>：一切就绪后一条 jmp 跳进被调方法（jump_from_interpreted）——返回时回到压栈的解释器返回地址，继续解释。
+一切就绪后，<b>最后一跳</b>：<code>jump_from_interpreted</code>（interp_masm_x86.cpp:715）——一条 jmp 进被调方法。
+<b>① 准备</b>：<code>prepare_to_jump_from_interpreted</code> 规范化解释器寄存器（rbcp/rlocals 等）
+<b>② 常规</b>：<code>jmp Method::from_interpreted_offset()</code>——Method 里的解释器入口指针，填一次用一生
+<b>③ JVMTI</b>：单步等事件开启时走 <code>interpreter_entry</code>（纯解释器模式）
+<b>④ 返回</b>：被调方法 ret → 回到 prepare_invoke 压的返回地址 → 继续解释
+<b>⑤ 三站闭环</b>：01 解析写缓存 → 02 建表 → 03（本站）热路径读缓存、查表、一跳——<b>一次多态调用 = 5 条寻址 + 1 次查表 + 1 条 jmp</b>`,
+      fn:()=>{
+        faces(4);
+        stage(`<span class="org">最后一跳（interp_masm_x86.cpp:715）</span>\n<span class="blu">jump_from_interpreted(method)</span>\n<span class="dim">  ├─ prepare_to_jump_from_interpreted()</span>\n<span class="grn">  └─ jmp Method::from_interpreted_offset()</span>\n<span class="dim">        └─▶ 被调方法的解释器入口 codelet</span>\n<span class="dim">被调方法执行完 ret ──▶ 回到压栈的解释器返回地址</span>\n<span class="dim">                    ──▶ 继续解释下一条字节码</span>\n<span class="org">三站闭环：</span>\n<span class="blu">01 解析（冷路径写缓存）→ 02 建表（链接期）→ 03 查表+跳（每次）</span>\n<span class="grn">一次多态调用 = 5 条寻址 + 1 次查表 + 1 条 jmp</span>`);
+        S.detail.textContent='最后一跳 = jmp Method 里的解释器入口；返回地址是分发循环入口，ret 后无缝继续。';
+        src(`<span class="dim">// cpu/x86/interp_masm_x86.cpp:715-732（原文全文）</span>\nvoid InterpreterMacroAssembler::jump_from_interpreted(
+    Register method, Register temp) {
+  <span class="grn">prepare_to_jump_from_interpreted();</span>
+  if (JvmtiExport::can_post_interpreter_events()) {
+    Label run_compiled_code;
+    cmpb(Address(r15_thread, JavaThread::interp_only_mode_offset()), 0);
+    jccb(Assembler::zero, run_compiled_code);
+    <span class="grn">jmp(Address(method, Method::interpreter_entry_offset()));</span>
+    bind(run_compiled_code);
+  }
+  <span class="grn">jmp(Address(method, Method::from_interpreted_offset()));</span>  <span class="dim">← 最后一跳</span>
+}`);
+      scene('场景 16：<b>最后一跳 + 闭环</b>');
+      }},
+  ];
+
+  const N = steps.length;
+  let cur = 0;
+  let timer = null;
+  let playing = false;
+
+  const pillEls = [];
+  steps.forEach((st, i) => {
+    const p = document.createElement('div');
+    p.className = 'step-pill';
+    p.textContent = (i === 0 ? '▶ ' : '') + i;
+    p.title = '跳到第 ' + i + ' 步';
+    p.onclick = () => { go(i); };
+    S.pills.appendChild(p);
+    pillEls.push(p);
+  });
+
+  function go(i) {
+    cur = Math.max(0, Math.min(N - 1, i));
+    steps[cur].fn();
+    S.desc.innerHTML = steps[cur].d;
+    pillEls.forEach((p, j) => {
+      p.className = 'step-pill' + (j === cur ? ' active' : (j < cur ? ' done' : ''));
+    });
+    S.scene.textContent = '第 ' + cur + ' / ' + (N - 1) + ' 步';
+  }
+  function next() { go(cur + 1); }
+  function prev() { go(cur - 1); }
+  function reset() { go(0); }
+  function toggle() {
+    if (playing) { clearInterval(timer); playing = false; S.btnPlay.textContent = '▶'; }
+    else {
+      playing = true; S.btnPlay.textContent = '⏸';
+      timer = setInterval(() => { if (cur >= N - 1) { toggle(); } else { next(); } }, 2600);
+    }
+  }
+
+  S.btnPrev = document.getElementById('btnPrev');
+  S.btnPlay = document.getElementById('btnPlay');
+  S.btnNext = document.getElementById('btnNext');
+  S.btnReset = document.getElementById('btnReset');
+  S.btnPrev.onclick = prev;
+  S.btnPlay.onclick = toggle;
+  S.btnNext.onclick = next;
+  S.btnReset.onclick = reset;
+
+  document.addEventListener('keydown', (e) => {
+    if (e.code === 'Space') { e.preventDefault(); toggle(); }
+    else if (e.key === 'ArrowRight') { next(); }
+    else if (e.key === 'ArrowLeft') { prev(); }
+    else if (e.key.toLowerCase() === 'r') { reset(); }
+  });
+
+  go(0);
+})();
+</script>
+</body>
+</html>
